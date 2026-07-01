@@ -20,6 +20,13 @@ export class RailButtonComponent {
   @Input({ required: true }) label = '';
   @Input() shortcut?: string;
   @Input({ required: true }) testId!: string;
+  /**
+   * VS Code activity-bar-style selected state, for rail buttons that toggle
+   * a persistent panel (Explorer/Documents) rather than fire a one-off
+   * action -- momentary-action buttons (New/Save/Upload/Templates) never
+   * pass this and stay at its default false, unaffected visually.
+   */
+  @Input() active = false;
 
   @Output() readonly clicked = new EventEmitter<void>();
 

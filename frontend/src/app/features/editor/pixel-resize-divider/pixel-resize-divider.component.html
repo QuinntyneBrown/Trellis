@@ -1,0 +1,21 @@
+<div
+  class="pixel-resize-divider"
+  data-testid="pixel-resize-divider"
+  [class.pixel-resize-divider--active]="isDragging()"
+  role="separator"
+  [attr.aria-orientation]="'vertical'"
+  tabindex="0"
+  [attr.aria-valuenow]="ariaValueNow"
+  [attr.aria-valuemin]="ariaValueMin"
+  [attr.aria-valuemax]="ariaValueMax"
+  aria-label="Resize side panel"
+  (pointerdown)="onPointerDown($event)"
+  (pointermove)="onPointerMove($event)"
+  (pointerup)="onPointerUp($event)"
+  (pointercancel)="onPointerCancel($event)"
+  (keydown.arrowleft)="onArrowLeft()"
+  (keydown.arrowright)="onArrowRight()"
+  (dblclick)="onDblClick()"
+>
+  <div class="pixel-resize-divider__grab-area"></div>
+</div>

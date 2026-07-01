@@ -1,6 +1,9 @@
+// Width used to be a hardcoded 18rem here; it's now controlled externally by
+// the shared .editor-page__side-panel wrapper (which also hosts
+// app-explorer-panel, toggled by the same rail-icon selection), so this
+// panel just fills whatever box that wrapper gives it.
 .documents-panel {
-  width: 18rem;
-  max-width: 100%;
+  width: 100%;
   height: 100%;
   overflow-y: auto;
   background-color: #ffffff;

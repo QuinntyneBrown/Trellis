@@ -1,0 +1,74 @@
+// `<app-file-tree-node>` itself must not generate its own box: `.file-tree-node`
+// below is the actual flex-column item stacking row-then-children, so all
+// sizing/layout lives on it directly.
+:host {
+  display: block;
+}
+
+.file-tree-node__row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding-top: 0.15rem;
+  padding-bottom: 0.15rem;
+  padding-right: 0.5rem;
+  font-size: 0.85rem;
+  color: #111827;
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    background-color: rgba(17, 24, 39, 0.06);
+  }
+}
+
+.file-tree-node__chevron,
+.file-tree-node__chevron-spacer {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+}
+
+// A simple right-pointing CSS triangle, rotated 90deg when expanded to
+// point down -- the same idiom VS Code's own Explorer chevrons use.
+.file-tree-node__chevron::before {
+  content: '';
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0.3rem 0 0.3rem 0.4rem;
+  border-color: transparent transparent transparent #6b7280;
+}
+
+.file-tree-node__chevron {
+  transition: transform 0.1s ease;
+}
+
+.file-tree-node__chevron--expanded {
+  transform: rotate(90deg);
+}
+
+.file-tree-node__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-tree-node__spinner {
+  flex: 0 0 auto;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  border: 0.1rem solid rgba(0, 0, 0, 0.15);
+  border-top-color: #3b82f6;
+  animation: file-tree-node-spin 0.7s linear infinite;
+}
+
+@keyframes file-tree-node-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -20,11 +20,16 @@ import { TemplatePickerComponent } from '../../templates/template-picker/templat
 })
 export class EditorToolbarComponent {
   @Input() connectionState: HubConnectionState = 'disconnected';
+  /** Gates the Explorer rail button entirely (hidden, not disabled) in browsers without the File System Access API. */
+  @Input() explorerSupported = false;
+  /** Which (if either) side panel is currently active -- drives the [active] state of both the Explorer and Documents rail buttons. */
+  @Input() activeSidePanel: 'explorer' | 'documents' | null = null;
 
   @Output() readonly newDocument = new EventEmitter<void>();
   @Output() readonly save = new EventEmitter<void>();
   @Output() readonly fileSelected = new EventEmitter<File>();
   @Output() readonly templateSelected = new EventEmitter<Template>();
+  @Output() readonly explorerPanelToggle = new EventEmitter<void>();
   @Output() readonly documentsPanelToggle = new EventEmitter<void>();
 
   @ViewChild('fileInput') private readonly fileInputRef!: ElementRef<HTMLInputElement>;
@@ -52,6 +57,10 @@ export class EditorToolbarComponent {
 
   onTemplateSelected(template: Template): void {
     this.templateSelected.emit(template);
+  }
+
+  onExplorerPanelToggleClicked(): void {
+    this.explorerPanelToggle.emit();
   }
 
   onDocumentsPanelToggleClicked(): void {

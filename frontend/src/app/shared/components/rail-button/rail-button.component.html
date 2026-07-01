@@ -1,6 +1,7 @@
 <button
   type="button"
   class="rail-button"
+  [class.rail-button--active]="active"
   [attr.data-testid]="testId"
   [attr.aria-label]="tooltipText"
   (click)="clicked.emit()"

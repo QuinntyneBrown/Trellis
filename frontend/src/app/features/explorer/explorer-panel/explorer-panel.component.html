@@ -1,0 +1,37 @@
+@if (isSupported) {
+  <div class="explorer-panel" data-testid="explorer-panel">
+    @if (errorMessage()) {
+      <app-error-banner class="explorer-panel__error" [message]="errorMessage()"></app-error-banner>
+    }
+
+    @if (isLoading()) {
+      <app-loading-spinner class="explorer-panel__loading"></app-loading-spinner>
+    } @else if (needsReconnect() && rootNode()) {
+      <button
+        type="button"
+        class="explorer-panel__reconnect"
+        data-testid="explorer-reconnect"
+        (click)="onReconnectClicked()"
+      >
+        Reconnect to {{ rootNode()!.name }}
+      </button>
+    } @else if (rootNode()) {
+      <app-file-tree-node
+        class="explorer-panel__tree"
+        [node]="rootNode()!"
+        [depth]="0"
+        (toggleExpand)="onToggleExpand($event)"
+        (fileClicked)="onFileClicked($event)"
+      ></app-file-tree-node>
+    } @else {
+      <button
+        type="button"
+        class="explorer-panel__open-folder"
+        data-testid="explorer-open-folder"
+        (click)="onOpenFolderClicked()"
+      >
+        Open Folder
+      </button>
+    }
+  </div>
+}

@@ -7,6 +7,8 @@ import { TemplatePickerComponent } from '../components/template-picker.component
 import { SaveDocumentDialogComponent } from '../components/save-document-dialog.component';
 import { DocumentsPanelComponent } from '../components/documents-panel.component';
 import { ResizeDividerComponent } from '../components/resize-divider.component';
+import { ExplorerPanelComponent } from '../components/explorer-panel.component';
+import { PixelResizeDividerComponent } from '../components/pixel-resize-divider.component';
 
 /**
  * The single routed page of the Trellis app: the editor route at '/',
@@ -28,6 +30,8 @@ export class EditorPage extends BasePage {
   readonly saveDialog: SaveDocumentDialogComponent;
   readonly documentsPanel: DocumentsPanelComponent;
   readonly divider: ResizeDividerComponent;
+  readonly explorerPanel: ExplorerPanelComponent;
+  readonly sidePanelDivider: PixelResizeDividerComponent;
 
   constructor(page: Page) {
     super(page);
@@ -38,6 +42,8 @@ export class EditorPage extends BasePage {
     this.saveDialog = new SaveDocumentDialogComponent(page);
     this.documentsPanel = new DocumentsPanelComponent(page);
     this.divider = new ResizeDividerComponent(page);
+    this.explorerPanel = new ExplorerPanelComponent(page);
+    this.sidePanelDivider = new PixelResizeDividerComponent(page);
   }
 
   /** Navigates to the editor route and waits for it to mount. */

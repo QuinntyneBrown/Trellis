@@ -1,0 +1,43 @@
+<div class="file-tree-node">
+  <div
+    class="file-tree-node__row"
+    data-testid="file-tree-node"
+    [attr.data-name]="node.name"
+    [attr.data-kind]="node.kind"
+    [style.padding-left.px]="indentPx"
+    [class.file-tree-node__row--directory]="node.kind === 'directory'"
+    [class.file-tree-node__row--file]="node.kind === 'file'"
+    [attr.aria-expanded]="node.kind === 'directory' ? node.expanded : null"
+    (click)="onRowClick()"
+  >
+    @if (node.kind === 'directory') {
+      <span
+        class="file-tree-node__chevron"
+        data-testid="file-tree-node-chevron"
+        [class.file-tree-node__chevron--expanded]="node.expanded"
+        aria-hidden="true"
+      ></span>
+    } @else {
+      <span class="file-tree-node__chevron-spacer" aria-hidden="true"></span>
+    }
+
+    <span class="file-tree-node__name">{{ node.name }}</span>
+
+    @if (node.loadState === 'loading') {
+      <span class="file-tree-node__spinner" data-testid="file-tree-node-spinner" aria-hidden="true"></span>
+    }
+  </div>
+
+  @if (node.kind === 'directory' && node.expanded && node.children) {
+    <div class="file-tree-node__children">
+      @for (child of node.children; track child.name) {
+        <app-file-tree-node
+          [node]="child"
+          [depth]="depth + 1"
+          (toggleExpand)="toggleExpand.emit($event)"
+          (fileClicked)="fileClicked.emit($event)"
+        ></app-file-tree-node>
+      }
+    </div>
+  }
+</div>

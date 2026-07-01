@@ -72,4 +72,22 @@ describe('RailButtonComponent', () => {
 
     expect(spy).toHaveBeenCalledTimes(1);
   });
+
+  it('does not apply the active modifier class by default', () => {
+    expect(button().classList).not.toContain('rail-button--active');
+  });
+
+  it('does not apply the active modifier class when active is explicitly false', () => {
+    component.active = false;
+    fixture.detectChanges();
+
+    expect(button().classList).not.toContain('rail-button--active');
+  });
+
+  it('applies the active modifier class when active is true', () => {
+    component.active = true;
+    fixture.detectChanges();
+
+    expect(button().classList).toContain('rail-button--active');
+  });
 });

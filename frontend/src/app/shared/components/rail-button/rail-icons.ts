@@ -3,7 +3,7 @@
  * path `d` strings on a shared 24x24 viewBox, drawn in an outline
  * (Heroicons/Feather-like) style: `fill="none" stroke="currentColor"`.
  */
-export type RailIconName = 'new' | 'save' | 'upload' | 'templates' | 'documents';
+export type RailIconName = 'new' | 'save' | 'upload' | 'templates' | 'documents' | 'explorer';
 
 /**
  * Hand-authored outline icon paths -- no icon-library dependency. Kept
@@ -30,4 +30,13 @@ export const RAIL_ICON_PATHS: Record<RailIconName, string[]> = {
 
   // A folder outline.
   documents: ['M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7z'],
+
+  // Two overlapping, diagonally-offset rounded-rectangle page outlines --
+  // visually distinct from both 'new' (a single page with a plus badge) and
+  // 'documents' (a folder): this reads as "a stack of files/folders in a
+  // tree", the VS Code Explorer activity-bar icon's own visual metaphor.
+  explorer: [
+    'M4 9a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z',
+    'M8 5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-1',
+  ],
 };

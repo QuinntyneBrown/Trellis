@@ -6,6 +6,16 @@
   aria-orientation="vertical"
 >
   <div class="editor-toolbar__group">
+    @if (explorerSupported) {
+      <app-rail-button
+        icon="explorer"
+        label="Explorer"
+        testId="toolbar-explorer"
+        [active]="activeSidePanel === 'explorer'"
+        (clicked)="onExplorerPanelToggleClicked()"
+      ></app-rail-button>
+    }
+
     <app-rail-button icon="new" label="New" testId="toolbar-new" (clicked)="onNewClicked()"></app-rail-button>
 
     <app-rail-button
@@ -37,6 +47,7 @@
       icon="documents"
       label="Documents"
       testId="documents-panel-toggle"
+      [active]="activeSidePanel === 'documents'"
       (clicked)="onDocumentsPanelToggleClicked()"
     ></app-rail-button>
   </div>
