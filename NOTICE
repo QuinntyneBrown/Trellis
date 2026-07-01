@@ -1,0 +1,11 @@
+Trellis
+Copyright (c) 2026 Trellis contributors.
+
+Trellis includes third-party software and vendored runtime assets that are
+distributed under their own license terms. The Trellis project license applies
+to original Trellis source code and documentation unless a file states
+otherwise.
+
+See THIRD_PARTY_NOTICES.md for vendored component notices and source
+information.
+

@@ -1,0 +1,54 @@
+<Project>
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      MediatR is pinned to EXACTLY 12.4.1 - the last version released before the v13
+      commercial licensing change. Every project references MediatR with no Version
+      attribute, so Central Package Management will hard-fail the build (NU1008) if
+      anyone ever attempts to float this onto 13.x or later. Do not relax this pin.
+    -->
+    <PackageVersion Include="MediatR" Version="[12.4.1]" />
+
+    <PackageVersion Include="FluentValidation" Version="11.12.0" />
+    <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="11.12.0" />
+
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="8.0.28" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.28" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.28" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.28" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.28" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="8.0.28" />
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
+
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.2.3" />
+
+    <!--
+      Pinned to the 1.2.0 beta line (rather than the older 1.1.118 stable release)
+      because 1.1.118 has incomplete support for C# 10+ file-scoped namespace
+      declarations: SA1402/SA1649 silently fail to fire against files using
+      "namespace X;" syntax under 1.1.118. Verified empirically against this repo.
+    -->
+    <PackageVersion Include="StyleCop.Analyzers" Version="1.2.0-beta.556" />
+
+    <!-- Test packages -->
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="Moq" Version="4.20.72" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.28" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+
+    <!--
+      FluentAssertions is intentionally NOT used (commercial licensing change starting
+      at v8). Shouldly (MIT-licensed) is available for fluent-style assertions; plain
+      xUnit Assert is preferred.
+    -->
+    <PackageVersion Include="Shouldly" Version="4.3.0" />
+  </ItemGroup>
+
+</Project>

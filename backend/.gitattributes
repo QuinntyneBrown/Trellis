@@ -1,0 +1,7 @@
+# The vendored PlantUML jar is a ~28 MB binary. Git LFS is recommended for this
+# path if this repository will be pushed to a remote with LFS support configured;
+# it is tracked as a normal binary blob for now (LFS setup is out of scope here).
+src/Trellis.Api/Vendor/plantuml/*.jar -text -diff binary
+
+# Vendored third-party sources - do not run diff/merge heuristics against them.
+src/Trellis.Api/Vendor/c4-plantuml/*.puml -diff linguist-vendored

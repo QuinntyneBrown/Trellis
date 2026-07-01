@@ -1,0 +1,39 @@
+<div class="editor-page" data-testid="editor-page">
+  <app-editor-toolbar
+    [connectionState]="hubService.connectionState()"
+    (newDocument)="onNewDocument()"
+    (save)="onSaveClicked()"
+    (fileSelected)="onFileSelected($event)"
+    (templateSelected)="onTemplateSelected($event)"
+    (documentsPanelToggle)="onDocumentsPanelToggle()"
+  ></app-editor-toolbar>
+
+  <div class="editor-page__body">
+    <div class="editor-page__editor-pane">
+      <app-monaco-editor
+        [value]="sourceCode()"
+        (valueChange)="onEditorValueChange($event)"
+        (renderRequested)="onRenderRequested($event)"
+      ></app-monaco-editor>
+    </div>
+
+    <div class="editor-page__preview-pane">
+      <app-diagram-preview
+        [result]="hubService.renderResult()"
+        [isRendering]="hubService.isRendering()"
+      ></app-diagram-preview>
+    </div>
+
+    <app-documents-panel
+      [open]="isDocumentsPanelOpen()"
+      (documentOpened)="onDocumentOpenedFromPanel($event)"
+    ></app-documents-panel>
+  </div>
+
+  <app-save-dialog
+    [visible]="isSaveDialogOpen()"
+    [initialName]="documentName()"
+    (confirm)="onSaveConfirm($event)"
+    (cancel)="onSaveCancel()"
+  ></app-save-dialog>
+</div>

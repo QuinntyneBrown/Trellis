@@ -1,0 +1,23 @@
+<div class="diagram-preview" data-testid="preview-pane" [attr.data-render-seq]="renderSeq()">
+  @if (renderSeq() === 0) {
+    <div class="diagram-preview__placeholder" data-testid="preview-placeholder">
+      Press Ctrl+Enter in the editor to render your diagram.
+    </div>
+  } @else {
+    @if (result && !result.isSuccess) {
+      <div class="diagram-preview__error" data-testid="preview-error">
+        {{ result.errorMessage }}
+      </div>
+    }
+
+    @if (result?.isSuccess && safeSvg()) {
+      <div class="diagram-preview__svg" [innerHTML]="safeSvg()"></div>
+    }
+  }
+
+  @if (isRendering) {
+    <div class="diagram-preview__spinner-overlay">
+      <app-loading-spinner></app-loading-spinner>
+    </div>
+  }
+</div>

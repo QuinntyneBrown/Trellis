@@ -1,0 +1,30 @@
+root = true
+
+[*]
+indent_style = space
+indent_size = 4
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.{json,yml,yaml}]
+indent_size = 2
+
+[*.cs]
+indent_size = 4
+
+# Disable every analyzer diagnostic (this project only uses the StyleCop.Analyzers
+# analyzer package, so in practice this silences all StyleCop rules) by default...
+dotnet_analyzer_diagnostic.severity = none
+
+# ...then enable exactly the two rules required by the architecture guardrail, as
+# build ERRORS:
+# SA1402 - a file may only contain a single type.
+dotnet_diagnostic.SA1402.severity = error
+# SA1649 - the file name must match the type it contains.
+dotnet_diagnostic.SA1649.severity = error
+
+# SA0001 (XML comment analysis is disabled) is just an informational note produced
+# because documentation rules are turned off above; it is not one of the two rules
+# we care about, so silence it explicitly too.
+dotnet_diagnostic.SA0001.severity = none

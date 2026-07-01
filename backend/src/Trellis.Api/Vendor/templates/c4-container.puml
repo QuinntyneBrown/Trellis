@@ -1,0 +1,16 @@
+@startuml
+!define RELATIVE_INCLUDE
+!include C4_Container.puml
+
+Person(customer, "Customer", "A customer of the online shop.")
+
+System_Boundary(shop, "Online Shop") {
+  Container(web, "Web Application", "Angular", "Lets customers browse products and place orders.")
+  Container(api, "API Application", "ASP.NET Core", "Serves the shop's REST and real-time API.")
+  ContainerDb(db, "Database", "SQLite", "Stores orders and product data.")
+}
+
+Rel(customer, web, "Uses", "HTTPS")
+Rel(web, api, "Calls", "JSON/HTTPS")
+Rel(api, db, "Reads from and writes to", "SQL")
+@enduml

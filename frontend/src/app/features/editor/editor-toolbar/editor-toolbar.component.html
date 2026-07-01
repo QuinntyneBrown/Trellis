@@ -1,0 +1,38 @@
+<div class="editor-toolbar" data-testid="editor-toolbar">
+  <div class="editor-toolbar__group">
+    <button type="button" class="editor-toolbar__button" data-testid="toolbar-new" (click)="onNewClicked()">
+      New
+    </button>
+
+    <button type="button" class="editor-toolbar__button" data-testid="toolbar-save" (click)="onSaveClicked()">
+      Save
+    </button>
+
+    <button type="button" class="editor-toolbar__button" data-testid="toolbar-upload" (click)="onUploadClicked()">
+      Upload
+    </button>
+    <input
+      #fileInput
+      type="file"
+      class="editor-toolbar__upload-input"
+      data-testid="toolbar-upload-input"
+      accept=".puml,.txt,.plantuml"
+      (change)="onFileInputChange($event)"
+    />
+
+    <app-template-picker (templateSelected)="onTemplateSelected($event)"></app-template-picker>
+
+    <button
+      type="button"
+      class="editor-toolbar__button"
+      data-testid="documents-panel-toggle"
+      (click)="onDocumentsPanelToggleClicked()"
+    >
+      Documents
+    </button>
+  </div>
+
+  <div class="editor-toolbar__group">
+    <app-connection-status [state]="connectionState"></app-connection-status>
+  </div>
+</div>

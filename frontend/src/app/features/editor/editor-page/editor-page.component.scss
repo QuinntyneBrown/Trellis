@@ -1,0 +1,22 @@
+.editor-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.editor-page__body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.editor-page__editor-pane {
+  flex: 1 1 50%;
+  min-width: 0;
+  border-right: 1px solid #e5e7eb;
+}
+
+.editor-page__preview-pane {
+  flex: 1 1 50%;
+  min-width: 0;
+}

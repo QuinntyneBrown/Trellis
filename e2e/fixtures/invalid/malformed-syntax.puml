@@ -1,0 +1,11 @@
+@startuml broken
+
+actor User
+User -> System : do the thing
+
+if (condition is true?) then (yes)
+  System -> User : ok
+
+' Deliberately broken: the if block above is never closed with endif,
+' and there is no matching @enduml. This must trigger a PlantUML
+' syntax error so isSuccess is false and errorMessage is populated.

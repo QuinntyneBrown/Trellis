@@ -1,0 +1,26 @@
+<div class="template-picker">
+  <button
+    type="button"
+    class="template-picker__toggle"
+    data-testid="template-picker-toggle"
+    (click)="toggle()"
+  >
+    Templates
+  </button>
+
+  @if (isOpen()) {
+    <div class="template-picker__panel" data-testid="template-picker">
+      @for (template of templates(); track template.key) {
+        <button
+          type="button"
+          class="template-picker__option"
+          [attr.data-testid]="'template-option-' + template.key"
+          (click)="select(template)"
+        >
+          <span class="template-picker__option-name">{{ template.name }}</span>
+          <span class="template-picker__option-category">{{ template.category }}</span>
+        </button>
+      }
+    </div>
+  }
+</div>

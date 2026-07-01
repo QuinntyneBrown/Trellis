@@ -1,0 +1,13 @@
+@startuml sample-one
+title Sample One - Simple Sequence
+
+actor User
+participant "Web App" as App
+database "Database" as DB
+
+User -> App : Request data
+App -> DB : Query
+DB --> App : Rows
+App --> User : Response
+
+@enduml

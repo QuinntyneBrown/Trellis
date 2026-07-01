@@ -1,0 +1,20 @@
+# Build outputs
+[Bb]in/
+[Oo]bj/
+
+# Runtime SQLite data
+App_Data/
+*.db
+*.db-shm
+*.db-wal
+
+# User-specific files
+*.user
+*.suo
+
+# VS / Rider
+.vs/
+.idea/
+
+# Test results
+TestResults/

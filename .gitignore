@@ -1,0 +1,42 @@
+# Local automation and editor state
+.claude/
+.idea/
+.vs/
+.vscode/
+*.suo
+*.user
+*.rsuser
+*.orig
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# .NET
+**/[Bb]in/
+**/[Oo]bj/
+**/TestResults/
+**/coverage/
+**/App_Data/*.db
+**/App_Data/*.db-shm
+**/App_Data/*.db-wal
+
+# Node and Angular
+**/node_modules/
+**/dist/
+**/.angular/
+**/.npm/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Playwright
+**/playwright-report/
+**/test-results/
+**/.playwright/
+
+# OS files
+.DS_Store
+Thumbs.db
+

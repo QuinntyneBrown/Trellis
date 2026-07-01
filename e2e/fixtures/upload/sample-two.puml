@@ -1,0 +1,21 @@
+@startuml sample-two
+title Sample Two - Simple Class Diagram
+
+class Vehicle {
+  +String make
+  +String model
+  +drive()
+}
+
+class Car {
+  +int doors
+}
+
+class Motorcycle {
+  +boolean hasSidecar
+}
+
+Vehicle <|-- Car
+Vehicle <|-- Motorcycle
+
+@enduml

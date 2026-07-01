@@ -1,0 +1,38 @@
+[
+  {
+    "key": "blank",
+    "name": "Blank",
+    "category": "General",
+    "file": "blank.puml"
+  },
+  {
+    "key": "sequence",
+    "name": "Sequence Diagram",
+    "category": "General",
+    "file": "sequence.puml"
+  },
+  {
+    "key": "class",
+    "name": "Class Diagram",
+    "category": "General",
+    "file": "class.puml"
+  },
+  {
+    "key": "c4-context",
+    "name": "C4 - Context",
+    "category": "C4",
+    "file": "c4-context.puml"
+  },
+  {
+    "key": "c4-container",
+    "name": "C4 - Container",
+    "category": "C4",
+    "file": "c4-container.puml"
+  },
+  {
+    "key": "c4-component",
+    "name": "C4 - Component",
+    "category": "C4",
+    "file": "c4-component.puml"
+  }
+]

@@ -1,0 +1,18 @@
+@if (open) {
+  <aside class="documents-panel" data-testid="documents-panel">
+    @if (documents().length === 0) {
+      <p class="documents-panel__empty">No saved documents yet.</p>
+    } @else {
+      <ul class="documents-panel__list">
+        @for (document of documents(); track document.id) {
+          <app-document-list-item
+            [document]="document"
+            (open)="onOpen($event)"
+            (delete)="onDelete($event)"
+            (rename)="onRename($event)"
+          ></app-document-list-item>
+        }
+      </ul>
+    }
+  </aside>
+}

@@ -1,0 +1,37 @@
+@if (visible) {
+  <div class="save-dialog" data-testid="save-dialog">
+    <div class="save-dialog__backdrop" (click)="onCancelClicked()"></div>
+    <div class="save-dialog__panel">
+      <h2 class="save-dialog__title">Save document</h2>
+
+      <label class="save-dialog__label" for="save-dialog-name-input">Name</label>
+      <input
+        id="save-dialog-name-input"
+        type="text"
+        class="save-dialog__input"
+        data-testid="save-dialog-name"
+        [ngModel]="name()"
+        (ngModelChange)="onNameInput($event)"
+      />
+
+      <div class="save-dialog__actions">
+        <button
+          type="button"
+          class="save-dialog__button save-dialog__button--cancel"
+          data-testid="save-dialog-cancel"
+          (click)="onCancelClicked()"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="save-dialog__button save-dialog__button--confirm"
+          data-testid="save-dialog-confirm"
+          (click)="onConfirmClicked()"
+        >
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+}

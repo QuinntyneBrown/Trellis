@@ -1,0 +1,6 @@
+<span
+  class="connection-status"
+  [class.connection-status--connected]="state === 'connected'"
+  [class.connection-status--disconnected]="state === 'disconnected'"
+  [class.connection-status--reconnecting]="state === 'reconnecting'"
+  data-testid="connection-status">{{ state }}</span>

@@ -1,0 +1,25 @@
+.loading-spinner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.loading-spinner__circle {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  border: 0.15rem solid rgba(0, 0, 0, 0.15);
+  border-top-color: #3b82f6;
+  animation: loading-spinner-rotate 0.7s linear infinite;
+}
+
+.loading-spinner__label {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+@keyframes loading-spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}

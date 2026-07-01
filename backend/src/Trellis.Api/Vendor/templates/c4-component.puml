@@ -1,0 +1,18 @@
+@startuml
+!define RELATIVE_INCLUDE
+!include C4_Component.puml
+
+Container(web, "Web Application", "Angular", "Lets customers browse products and place orders.")
+ContainerDb(db, "Database", "SQLite", "Stores orders and product data.")
+
+Container_Boundary(api, "API Application") {
+  Component(controller, "Orders Controller", "ASP.NET Core Controller", "Handles order REST requests.")
+  Component(handler, "Place Order Handler", "MediatR Handler", "Validates and creates a new order.")
+  Component(repository, "Order Repository", "EF Core", "Reads and writes order data.")
+}
+
+Rel(web, controller, "Calls", "JSON/HTTPS")
+Rel(controller, handler, "Dispatches to")
+Rel(handler, repository, "Uses")
+Rel(repository, db, "Reads from and writes to", "SQL")
+@enduml
