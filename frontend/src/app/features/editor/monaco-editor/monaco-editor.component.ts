@@ -47,6 +47,7 @@ export class MonacoEditorComponent implements AfterViewInit, OnChanges, OnDestro
         language: 'plaintext',
         automaticLayout: true,
         minimap: { enabled: false },
+        scrollBeyondLastLine: false,
       });
 
       this.editorInstance.onDidChangeModelContent(() => {
