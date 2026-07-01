@@ -3,6 +3,7 @@ import { Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@
 import { HubConnectionState } from '../../../core/models/hub-connection-state.model';
 import { Template } from '../../../core/models/template.model';
 import { ConnectionStatusComponent } from '../../../shared/components/connection-status/connection-status.component';
+import { RailButtonComponent } from '../../../shared/components/rail-button/rail-button.component';
 import { TemplatePickerComponent } from '../../templates/template-picker/template-picker.component';
 
 /**
@@ -13,7 +14,7 @@ import { TemplatePickerComponent } from '../../templates/template-picker/templat
 @Component({
   selector: 'app-editor-toolbar',
   standalone: true,
-  imports: [ConnectionStatusComponent, TemplatePickerComponent],
+  imports: [ConnectionStatusComponent, RailButtonComponent, TemplatePickerComponent],
   templateUrl: './editor-toolbar.component.html',
   styleUrl: './editor-toolbar.component.scss',
 })

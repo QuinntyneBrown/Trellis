@@ -3,23 +3,15 @@
   display: inline-block;
 }
 
-.template-picker__toggle {
-  padding: 0.35rem 0.75rem;
-  border-radius: 0.25rem;
-  border: 1px solid #d1d5db;
-  background-color: #ffffff;
-  cursor: pointer;
-  font-size: 0.85rem;
-
-  &:hover {
-    background-color: #f3f4f6;
-  }
-}
-
+// Opens to the right of the rail rather than below the toggle now that the
+// toggle lives in a narrow vertical icon rail rather than a horizontal bar.
+// z-index stays above rail-button.component.scss's tooltip z-index (5) so a
+// keyboard-opened panel is never hidden behind a lingering tooltip -- both
+// anchor at this same button's `left: 100%` point.
 .template-picker__panel {
   position: absolute;
-  top: calc(100% + 0.25rem);
-  left: 0;
+  top: 0;
+  left: calc(100% + 0.5rem);
   z-index: 10;
   display: flex;
   flex-direction: column;

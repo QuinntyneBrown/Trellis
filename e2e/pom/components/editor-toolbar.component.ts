@@ -64,4 +64,13 @@ export class EditorToolbarComponent {
   async getConnectionStatus(): Promise<string> {
     return (await this.connectionStatus.textContent())?.trim() ?? '';
   }
+
+  /**
+   * Locates a rail button's tooltip span (RailButtonComponent's
+   * `.rail-button__tooltip`), scoped within the given rail button locator,
+   * e.g. `tooltipFor(this.saveButton)`.
+   */
+  tooltipFor(railButton: Locator): Locator {
+    return railButton.locator('.rail-button__tooltip');
+  }
 }

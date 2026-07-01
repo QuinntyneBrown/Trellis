@@ -1,16 +1,27 @@
-<div class="editor-toolbar" data-testid="editor-toolbar">
+<div
+  class="editor-toolbar"
+  data-testid="editor-toolbar"
+  role="toolbar"
+  aria-label="Editor actions"
+  aria-orientation="vertical"
+>
   <div class="editor-toolbar__group">
-    <button type="button" class="editor-toolbar__button" data-testid="toolbar-new" (click)="onNewClicked()">
-      New
-    </button>
+    <app-rail-button icon="new" label="New" testId="toolbar-new" (clicked)="onNewClicked()"></app-rail-button>
 
-    <button type="button" class="editor-toolbar__button" data-testid="toolbar-save" (click)="onSaveClicked()">
-      Save
-    </button>
+    <app-rail-button
+      icon="save"
+      label="Save"
+      shortcut="Ctrl+S"
+      testId="toolbar-save"
+      (clicked)="onSaveClicked()"
+    ></app-rail-button>
 
-    <button type="button" class="editor-toolbar__button" data-testid="toolbar-upload" (click)="onUploadClicked()">
-      Upload
-    </button>
+    <app-rail-button
+      icon="upload"
+      label="Upload"
+      testId="toolbar-upload"
+      (clicked)="onUploadClicked()"
+    ></app-rail-button>
     <input
       #fileInput
       type="file"
@@ -22,17 +33,15 @@
 
     <app-template-picker (templateSelected)="onTemplateSelected($event)"></app-template-picker>
 
-    <button
-      type="button"
-      class="editor-toolbar__button"
-      data-testid="documents-panel-toggle"
-      (click)="onDocumentsPanelToggleClicked()"
-    >
-      Documents
-    </button>
+    <app-rail-button
+      icon="documents"
+      label="Documents"
+      testId="documents-panel-toggle"
+      (clicked)="onDocumentsPanelToggleClicked()"
+    ></app-rail-button>
   </div>
 
-  <div class="editor-toolbar__group">
+  <div class="editor-toolbar__group editor-toolbar__group--bottom">
     <app-connection-status [state]="connectionState"></app-connection-status>
   </div>
 </div>

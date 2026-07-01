@@ -1,0 +1,14 @@
+<button
+  type="button"
+  class="rail-button"
+  [attr.data-testid]="testId"
+  [attr.aria-label]="tooltipText"
+  (click)="clicked.emit()"
+>
+  <svg class="rail-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+    @for (path of paths; track path) {
+      <path [attr.d]="path" />
+    }
+  </svg>
+  <span class="rail-button__tooltip" aria-hidden="true">{{ tooltipText }}</span>
+</button>

@@ -1,0 +1,77 @@
+// `<app-rail-button>` itself must not generate its own box -- `.rail-button`
+// below (the real native <button>) is the actual flex item inside
+// `.editor-toolbar__group`, so it can be sized/gapped like any other rail
+// icon without an extra wrapping box in between.
+:host {
+  display: contents;
+}
+
+.rail-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 0.35rem;
+  background-color: transparent;
+  color: #4b5563;
+  cursor: pointer;
+
+  &:hover,
+  &.rail-button--active {
+    background-color: rgba(17, 24, 39, 0.08);
+  }
+
+  &:focus-visible {
+    background-color: rgba(17, 24, 39, 0.08);
+    outline: 2px solid #3b82f6;
+    outline-offset: -2px;
+  }
+}
+
+.rail-button__icon {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+// A real element (not a ::after/content:attr() pseudo-element) so it's
+// simple to compose and to assert against directly in tests. Revealed via
+// `opacity`/`visibility` (not `display`, which cannot transition) on hover
+// AND focus-visible, so keyboard users get the same affordance as mouse
+// users. z-index is kept modest and, in particular, below
+// template-picker.component.scss's `.template-picker__panel` z-index (10)
+// -- both anchor at this same button's `left: 100%` point, and a
+// keyboard-opened template picker panel must never end up with a stray
+// tooltip rendered on top of it.
+.rail-button__tooltip {
+  position: absolute;
+  left: calc(100% + 0.5rem);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  background-color: #111827;
+  color: #ffffff;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s ease, visibility 0.12s ease;
+  pointer-events: none;
+}
+
+.rail-button:hover .rail-button__tooltip,
+.rail-button:focus-visible .rail-button__tooltip {
+  opacity: 1;
+  visibility: visible;
+}

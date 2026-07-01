@@ -1,30 +1,38 @@
+// The host is the actual flex item of `.editor-page` (a row-direction flex
+// container) -- this is what pins the rail to the fixed VS Code
+// activity-bar width of 48px. Height is deliberately left unset: as a flex
+// item of a row-direction parent, it stretches to fill the parent's cross
+// axis (100vh) automatically via flex's default `align-items: stretch`.
+:host {
+  display: flex;
+  flex: 0 0 48px;
+  min-width: 0;
+}
+
 .editor-toolbar {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.5rem 0.75rem;
+  width: 100%;
+  height: 100%;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
   background-color: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
+  border-right: 1px solid #e5e7eb;
 }
 
 .editor-toolbar__group {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 0.5rem;
 }
 
-.editor-toolbar__button {
-  padding: 0.35rem 0.75rem;
-  border-radius: 0.25rem;
-  border: 1px solid #d1d5db;
-  background-color: #ffffff;
-  cursor: pointer;
-  font-size: 0.85rem;
-
-  &:hover {
-    background-color: #f3f4f6;
-  }
+// Pins this group (the connection status indicator) to the bottom of the
+// rail, VS Code activity-bar style, the same way its account/settings
+// icons sit below the main navigation icons.
+.editor-toolbar__group--bottom {
+  margin-top: auto;
 }
 
 .editor-toolbar__upload-input {

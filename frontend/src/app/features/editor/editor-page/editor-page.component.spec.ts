@@ -304,4 +304,120 @@ describe('EditorPageComponent', () => {
     expect(component.MIN_EDITOR_PANE_RATIO).toBe(MIN_EDITOR_PANE_RATIO);
     expect(component.MAX_EDITOR_PANE_RATIO).toBe(MAX_EDITOR_PANE_RATIO);
   });
+
+  describe('Ctrl/Cmd+S quick-save', () => {
+    function ctrlSEvent(): KeyboardEvent {
+      const event = new KeyboardEvent('keydown', { key: 's', ctrlKey: true, cancelable: true });
+      jest.spyOn(event, 'preventDefault');
+      return event;
+    }
+
+    it('quick-saves the existing document (no dialog) when there are unsaved changes and a documentId', () => {
+      const document: Document = {
+        id: '1',
+        name: 'Doc',
+        content: 'old',
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: null,
+      };
+      routeDataSubject.next({ document });
+      fixture.detectChanges();
+      component.sourceCode.set('new content');
+      documentsServiceMock.update.mockReturnValue(
+        of({
+          id: '1',
+          name: 'Doc',
+          content: 'new content',
+          createdAt: '2026-01-01T00:00:00Z',
+          updatedAt: '2026-01-02T00:00:00Z',
+        }),
+      );
+
+      const event = ctrlSEvent();
+      component.onKeyDown(event);
+
+      expect(documentsServiceMock.update).toHaveBeenCalledWith('1', { name: 'Doc', content: 'new content' });
+      expect(documentsServiceMock.create).not.toHaveBeenCalled();
+      expect(component.isSaveDialogOpen()).toBe(false);
+      expect(event.preventDefault).toHaveBeenCalled();
+    });
+
+    it('opens the save dialog (without saving) when there are unsaved changes but no documentId yet', () => {
+      fixture.detectChanges();
+      component.sourceCode.set('brand new content');
+
+      const event = ctrlSEvent();
+      component.onKeyDown(event);
+
+      expect(component.isSaveDialogOpen()).toBe(true);
+      expect(documentsServiceMock.create).not.toHaveBeenCalled();
+      expect(documentsServiceMock.update).not.toHaveBeenCalled();
+      expect(event.preventDefault).toHaveBeenCalled();
+    });
+
+    it('does nothing when there are no unsaved changes', () => {
+      fixture.detectChanges();
+
+      const event = ctrlSEvent();
+      component.onKeyDown(event);
+
+      expect(documentsServiceMock.create).not.toHaveBeenCalled();
+      expect(documentsServiceMock.update).not.toHaveBeenCalled();
+      expect(component.isSaveDialogOpen()).toBe(false);
+      expect(event.preventDefault).toHaveBeenCalled();
+    });
+
+    it('is a no-op when the save dialog is already open, regardless of documentId/hasUnsavedChanges', () => {
+      const document: Document = {
+        id: '1',
+        name: 'Doc',
+        content: 'old',
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: null,
+      };
+      routeDataSubject.next({ document });
+      fixture.detectChanges();
+      component.sourceCode.set('new content');
+      component.isSaveDialogOpen.set(true);
+
+      const event = ctrlSEvent();
+      component.onKeyDown(event);
+
+      expect(documentsServiceMock.create).not.toHaveBeenCalled();
+      expect(documentsServiceMock.update).not.toHaveBeenCalled();
+      expect(component.isSaveDialogOpen()).toBe(true);
+      expect(event.preventDefault).toHaveBeenCalled();
+    });
+
+    it('ignores a non-save key combination and does not call preventDefault', () => {
+      fixture.detectChanges();
+      component.sourceCode.set('unsaved content');
+
+      const plainA = new KeyboardEvent('keydown', { key: 'a', cancelable: true });
+      jest.spyOn(plainA, 'preventDefault');
+      component.onKeyDown(plainA);
+
+      const ctrlB = new KeyboardEvent('keydown', { key: 'b', ctrlKey: true, cancelable: true });
+      jest.spyOn(ctrlB, 'preventDefault');
+      component.onKeyDown(ctrlB);
+
+      expect(plainA.preventDefault).not.toHaveBeenCalled();
+      expect(ctrlB.preventDefault).not.toHaveBeenCalled();
+      expect(documentsServiceMock.create).not.toHaveBeenCalled();
+      expect(documentsServiceMock.update).not.toHaveBeenCalled();
+      expect(component.isSaveDialogOpen()).toBe(false);
+    });
+
+    it('also triggers via metaKey (Cmd+S) and via an uppercase "S"', () => {
+      fixture.detectChanges();
+      component.sourceCode.set('brand new content');
+
+      const event = new KeyboardEvent('keydown', { key: 'S', metaKey: true, cancelable: true });
+      jest.spyOn(event, 'preventDefault');
+      component.onKeyDown(event);
+
+      expect(component.isSaveDialogOpen()).toBe(true);
+      expect(event.preventDefault).toHaveBeenCalled();
+    });
+  });
 });

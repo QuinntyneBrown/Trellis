@@ -1,8 +1,6 @@
 .diagram-preview {
   position: relative;
   display: flex;
-  align-items: center;
-  justify-content: center;
   height: 100%;
   width: 100%;
   overflow: auto;
@@ -28,16 +26,12 @@
 }
 
 .diagram-preview__svg {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-
-  ::ng-deep svg {
-    max-width: 100%;
-    max-height: 100%;
-  }
+  // auto margins (not the parent's justify-content/align-items) so the svg
+  // stays centered while smaller than the pane, but collapses to a natural
+  // top-left origin -- fully scrollable on every edge -- once it's larger.
+  // Centering via the scroll container itself clips the far edge of
+  // overflowing content in most browsers.
+  margin: auto;
 }
 
 .diagram-preview__spinner-overlay {

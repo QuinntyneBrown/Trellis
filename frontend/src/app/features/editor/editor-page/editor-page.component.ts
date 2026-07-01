@@ -1,5 +1,5 @@
 import { Location } from '@angular/common';
-import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
@@ -146,10 +146,53 @@ export class EditorPageComponent implements OnInit {
   }
 
   onSaveConfirm(name: string): void {
-    // Deliberately NOT closed until the request actually succeeds: closing
-    // optimistically here would let a caller (or a test) observe "dialog is
-    // hidden" as a false signal that the save has landed, while the
-    // create/update request is still in flight.
+    this.performSave(name);
+  }
+
+  onSaveCancel(): void {
+    this.isSaveDialogOpen.set(false);
+  }
+
+  /**
+   * Ctrl/Cmd+S quick-save, mirroring VS Code: a no-op while the dialog is
+   * already open (avoids double-triggering mid-dialog) or while there is
+   * nothing unsaved; otherwise saves immediately under the current name if
+   * this document already has an id, or opens the save dialog for a
+   * first-time save (there is no name yet to quick-save with). The native
+   * Save-Page-As dialog is prevented unconditionally on every matching
+   * keypress, even on the no-op paths above, since letting it fire even once
+   * would be jarring.
+   */
+  @HostListener('keydown', ['$event'])
+  onKeyDown(event: KeyboardEvent): void {
+    if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 's') {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (this.isSaveDialogOpen()) {
+      return;
+    }
+    if (!this.hasUnsavedChanges()) {
+      return;
+    }
+
+    if (this.documentId()) {
+      this.performSave(this.documentName());
+    } else {
+      this.onSaveClicked();
+    }
+  }
+
+  /**
+   * Shared by the save dialog's confirm and the Ctrl/Cmd+S quick-save: not
+   * closed until the request actually succeeds -- closing optimistically
+   * here would let a caller (or a test) observe "dialog is hidden" as a
+   * false signal that the save has landed, while the create/update request
+   * is still in flight.
+   */
+  private performSave(name: string): void {
     const id = this.documentId();
 
     const request$ = id
@@ -171,10 +214,6 @@ export class EditorPageComponent implements OnInit {
         this.location.go(`/editor/${saved.id}`);
       }
     });
-  }
-
-  onSaveCancel(): void {
-    this.isSaveDialogOpen.set(false);
   }
 
   onFileSelected(file: File): void {

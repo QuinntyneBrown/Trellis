@@ -88,4 +88,16 @@ describe('EditorToolbarComponent', () => {
 
     expect(byTestId('connection-status').textContent).toBe('reconnecting');
   });
+
+  it('shows the Ctrl+S shortcut in the Save rail button tooltip', () => {
+    const tooltip = byTestId('toolbar-save').querySelector('.rail-button__tooltip') as HTMLElement;
+
+    expect(tooltip.textContent).toBe('Save (Ctrl+S)');
+  });
+
+  it('shows a plain, parenthetical-free label in the New rail button tooltip', () => {
+    const tooltip = byTestId('toolbar-new').querySelector('.rail-button__tooltip') as HTMLElement;
+
+    expect(tooltip.textContent).toBe('New');
+  });
 });

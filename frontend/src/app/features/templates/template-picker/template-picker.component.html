@@ -1,12 +1,10 @@
 <div class="template-picker">
-  <button
-    type="button"
-    class="template-picker__toggle"
-    data-testid="template-picker-toggle"
-    (click)="toggle()"
-  >
-    Templates
-  </button>
+  <app-rail-button
+    icon="templates"
+    label="Templates"
+    testId="template-picker-toggle"
+    (clicked)="toggle()"
+  ></app-rail-button>
 
   @if (isOpen()) {
     <div class="template-picker__panel" data-testid="template-picker">

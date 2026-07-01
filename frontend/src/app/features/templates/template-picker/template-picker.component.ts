@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 
 import { Template } from '../../../core/models/template.model';
 import { TemplatesService } from '../../../core/services/templates.service';
+import { RailButtonComponent } from '../../../shared/components/rail-button/rail-button.component';
 
 /**
  * Fetches the template catalog once and lets the user pick a starter
@@ -13,7 +14,7 @@ import { TemplatesService } from '../../../core/services/templates.service';
 @Component({
   selector: 'app-template-picker',
   standalone: true,
-  imports: [],
+  imports: [RailButtonComponent],
   templateUrl: './template-picker.component.html',
   styleUrl: './template-picker.component.scss',
 })
