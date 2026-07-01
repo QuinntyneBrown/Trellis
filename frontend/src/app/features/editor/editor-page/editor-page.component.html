@@ -9,13 +9,21 @@
   ></app-editor-toolbar>
 
   <div class="editor-page__body">
-    <div class="editor-page__editor-pane">
+    <div class="editor-page__editor-pane" [style.flex-basis.%]="editorPaneRatioPercent()">
       <app-monaco-editor
         [value]="sourceCode()"
         (valueChange)="onEditorValueChange($event)"
         (renderRequested)="onRenderRequested($event)"
       ></app-monaco-editor>
     </div>
+
+    <app-resize-divider
+      [ratio]="editorPaneRatio()"
+      [minRatio]="MIN_EDITOR_PANE_RATIO"
+      [maxRatio]="MAX_EDITOR_PANE_RATIO"
+      (ratioChange)="onDividerRatioChange($event)"
+      (resizeEnd)="onDividerResizeEnd($event)"
+    ></app-resize-divider>
 
     <div class="editor-page__preview-pane">
       <app-diagram-preview

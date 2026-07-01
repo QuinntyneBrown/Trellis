@@ -11,12 +11,18 @@
 }
 
 .editor-page__editor-pane {
-  flex: 1 1 50%;
+  // Basis comes purely from the [style.flex-basis.%] template binding now
+  // (driven by the resize divider), not a fixed 50%; flex-grow/shrink stay
+  // at 0 so the bound basis is the pane's actual width, not just a hint.
+  flex: 0 0 auto;
   min-width: 0;
-  border-right: 1px solid #e5e7eb;
+  // No border-right here anymore -- the resize divider (a real flex sibling
+  // between the two panes) now owns that visual seam.
 }
 
 .editor-page__preview-pane {
-  flex: 1 1 50%;
+  // Absorbs whatever width remains after the editor pane's bound percentage
+  // and the divider's own fixed width -- no ratio math needed on this side.
+  flex: 1 1 auto;
   min-width: 0;
 }

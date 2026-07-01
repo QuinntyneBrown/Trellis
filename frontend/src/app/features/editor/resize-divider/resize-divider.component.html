@@ -1,0 +1,21 @@
+<div
+  class="resize-divider"
+  data-testid="resize-divider"
+  [class.resize-divider--active]="isDragging()"
+  role="separator"
+  [attr.aria-orientation]="'vertical'"
+  tabindex="0"
+  [attr.aria-valuenow]="ariaValueNow"
+  [attr.aria-valuemin]="ariaValueMin"
+  [attr.aria-valuemax]="ariaValueMax"
+  aria-label="Resize editor and preview panes"
+  (pointerdown)="onPointerDown($event)"
+  (pointermove)="onPointerMove($event)"
+  (pointerup)="onPointerUp($event)"
+  (pointercancel)="onPointerCancel($event)"
+  (keydown.arrowleft)="onArrowLeft()"
+  (keydown.arrowright)="onArrowRight()"
+  (dblclick)="onDblClick()"
+>
+  <div class="resize-divider__grab-area"></div>
+</div>

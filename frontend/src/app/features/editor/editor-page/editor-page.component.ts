@@ -8,10 +8,14 @@ import { DocumentSummary } from '../../../core/models/document-summary.model';
 import { Template } from '../../../core/models/template.model';
 import { DiagramHubService } from '../../../core/services/diagram-hub.service';
 import { DocumentsService } from '../../../core/services/documents.service';
+import { EditorLayoutPreferencesService } from '../../../core/services/editor-layout-preferences.service';
 import { DocumentsPanelComponent } from '../../documents/documents-panel/documents-panel.component';
 import { DiagramPreviewComponent } from '../diagram-preview/diagram-preview.component';
+import { MIN_EDITOR_PANE_RATIO, MAX_EDITOR_PANE_RATIO } from '../editor-pane-ratio.constants';
 import { EditorToolbarComponent } from '../editor-toolbar/editor-toolbar.component';
 import { MonacoEditorComponent } from '../monaco-editor/monaco-editor.component';
+import { ResizeDividerComponent } from '../resize-divider/resize-divider.component';
+import { clampRatio } from '../resize-divider/clamp-ratio';
 import { SaveDialogComponent } from '../save-dialog/save-dialog.component';
 
 const BLANK_DOCUMENT_NAME = 'Untitled diagram';
@@ -28,6 +32,7 @@ const BLANK_DOCUMENT_NAME = 'Untitled diagram';
     MonacoEditorComponent,
     EditorToolbarComponent,
     DiagramPreviewComponent,
+    ResizeDividerComponent,
     SaveDialogComponent,
     DocumentsPanelComponent,
   ],
@@ -39,7 +44,14 @@ export class EditorPageComponent implements OnInit {
   private readonly location = inject(Location);
   private readonly documentsService = inject(DocumentsService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly layoutPreferences = inject(EditorLayoutPreferencesService);
   readonly hubService = inject(DiagramHubService);
+
+  // Exposed as fields (rather than referenced as free module-level constants)
+  // because the template binds [minRatio]/[maxRatio] on <app-resize-divider>,
+  // and Angular templates can only bind to members of the component instance.
+  readonly MIN_EDITOR_PANE_RATIO = MIN_EDITOR_PANE_RATIO;
+  readonly MAX_EDITOR_PANE_RATIO = MAX_EDITOR_PANE_RATIO;
 
   readonly documentId = signal<string | null>(null);
   readonly documentName = signal<string>(BLANK_DOCUMENT_NAME);
@@ -49,6 +61,14 @@ export class EditorPageComponent implements OnInit {
 
   readonly isSaveDialogOpen = signal(false);
   readonly isDocumentsPanelOpen = signal(false);
+
+  // Seeded from persisted preferences (clamped to the divider's own UX
+  // bounds, since the preferences service only enforces the much looser
+  // (0, 1) structural invariant, not these product-level min/max).
+  readonly editorPaneRatio = signal(
+    clampRatio(this.layoutPreferences.getEditorPaneRatio(), MIN_EDITOR_PANE_RATIO, MAX_EDITOR_PANE_RATIO),
+  );
+  readonly editorPaneRatioPercent = computed(() => this.editorPaneRatio() * 100);
 
   /** Monotonically increasing token identifying the most recent upload; see onFileSelected. */
   private uploadSequence = 0;
@@ -91,6 +111,26 @@ export class EditorPageComponent implements OnInit {
 
   onRenderRequested(value: string): void {
     void this.hubService.render(value);
+  }
+
+  /**
+   * Live layout updates during an in-progress drag/nudge -- deliberately
+   * does NOT persist. A drag can fire this dozens of times per second, and
+   * calling localStorage.setItem that often would be wasteful (and, in the
+   * worst case, noticeably janky).
+   */
+  onDividerRatioChange(ratio: number): void {
+    this.editorPaneRatio.set(ratio);
+  }
+
+  /**
+   * Fired exactly once per completed resize gesture (pointerup, a single
+   * arrow-key nudge, or a dblclick-reset) -- the only point at which the
+   * chosen ratio is persisted.
+   */
+  onDividerResizeEnd(ratio: number): void {
+    this.editorPaneRatio.set(ratio);
+    this.layoutPreferences.setEditorPaneRatio(ratio);
   }
 
   onNewDocument(): void {

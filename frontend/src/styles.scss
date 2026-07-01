@@ -18,3 +18,14 @@ body {
 * {
   box-sizing: border-box;
 }
+
+// Applied to the real <body> element (via document.body.classList) for the
+// duration of a resize-divider drag. This lives here rather than in
+// resize-divider.component.scss because Angular's default view encapsulation
+// rewrites component-scoped selectors so they only ever match elements
+// inside that component's own template -- a `body { }` rule written there
+// could never match the real, global <body>.
+body.is-resizing-panes {
+  cursor: col-resize !important;
+  user-select: none;
+}

@@ -1,0 +1,45 @@
+// `<app-resize-divider>` itself must not generate its own box: `.resize-divider`
+// below is the *actual* flex child of `.editor-page__body`, so all sizing,
+// positioning and cursor styling live on it directly rather than being split
+// (and duplicated) across :host and an inner element.
+:host {
+  display: contents;
+}
+
+.resize-divider {
+  position: relative;
+  // Per the Flexbox spec, flex items with z-index:auto paint like inline
+  // blocks in (order-modified) document order -- position:relative alone is
+  // NOT enough to guarantee this element paints above its flex siblings.
+  // Without an explicit z-index here, `.resize-divider__grab-area` below
+  // (which deliberately overflows this element's own 1px-wide box into the
+  // editor/preview panes on either side) gets visually and hit-test-wise
+  // covered by the preview pane, since it comes later in DOM order. An
+  // explicit z-index promotes this flex item into its own stacking context,
+  // so its whole subtree (including the overflowing grab area) always
+  // paints -- and receives pointer events -- above both neighboring panes.
+  z-index: 1;
+  flex: 0 0 auto;
+  width: 1px;
+  background-color: #e5e7eb;
+  cursor: col-resize;
+  touch-action: none;
+
+  &:hover,
+  &.resize-divider--active {
+    background-color: #3b82f6;
+  }
+}
+
+// A comfortably wide (~9px) invisible grab area centered over the 1px visible
+// line -- wide enough to reliably grab with a mouse/touch without needing a
+// visually thick seam between the panes.
+.resize-divider__grab-area {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 9px;
+  height: 100%;
+  cursor: col-resize;
+}

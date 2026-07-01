@@ -8,8 +8,10 @@ import { Document } from '../../../core/models/document.model';
 import { Template } from '../../../core/models/template.model';
 import { DiagramHubService } from '../../../core/services/diagram-hub.service';
 import { DocumentsService } from '../../../core/services/documents.service';
+import { EditorLayoutPreferencesService } from '../../../core/services/editor-layout-preferences.service';
 import { MonacoLoaderService } from '../../../core/services/monaco-loader.service';
 import { TemplatesService } from '../../../core/services/templates.service';
+import { MAX_EDITOR_PANE_RATIO, MIN_EDITOR_PANE_RATIO } from '../editor-pane-ratio.constants';
 import { EditorPageComponent } from './editor-page.component';
 
 describe('EditorPageComponent', () => {
@@ -32,6 +34,7 @@ describe('EditorPageComponent', () => {
     isRendering: ReturnType<typeof signal<boolean>>;
     render: jest.Mock;
   };
+  let layoutPreferencesMock: { getEditorPaneRatio: jest.Mock; setEditorPaneRatio: jest.Mock };
 
   beforeEach(async () => {
     routeDataSubject = new BehaviorSubject<Record<string, unknown>>({});
@@ -50,6 +53,10 @@ describe('EditorPageComponent', () => {
       renderError: signal(null),
       isRendering: signal(false),
       render: jest.fn().mockResolvedValue(undefined),
+    };
+    layoutPreferencesMock = {
+      getEditorPaneRatio: jest.fn().mockReturnValue(0.4),
+      setEditorPaneRatio: jest.fn(),
     };
 
     const editorStub = {
@@ -72,6 +79,7 @@ describe('EditorPageComponent', () => {
         { provide: Location, useValue: locationMock },
         { provide: DocumentsService, useValue: documentsServiceMock },
         { provide: DiagramHubService, useValue: hubServiceMock },
+        { provide: EditorLayoutPreferencesService, useValue: layoutPreferencesMock },
         { provide: TemplatesService, useValue: { list: jest.fn().mockReturnValue(of([])) } },
         { provide: MonacoLoaderService, useValue: { load: jest.fn().mockResolvedValue(fakeMonaco) } },
       ],
@@ -235,5 +243,65 @@ describe('EditorPageComponent', () => {
     expect(component.isDocumentsPanelOpen()).toBe(false);
     component.onDocumentsPanelToggle();
     expect(component.isDocumentsPanelOpen()).toBe(true);
+  });
+
+  it('seeds the initial editor pane ratio from the layout preferences service, clamped to bounds', () => {
+    fixture.detectChanges();
+
+    expect(layoutPreferencesMock.getEditorPaneRatio).toHaveBeenCalled();
+    expect(component.editorPaneRatio()).toBe(0.4);
+    expect(component.editorPaneRatioPercent()).toBe(40);
+  });
+
+  it('clamps an out-of-bounds persisted ratio into [MIN_EDITOR_PANE_RATIO, MAX_EDITOR_PANE_RATIO] at seed time', async () => {
+    layoutPreferencesMock.getEditorPaneRatio.mockReturnValue(0.95);
+
+    await TestBed.resetTestingModule()
+      .configureTestingModule({
+        imports: [EditorPageComponent],
+        providers: [
+          { provide: ActivatedRoute, useValue: { data: routeDataSubject.asObservable() } },
+          { provide: Location, useValue: locationMock },
+          { provide: DocumentsService, useValue: documentsServiceMock },
+          { provide: DiagramHubService, useValue: hubServiceMock },
+          { provide: EditorLayoutPreferencesService, useValue: layoutPreferencesMock },
+          { provide: TemplatesService, useValue: { list: jest.fn().mockReturnValue(of([])) } },
+        ],
+      })
+      .compileComponents();
+    const clampedFixture = TestBed.createComponent(EditorPageComponent);
+
+    expect(clampedFixture.componentInstance.editorPaneRatio()).toBe(MAX_EDITOR_PANE_RATIO);
+  });
+
+  it('updates the live ratio/percent used for the editor pane width binding on (ratioChange), without persisting', () => {
+    fixture.detectChanges();
+
+    component.onDividerRatioChange(0.65);
+
+    expect(component.editorPaneRatio()).toBe(0.65);
+    expect(component.editorPaneRatioPercent()).toBe(65);
+    fixture.detectChanges();
+    const editorPane = fixture.nativeElement.querySelector('.editor-page__editor-pane') as HTMLElement;
+    expect(editorPane.style.flexBasis).toBe('65%');
+    expect(layoutPreferencesMock.setEditorPaneRatio).not.toHaveBeenCalled();
+  });
+
+  it('persists the ratio via the layout preferences service on (resizeEnd) only', () => {
+    fixture.detectChanges();
+
+    component.onDividerRatioChange(0.3);
+    expect(layoutPreferencesMock.setEditorPaneRatio).not.toHaveBeenCalled();
+
+    component.onDividerResizeEnd(0.3);
+
+    expect(layoutPreferencesMock.setEditorPaneRatio).toHaveBeenCalledTimes(1);
+    expect(layoutPreferencesMock.setEditorPaneRatio).toHaveBeenCalledWith(0.3);
+    expect(component.editorPaneRatio()).toBe(0.3);
+  });
+
+  it('exposes MIN_EDITOR_PANE_RATIO/MAX_EDITOR_PANE_RATIO for the template to bind to the divider', () => {
+    expect(component.MIN_EDITOR_PANE_RATIO).toBe(MIN_EDITOR_PANE_RATIO);
+    expect(component.MAX_EDITOR_PANE_RATIO).toBe(MAX_EDITOR_PANE_RATIO);
   });
 });
