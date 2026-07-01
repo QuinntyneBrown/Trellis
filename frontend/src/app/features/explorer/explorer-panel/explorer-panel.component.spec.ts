@@ -3,6 +3,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DirectoryChildEntry } from '../../../core/models/directory-child-entry.model';
 import { ExplorerTreeNode } from '../../../core/models/explorer-tree-node.model';
 import { FileSystemAccessService } from '../../../core/services/file-system-access.service';
+import { CreateEntryEvent } from '../file-tree-node/create-entry-event.model';
+import { DeleteEntryEvent } from '../file-tree-node/delete-entry-event.model';
 import { ExplorerPanelComponent } from './explorer-panel.component';
 
 function fakeDirHandle(name: string): FileSystemDirectoryHandle {
@@ -22,6 +24,9 @@ describe('ExplorerPanelComponent', () => {
     listChildren: jest.Mock;
     readTextFile: jest.Mock;
     writeTextFile: jest.Mock;
+    createFile: jest.Mock;
+    createDirectory: jest.Mock;
+    removeEntry: jest.Mock;
     queryPermission: jest.Mock;
     requestPermission: jest.Mock;
     saveRootHandle: jest.Mock;
@@ -36,6 +41,9 @@ describe('ExplorerPanelComponent', () => {
       listChildren: jest.fn().mockResolvedValue([]),
       readTextFile: jest.fn(),
       writeTextFile: jest.fn(),
+      createFile: jest.fn(),
+      createDirectory: jest.fn(),
+      removeEntry: jest.fn(),
       queryPermission: jest.fn(),
       requestPermission: jest.fn(),
       saveRootHandle: jest.fn().mockResolvedValue(undefined),
@@ -337,6 +345,211 @@ describe('ExplorerPanelComponent', () => {
 
       expect(spy).not.toHaveBeenCalled();
       expect(component.errorMessage()).toBeTruthy();
+    });
+  });
+
+  describe('creating a new file/folder', () => {
+    function loadedRootWithChildren(): ExplorerTreeNode {
+      return {
+        name: 'root',
+        kind: 'directory',
+        handle: fakeDirHandle('root'),
+        children: [
+          { name: 'existing.puml', kind: 'file', handle: fakeFileHandle('existing.puml'), loadState: 'unloaded', expanded: false, children: undefined },
+        ],
+        loadState: 'loaded',
+        expanded: true,
+      };
+    }
+
+    it('onCreateFile calls createFile with the parent handle/name, then reloads the parent children', async () => {
+      createFixture();
+      fixture.detectChanges();
+      await flush();
+      const root = loadedRootWithChildren();
+      component.rootNode.set(root);
+      fileSystemAccessServiceMock.createFile.mockResolvedValue(fakeFileHandle('new.puml'));
+      fileSystemAccessServiceMock.listChildren.mockResolvedValue([
+        { name: 'existing.puml', kind: 'file', handle: fakeFileHandle('existing.puml') },
+        { name: 'new.puml', kind: 'file', handle: fakeFileHandle('new.puml') },
+      ] as DirectoryChildEntry[]);
+
+      const event: CreateEntryEvent = { parent: root, name: 'new.puml' };
+      component.onCreateFile(event);
+      await flush();
+
+      expect(fileSystemAccessServiceMock.createFile).toHaveBeenCalledWith(root.handle, 'new.puml');
+      expect(root.children?.map((c) => c.name)).toEqual(['existing.puml', 'new.puml']);
+      expect(root.expanded).toBe(true);
+    });
+
+    it('onCreateFolder calls createDirectory with the parent handle/name, then reloads the parent children', async () => {
+      createFixture();
+      fixture.detectChanges();
+      await flush();
+      const root = loadedRootWithChildren();
+      component.rootNode.set(root);
+      fileSystemAccessServiceMock.createDirectory.mockResolvedValue(fakeDirHandle('new-folder'));
+      fileSystemAccessServiceMock.listChildren.mockResolvedValue([
+        { name: 'new-folder', kind: 'directory', handle: fakeDirHandle('new-folder') },
+        { name: 'existing.puml', kind: 'file', handle: fakeFileHandle('existing.puml') },
+      ] as DirectoryChildEntry[]);
+
+      const event: CreateEntryEvent = { parent: root, name: 'new-folder' };
+      component.onCreateFolder(event);
+      await flush();
+
+      expect(fileSystemAccessServiceMock.createDirectory).toHaveBeenCalledWith(root.handle, 'new-folder');
+      expect(root.children?.map((c) => c.name)).toEqual(['new-folder', 'existing.puml']);
+    });
+
+    it('blocks the create call entirely and sets errorMessage on a case-insensitive duplicate name', async () => {
+      createFixture();
+      fixture.detectChanges();
+      await flush();
+      const root = loadedRootWithChildren();
+      component.rootNode.set(root);
+
+      const event: CreateEntryEvent = { parent: root, name: 'EXISTING.puml' };
+      component.onCreateFile(event);
+      await flush();
+
+      expect(fileSystemAccessServiceMock.createFile).not.toHaveBeenCalled();
+      expect(fileSystemAccessServiceMock.createDirectory).not.toHaveBeenCalled();
+      expect(component.errorMessage()).toBe('"EXISTING.puml" already exists in "root".');
+    });
+
+    it('force-loads children first (calling listChildren) when creating inside a directory whose children are undefined', async () => {
+      createFixture();
+      fixture.detectChanges();
+      await flush();
+      const unloadedDir: ExplorerTreeNode = {
+        name: 'unloaded-dir',
+        kind: 'directory',
+        handle: fakeDirHandle('unloaded-dir'),
+        children: undefined,
+        loadState: 'unloaded',
+        expanded: false,
+      };
+      component.rootNode.set({
+        name: 'root',
+        kind: 'directory',
+        handle: fakeDirHandle('root'),
+        children: [unloadedDir],
+        loadState: 'loaded',
+        expanded: true,
+      });
+
+      fileSystemAccessServiceMock.listChildren
+        .mockResolvedValueOnce([] as DirectoryChildEntry[])
+        .mockResolvedValueOnce([
+          { name: 'new.puml', kind: 'file', handle: fakeFileHandle('new.puml') },
+        ] as DirectoryChildEntry[]);
+      fileSystemAccessServiceMock.createFile.mockResolvedValue(fakeFileHandle('new.puml'));
+
+      const event: CreateEntryEvent = { parent: unloadedDir, name: 'new.puml' };
+      component.onCreateFile(event);
+      await flush();
+
+      expect(fileSystemAccessServiceMock.listChildren).toHaveBeenCalledWith(unloadedDir.handle);
+      expect(unloadedDir.expanded).toBe(true);
+      expect(fileSystemAccessServiceMock.createFile).toHaveBeenCalledWith(unloadedDir.handle, 'new.puml');
+      expect(unloadedDir.children?.map((c) => c.name)).toEqual(['new.puml']);
+    });
+
+    it('surfaces a thrown creation error via errorMessage rather than throwing out of the component', async () => {
+      createFixture();
+      fixture.detectChanges();
+      await flush();
+      const root = loadedRootWithChildren();
+      component.rootNode.set(root);
+      fileSystemAccessServiceMock.createFile.mockRejectedValue(new Error('boom'));
+
+      const event: CreateEntryEvent = { parent: root, name: 'new.puml' };
+      expect(() => component.onCreateFile(event)).not.toThrow();
+      await flush();
+
+      expect(component.errorMessage()).toBe('Could not create "new.puml" in "root".');
+    });
+  });
+
+  describe('deleting an entry', () => {
+    function loadedRootWithFileAndDir(): ExplorerTreeNode {
+      return {
+        name: 'root',
+        kind: 'directory',
+        handle: fakeDirHandle('root'),
+        children: [
+          { name: 'subdir', kind: 'directory', handle: fakeDirHandle('subdir'), loadState: 'unloaded', expanded: false, children: undefined },
+          { name: 'diagram.puml', kind: 'file', handle: fakeFileHandle('diagram.puml'), loadState: 'unloaded', expanded: false, children: undefined },
+        ],
+        loadState: 'loaded',
+        expanded: true,
+      };
+    }
+
+    it('calls removeEntry with the parent handle/name/kind, then refreshes the parent children, and emits fileDeleted for a file', async () => {
+      createFixture();
+      fixture.detectChanges();
+      await flush();
+      const root = loadedRootWithFileAndDir();
+      component.rootNode.set(root);
+      const fileNode = root.children!.find((c) => c.name === 'diagram.puml')!;
+      fileSystemAccessServiceMock.removeEntry.mockResolvedValue(undefined);
+      fileSystemAccessServiceMock.listChildren.mockResolvedValue([
+        { name: 'subdir', kind: 'directory', handle: fakeDirHandle('subdir') },
+      ] as DirectoryChildEntry[]);
+      const fileDeletedSpy = jest.fn();
+      component.fileDeleted.subscribe(fileDeletedSpy);
+
+      const event: DeleteEntryEvent = { node: fileNode, parentNode: root };
+      component.onDeleteEntry(event);
+      await flush();
+
+      expect(fileSystemAccessServiceMock.removeEntry).toHaveBeenCalledWith(root.handle, 'diagram.puml', 'file');
+      expect(root.children?.map((c) => c.name)).toEqual(['subdir']);
+      expect(fileDeletedSpy).toHaveBeenCalledWith(fileNode.handle);
+    });
+
+    it('does not emit fileDeleted when the deleted entry is a directory', async () => {
+      createFixture();
+      fixture.detectChanges();
+      await flush();
+      const root = loadedRootWithFileAndDir();
+      component.rootNode.set(root);
+      const dirNode = root.children!.find((c) => c.name === 'subdir')!;
+      fileSystemAccessServiceMock.removeEntry.mockResolvedValue(undefined);
+      fileSystemAccessServiceMock.listChildren.mockResolvedValue([
+        { name: 'diagram.puml', kind: 'file', handle: fakeFileHandle('diagram.puml') },
+      ] as DirectoryChildEntry[]);
+      const fileDeletedSpy = jest.fn();
+      component.fileDeleted.subscribe(fileDeletedSpy);
+
+      const event: DeleteEntryEvent = { node: dirNode, parentNode: root };
+      component.onDeleteEntry(event);
+      await flush();
+
+      expect(fileSystemAccessServiceMock.removeEntry).toHaveBeenCalledWith(root.handle, 'subdir', 'directory');
+      expect(fileDeletedSpy).not.toHaveBeenCalled();
+    });
+
+    it('surfaces a thrown delete error via errorMessage rather than throwing out of the component', async () => {
+      createFixture();
+      fixture.detectChanges();
+      await flush();
+      const root = loadedRootWithFileAndDir();
+      component.rootNode.set(root);
+      const fileNode = root.children!.find((c) => c.name === 'diagram.puml')!;
+      fileSystemAccessServiceMock.removeEntry.mockRejectedValue(new Error('boom'));
+      const fileDeletedSpy = jest.fn();
+      component.fileDeleted.subscribe(fileDeletedSpy);
+
+      const event: DeleteEntryEvent = { node: fileNode, parentNode: root };
+      component.onDeleteEntry(event);
+      await flush();
+
+      expect(component.errorMessage()).toBeTruthy();
+      expect(fileDeletedSpy).not.toHaveBeenCalled();
     });
   });
 });

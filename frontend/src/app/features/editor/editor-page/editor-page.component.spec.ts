@@ -466,9 +466,24 @@ describe('EditorPageComponent', () => {
   });
 
   describe('disk-backed files (Explorer) vs. SQLite documents', () => {
+    /**
+     * A real FileSystemFileHandle's isSameEntry() compares by underlying
+     * disk identity, not by object reference (two separate directory reads
+     * of the very same file hand back two distinct, `!==` handle objects
+     * that still resolve isSameEntry() true against each other) -- mocked
+     * here by name so a differently-referenced-but-same-name fake behaves
+     * the same way a real refreshed handle would.
+     */
+    function fakeFileHandle(name: string): FileSystemFileHandle {
+      return {
+        name,
+        isSameEntry: (other: FileSystemHandle) => Promise.resolve((other as { name?: string })?.name === name),
+      } as unknown as FileSystemFileHandle;
+    }
+
     function diskFile(overrides: Partial<OpenedDiskFile> = {}): OpenedDiskFile {
       return {
-        handle: { name: 'diagram.puml' } as unknown as FileSystemFileHandle,
+        handle: fakeFileHandle('diagram.puml'),
         name: 'diagram.puml',
         content: '@startuml\nfrom disk\n@enduml',
         ...overrides,
@@ -549,6 +564,69 @@ describe('EditorPageComponent', () => {
       routeDataSubject.next({ document });
 
       expect(component.openFileHandle()).toBeNull();
+    });
+
+    it('onDiskFileDeleted resets to the blank document and navigates to /editor when the handle matches the currently open file', async () => {
+      fixture.detectChanges();
+      const file = diskFile();
+      component.onDiskFileOpened(file);
+      component.sourceCode.set('edited content');
+      locationMock.go.mockClear();
+
+      await component.onDiskFileDeleted(file.handle);
+
+      expect(component.documentId()).toBeNull();
+      expect(component.documentName()).toBe('Untitled diagram');
+      expect(component.sourceCode()).toBe('');
+      expect(component.savedSourceCode()).toBe('');
+      expect(component.openFileHandle()).toBeNull();
+      expect(locationMock.go).toHaveBeenCalledWith('/editor');
+    });
+
+    it('onDiskFileDeleted resets the editor even when the deleted handle is a different object instance representing the same file (isSameEntry, not ===)', async () => {
+      fixture.detectChanges();
+      const file = diskFile();
+      component.onDiskFileOpened(file);
+      component.sourceCode.set('edited content');
+      locationMock.go.mockClear();
+
+      // A distinct handle object -- e.g. what ExplorerPanelComponent hands
+      // over after any refresh of the file's parent directory -- but
+      // isSameEntry-equal to the one currently open.
+      await component.onDiskFileDeleted(fakeFileHandle('diagram.puml'));
+
+      expect(component.sourceCode()).toBe('');
+      expect(component.openFileHandle()).toBeNull();
+      expect(locationMock.go).toHaveBeenCalledWith('/editor');
+    });
+
+    it('onDiskFileDeleted is a complete no-op when the handle does not match the currently open file', async () => {
+      fixture.detectChanges();
+      const file = diskFile();
+      component.onDiskFileOpened(file);
+      component.sourceCode.set('edited content');
+      locationMock.go.mockClear();
+
+      const otherHandle = fakeFileHandle('other.puml');
+      await component.onDiskFileDeleted(otherHandle);
+
+      expect(component.documentName()).toBe(file.name);
+      expect(component.sourceCode()).toBe('edited content');
+      expect(component.openFileHandle()).toBe(file.handle);
+      expect(locationMock.go).not.toHaveBeenCalled();
+    });
+
+    it('onDiskFileDeleted never calls window.confirm, unlike onDiskFileOpened', async () => {
+      fixture.detectChanges();
+      const file = diskFile();
+      component.onDiskFileOpened(file);
+      component.sourceCode.set('edited content');
+
+      const confirmSpy = jest.spyOn(window, 'confirm');
+      await component.onDiskFileDeleted(file.handle);
+
+      expect(confirmSpy).not.toHaveBeenCalled();
+      confirmSpy.mockRestore();
     });
 
     it('selecting a template clears a previously open disk file handle', () => {

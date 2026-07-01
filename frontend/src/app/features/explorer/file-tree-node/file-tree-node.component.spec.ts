@@ -158,4 +158,188 @@ describe('FileTreeNodeComponent', () => {
 
     expect(spy).toHaveBeenCalledWith(grandchildFile);
   });
+
+  describe('per-row New File/New Folder/Delete action buttons', () => {
+    function newFileButton(): HTMLElement | null {
+      return fixture.nativeElement.querySelector('[data-testid="file-tree-node-new-file"]');
+    }
+    function newFolderButton(): HTMLElement | null {
+      return fixture.nativeElement.querySelector('[data-testid="file-tree-node-new-folder"]');
+    }
+    function deleteButton(): HTMLElement | null {
+      return fixture.nativeElement.querySelector('[data-testid="file-tree-node-delete"]');
+    }
+
+    it('shows New File/New Folder for a directory node', () => {
+      component.node = fakeNode({ kind: 'directory' });
+      fixture.detectChanges();
+
+      expect(newFileButton()).toBeTruthy();
+      expect(newFolderButton()).toBeTruthy();
+    });
+
+    it('hides New File/New Folder for a file node', () => {
+      component.node = fakeNode({ kind: 'file', name: 'diagram.puml' });
+      fixture.detectChanges();
+
+      expect(newFileButton()).toBeNull();
+      expect(newFolderButton()).toBeNull();
+    });
+
+    it('hides the Delete button when parentNode is null (the true root)', () => {
+      component.node = fakeNode();
+      component.parentNode = null;
+      fixture.detectChanges();
+
+      expect(deleteButton()).toBeNull();
+    });
+
+    it('shows the Delete button when parentNode is set', () => {
+      component.node = fakeNode();
+      component.parentNode = fakeNode({ name: 'parent-dir' });
+      fixture.detectChanges();
+
+      expect(deleteButton()).toBeTruthy();
+    });
+
+    it('clicking New File prompts and emits createFile with the trimmed name, without also emitting toggleExpand', () => {
+      const node = fakeNode({ kind: 'directory' });
+      component.node = node;
+      fixture.detectChanges();
+      const promptSpy = jest.spyOn(window, 'prompt').mockReturnValue('  new-file.puml  ');
+      const createFileSpy = jest.fn();
+      component.createFile.subscribe(createFileSpy);
+      const toggleSpy = jest.fn();
+      component.toggleExpand.subscribe(toggleSpy);
+
+      newFileButton()!.click();
+
+      expect(promptSpy).toHaveBeenCalledWith('New file name');
+      expect(createFileSpy).toHaveBeenCalledWith({ parent: node, name: 'new-file.puml' });
+      expect(toggleSpy).not.toHaveBeenCalled();
+      promptSpy.mockRestore();
+    });
+
+    it('does not emit createFile when the New File prompt is cancelled (null)', () => {
+      component.node = fakeNode({ kind: 'directory' });
+      fixture.detectChanges();
+      const promptSpy = jest.spyOn(window, 'prompt').mockReturnValue(null);
+      const createFileSpy = jest.fn();
+      component.createFile.subscribe(createFileSpy);
+
+      newFileButton()!.click();
+
+      expect(createFileSpy).not.toHaveBeenCalled();
+      promptSpy.mockRestore();
+    });
+
+    it('does not emit createFile when the New File prompt result is blank', () => {
+      component.node = fakeNode({ kind: 'directory' });
+      fixture.detectChanges();
+      const promptSpy = jest.spyOn(window, 'prompt').mockReturnValue('   ');
+      const createFileSpy = jest.fn();
+      component.createFile.subscribe(createFileSpy);
+
+      newFileButton()!.click();
+
+      expect(createFileSpy).not.toHaveBeenCalled();
+      promptSpy.mockRestore();
+    });
+
+    it('clicking New Folder prompts and emits createFolder with the trimmed name, without also emitting toggleExpand', () => {
+      const node = fakeNode({ kind: 'directory' });
+      component.node = node;
+      fixture.detectChanges();
+      const promptSpy = jest.spyOn(window, 'prompt').mockReturnValue('new-folder');
+      const createFolderSpy = jest.fn();
+      component.createFolder.subscribe(createFolderSpy);
+      const toggleSpy = jest.fn();
+      component.toggleExpand.subscribe(toggleSpy);
+
+      newFolderButton()!.click();
+
+      expect(promptSpy).toHaveBeenCalledWith('New folder name');
+      expect(createFolderSpy).toHaveBeenCalledWith({ parent: node, name: 'new-folder' });
+      expect(toggleSpy).not.toHaveBeenCalled();
+      promptSpy.mockRestore();
+    });
+
+    it('clicking Delete on a directory confirms with the directory phrasing and emits deleteEntry on accept', () => {
+      const node = fakeNode({ kind: 'directory', name: 'subdir' });
+      const parentNode = fakeNode({ name: 'root' });
+      component.node = node;
+      component.parentNode = parentNode;
+      fixture.detectChanges();
+      const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true);
+      const deleteSpy = jest.fn();
+      component.deleteEntry.subscribe(deleteSpy);
+      const toggleSpy = jest.fn();
+      component.toggleExpand.subscribe(toggleSpy);
+
+      deleteButton()!.click();
+
+      expect(confirmSpy).toHaveBeenCalledWith('Delete "subdir" and everything inside it? This cannot be undone.');
+      expect(deleteSpy).toHaveBeenCalledWith({ node, parentNode });
+      expect(toggleSpy).not.toHaveBeenCalled();
+      confirmSpy.mockRestore();
+    });
+
+    it('clicking Delete on a file confirms with the file phrasing and emits deleteEntry on accept, without also emitting fileClicked', () => {
+      const node = fakeNode({ kind: 'file', name: 'diagram.puml' });
+      const parentNode = fakeNode({ name: 'root' });
+      component.node = node;
+      component.parentNode = parentNode;
+      fixture.detectChanges();
+      const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true);
+      const deleteSpy = jest.fn();
+      component.deleteEntry.subscribe(deleteSpy);
+      const fileClickedSpy = jest.fn();
+      component.fileClicked.subscribe(fileClickedSpy);
+
+      deleteButton()!.click();
+
+      expect(confirmSpy).toHaveBeenCalledWith('Delete "diagram.puml"? This cannot be undone.');
+      expect(deleteSpy).toHaveBeenCalledWith({ node, parentNode });
+      expect(fileClickedSpy).not.toHaveBeenCalled();
+      confirmSpy.mockRestore();
+    });
+
+    it('does not emit deleteEntry when the confirm dialog is declined', () => {
+      component.node = fakeNode();
+      component.parentNode = fakeNode({ name: 'root' });
+      fixture.detectChanges();
+      const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(false);
+      const deleteSpy = jest.fn();
+      component.deleteEntry.subscribe(deleteSpy);
+
+      deleteButton()!.click();
+
+      expect(deleteSpy).not.toHaveBeenCalled();
+      confirmSpy.mockRestore();
+    });
+  });
+
+  describe('bubbling createFile/createFolder/deleteEntry through one level of recursion', () => {
+    it('re-emits a nested child createFile/createFolder/deleteEntry event through its own outputs untouched', () => {
+      const grandchildFile = fakeNode({ name: 'deep.puml', kind: 'file' });
+      component.node = fakeNode({ name: 'root', expanded: true, children: [grandchildFile] });
+      fixture.detectChanges();
+
+      const createFileSpy = jest.fn();
+      const createFolderSpy = jest.fn();
+      const deleteEntrySpy = jest.fn();
+      component.createFile.subscribe(createFileSpy);
+      component.createFolder.subscribe(createFolderSpy);
+      component.deleteEntry.subscribe(deleteEntrySpy);
+
+      const childRow = fixture.nativeElement.querySelectorAll('[data-testid="file-tree-node"]')[1] as HTMLElement;
+      const childDeleteButton = childRow.querySelector('[data-testid="file-tree-node-delete"]') as HTMLElement;
+
+      const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true);
+      childDeleteButton.click();
+      confirmSpy.mockRestore();
+
+      expect(deleteEntrySpy).toHaveBeenCalledWith({ node: grandchildFile, parentNode: component.node });
+    });
+  });
 });

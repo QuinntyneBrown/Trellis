@@ -20,8 +20,12 @@
         class="explorer-panel__tree"
         [node]="rootNode()!"
         [depth]="0"
+        [parentNode]="null"
         (toggleExpand)="onToggleExpand($event)"
         (fileClicked)="onFileClicked($event)"
+        (createFile)="onCreateFile($event)"
+        (createFolder)="onCreateFolder($event)"
+        (deleteEntry)="onDeleteEntry($event)"
       ></app-file-tree-node>
     } @else {
       <button

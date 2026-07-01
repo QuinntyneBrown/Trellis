@@ -55,6 +55,41 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  // Lets the actions group below sit flush to the row's own right edge
+  // instead of hugging the (possibly short) name.
+  flex: 1 1 auto;
+}
+
+// Always visible (not hover-revealed) -- mirrors
+// DocumentListItemComponent's own row actions, which likewise have no
+// opacity/hover-reveal treatment, just a plain per-button :hover tweak.
+.file-tree-node__actions {
+  display: flex;
+  gap: 0.25rem;
+  flex: 0 0 auto;
+}
+
+.file-tree-node__action {
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.25rem;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  cursor: pointer;
+  font-size: 0.7rem;
+  line-height: 1.3;
+
+  &:hover {
+    background-color: #f3f4f6;
+  }
+}
+
+.file-tree-node__action--danger {
+  color: #b91c1c;
+  border-color: #fecaca;
+
+  &:hover {
+    background-color: #fef2f2;
+  }
 }
 
 .file-tree-node__spinner {

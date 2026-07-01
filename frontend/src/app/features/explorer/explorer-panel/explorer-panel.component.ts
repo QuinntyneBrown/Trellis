@@ -6,7 +6,20 @@ import { OpenedDiskFile } from '../../../core/models/opened-disk-file.model';
 import { FileSystemAccessService } from '../../../core/services/file-system-access.service';
 import { ErrorBannerComponent } from '../../../shared/components/error-banner/error-banner.component';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
+import { CreateEntryEvent } from '../file-tree-node/create-entry-event.model';
+import { DeleteEntryEvent } from '../file-tree-node/delete-entry-event.model';
 import { FileTreeNodeComponent } from '../file-tree-node/file-tree-node.component';
+
+/**
+ * Same directories-before-files, then case-insensitive-alphabetical
+ * comparator FileSystemAccessService.listChildren() itself sorts with --
+ * reused here (rather than reinvented) for the duplicate-name check inside
+ * createEntry, since a case-insensitive match against listChildren's own
+ * output should agree with listChildren's own notion of "same name".
+ */
+function sameNameCaseInsensitive(a: string, b: string): boolean {
+  return a.localeCompare(b, undefined, { sensitivity: 'base' }) === 0;
+}
 
 /**
  * VS Code-style Explorer panel: opens a local folder via the File System
@@ -15,7 +28,8 @@ import { FileTreeNodeComponent } from '../file-tree-node/file-tree-node.componen
  *
  * Centralizes every File System Access call here -- FileTreeNodeComponent
  * (the recursive row renderer) is a purely presentational, I/O-free "dumb"
- * component that only bubbles toggleExpand/fileClicked events back up.
+ * component that only bubbles toggleExpand/fileClicked/createFile/
+ * createFolder/deleteEntry events back up.
  */
 @Component({
   selector: 'app-explorer-panel',
@@ -28,6 +42,8 @@ export class ExplorerPanelComponent implements OnInit {
   private readonly fileSystemAccessService = inject(FileSystemAccessService);
 
   @Output() readonly fileOpened = new EventEmitter<OpenedDiskFile>();
+  /** Emitted only for a file delete (never a directory delete) so EditorPageComponent can reset an open, now-gone file. */
+  @Output() readonly fileDeleted = new EventEmitter<FileSystemFileHandle>();
 
   /** Computed once -- the browser either has this API or it doesn't, for the whole session. */
   readonly isSupported = this.fileSystemAccessService.isSupported();
@@ -141,6 +157,18 @@ export class ExplorerPanelComponent implements OnInit {
     void this.openFile(node);
   }
 
+  onCreateFile(event: CreateEntryEvent): void {
+    void this.createEntry(event.parent, event.name, 'file');
+  }
+
+  onCreateFolder(event: CreateEntryEvent): void {
+    void this.createEntry(event.parent, event.name, 'directory');
+  }
+
+  onDeleteEntry(event: DeleteEntryEvent): void {
+    void this.deleteEntry(event);
+  }
+
   /** Fetches `handle`'s children and sets up the fully-loaded, expanded root node. */
   private async populateRoot(handle: FileSystemDirectoryHandle): Promise<void> {
     try {
@@ -172,6 +200,61 @@ export class ExplorerPanelComponent implements OnInit {
     }
 
     this.rootNode.set(this.rootNode());
+  }
+
+  /**
+   * Shared by onCreateFile/onCreateFolder. Force-loads `parent`'s children
+   * first when they've never been loaded (this both hydrates the data the
+   * duplicate-name check below needs, and auto-expands the directory so the
+   * user immediately sees where the new entry lands), then rejects a
+   * case-insensitive duplicate name without ever calling the create API,
+   * and otherwise creates the entry and reloads `parent`'s children so the
+   * new, correctly-sorted entry shows up.
+   */
+  private async createEntry(parent: ExplorerTreeNode, name: string, kind: 'file' | 'directory'): Promise<void> {
+    this.errorMessage.set(null);
+
+    if (parent.children === undefined) {
+      parent.expanded = true;
+      await this.loadChildren(parent);
+    }
+
+    const isDuplicate = (parent.children ?? []).some((child) => sameNameCaseInsensitive(child.name, name));
+    if (isDuplicate) {
+      this.errorMessage.set(`"${name}" already exists in "${parent.name}".`);
+      return;
+    }
+
+    try {
+      const parentHandle = parent.handle as FileSystemDirectoryHandle;
+      if (kind === 'file') {
+        await this.fileSystemAccessService.createFile(parentHandle, name);
+      } else {
+        await this.fileSystemAccessService.createDirectory(parentHandle, name);
+      }
+      parent.expanded = true;
+      await this.loadChildren(parent);
+    } catch {
+      this.errorMessage.set(`Could not create "${name}" in "${parent.name}".`);
+    }
+  }
+
+  private async deleteEntry(event: DeleteEntryEvent): Promise<void> {
+    this.errorMessage.set(null);
+    try {
+      await this.fileSystemAccessService.removeEntry(
+        event.parentNode.handle as FileSystemDirectoryHandle,
+        event.node.name,
+        event.node.kind,
+      );
+      await this.loadChildren(event.parentNode);
+
+      if (event.node.kind === 'file') {
+        this.fileDeleted.emit(event.node.handle as FileSystemFileHandle);
+      }
+    } catch {
+      this.errorMessage.set(`Could not delete "${event.node.name}".`);
+    }
   }
 
   private async openFile(node: ExplorerTreeNode): Promise<void> {

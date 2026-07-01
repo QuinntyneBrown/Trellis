@@ -86,6 +86,35 @@ export class FileSystemAccessService {
     }
   }
 
+  /**
+   * Creates (or opens, if it already exists) a file named `name` directly
+   * inside `parent`. Like listChildren/readTextFile/writeTextFile above
+   * (and unlike the IndexedDB persistence methods below), failures are
+   * propagated to the caller rather than swallowed here.
+   */
+  async createFile(parent: FileSystemDirectoryHandle, name: string): Promise<FileSystemFileHandle> {
+    return parent.getFileHandle(name, { create: true });
+  }
+
+  /**
+   * Creates (or opens, if it already exists) a subdirectory named `name`
+   * directly inside `parent`. Failures propagate to the caller.
+   */
+  async createDirectory(parent: FileSystemDirectoryHandle, name: string): Promise<FileSystemDirectoryHandle> {
+    return parent.getDirectoryHandle(name, { create: true });
+  }
+
+  /**
+   * Removes the entry named `name` from `parent`. `kind` is supplied
+   * explicitly by the caller (rather than inferred from a handle) so that
+   * `recursive` is only ever true for a directory removal -- a caller
+   * removing a file can never accidentally trigger a recursive delete.
+   * Failures propagate to the caller.
+   */
+  async removeEntry(parent: FileSystemDirectoryHandle, name: string, kind: 'file' | 'directory'): Promise<void> {
+    return parent.removeEntry(name, { recursive: kind === 'directory' });
+  }
+
   async queryPermission(
     handle: FileSystemHandle,
     mode: FileSystemPermissionMode = DEFAULT_PERMISSION_MODE,

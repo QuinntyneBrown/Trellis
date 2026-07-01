@@ -223,6 +223,73 @@ describe('FileSystemAccessService', () => {
     });
   });
 
+  describe('createFile', () => {
+    it('delegates to parent.getFileHandle with create:true and returns the resolved handle', async () => {
+      const fileHandle = {} as FileSystemFileHandle;
+      const getFileHandle = jest.fn().mockResolvedValue(fileHandle);
+      const parent = { getFileHandle } as unknown as FileSystemDirectoryHandle;
+
+      const result = await service.createFile(parent, 'new-file.puml');
+
+      expect(getFileHandle).toHaveBeenCalledWith('new-file.puml', { create: true });
+      expect(result).toBe(fileHandle);
+    });
+
+    it('propagates a rejection rather than swallowing it', async () => {
+      const getFileHandle = jest.fn().mockRejectedValue(new Error('cannot create'));
+      const parent = { getFileHandle } as unknown as FileSystemDirectoryHandle;
+
+      await expect(service.createFile(parent, 'new-file.puml')).rejects.toThrow('cannot create');
+    });
+  });
+
+  describe('createDirectory', () => {
+    it('delegates to parent.getDirectoryHandle with create:true and returns the resolved handle', async () => {
+      const dirHandle = {} as FileSystemDirectoryHandle;
+      const getDirectoryHandle = jest.fn().mockResolvedValue(dirHandle);
+      const parent = { getDirectoryHandle } as unknown as FileSystemDirectoryHandle;
+
+      const result = await service.createDirectory(parent, 'new-folder');
+
+      expect(getDirectoryHandle).toHaveBeenCalledWith('new-folder', { create: true });
+      expect(result).toBe(dirHandle);
+    });
+
+    it('propagates a rejection rather than swallowing it', async () => {
+      const getDirectoryHandle = jest.fn().mockRejectedValue(new Error('cannot create'));
+      const parent = { getDirectoryHandle } as unknown as FileSystemDirectoryHandle;
+
+      await expect(service.createDirectory(parent, 'new-folder')).rejects.toThrow('cannot create');
+    });
+  });
+
+  describe('removeEntry', () => {
+    it('passes recursive:false when removing a file', async () => {
+      const removeEntry = jest.fn().mockResolvedValue(undefined);
+      const parent = { removeEntry } as unknown as FileSystemDirectoryHandle;
+
+      await service.removeEntry(parent, 'diagram.puml', 'file');
+
+      expect(removeEntry).toHaveBeenCalledWith('diagram.puml', { recursive: false });
+    });
+
+    it('passes recursive:true when removing a directory', async () => {
+      const removeEntry = jest.fn().mockResolvedValue(undefined);
+      const parent = { removeEntry } as unknown as FileSystemDirectoryHandle;
+
+      await service.removeEntry(parent, 'subdir', 'directory');
+
+      expect(removeEntry).toHaveBeenCalledWith('subdir', { recursive: true });
+    });
+
+    it('propagates a rejection rather than swallowing it', async () => {
+      const removeEntry = jest.fn().mockRejectedValue(new Error('permission denied'));
+      const parent = { removeEntry } as unknown as FileSystemDirectoryHandle;
+
+      await expect(service.removeEntry(parent, 'diagram.puml', 'file')).rejects.toThrow('permission denied');
+    });
+  });
+
   describe('queryPermission / requestPermission', () => {
     it('queryPermission passes through to handle.queryPermission, defaulting to readwrite', async () => {
       const queryPermission = jest.fn().mockResolvedValue('granted');

@@ -388,6 +388,34 @@ export class EditorPageComponent implements OnInit {
     this.location.go('/editor');
     void this.hubService.render(file.content);
   }
+
+  /**
+   * Fired when a file is deleted from the Explorer panel. Only resets the
+   * editor when the deleted handle is the one currently open -- deleting
+   * some other, unrelated file must not disturb the editor's current
+   * content. Unlike onDiskFileOpened, there is no confirm here: the user
+   * already confirmed the delete itself inside FileTreeNodeComponent.
+   * Mirrors onNewDocument's reset shape, minus the discard-guard.
+   *
+   * Compares via FileSystemHandle.isSameEntry() rather than `===`:
+   * FileSystemFileHandle objects are NOT reference-stable across separate
+   * directory reads -- every ExplorerPanelComponent.loadChildren() call
+   * (e.g. from creating a sibling entry, or any other refresh of the same
+   * parent directory) hands back brand-new handle objects for entries that
+   * are, on disk, unchanged. A same-instance `===` check would silently
+   * stop matching the very next time the open file's parent directory got
+   * reloaded for any reason, leaving the editor showing stale content
+   * against a handle for a file that no longer exists. isSameEntry() is the
+   * File System Access API's own, identity-correct comparison for exactly
+   * this situation.
+   */
+  async onDiskFileDeleted(handle: FileSystemFileHandle): Promise<void> {
+    const openHandle = this.openFileHandle();
+    if (openHandle && (await openHandle.isSameEntry(handle))) {
+      this.applyDocument(null);
+      this.location.go('/editor');
+    }
+  }
 }
 
 function readFileAsText(file: File): Promise<string> {

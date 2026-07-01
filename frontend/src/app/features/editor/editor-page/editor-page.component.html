@@ -20,6 +20,7 @@
       <app-explorer-panel
         [style.display]="activeSidePanel() === 'explorer' ? '' : 'none'"
         (fileOpened)="onDiskFileOpened($event)"
+        (fileDeleted)="onDiskFileDeleted($event)"
       ></app-explorer-panel>
       <app-documents-panel
         [style.display]="activeSidePanel() === 'documents' ? '' : 'none'"

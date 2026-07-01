@@ -10,19 +10,25 @@ import { byTestId } from '../base.page';
  * [data-testid="explorer-reconnect"], and one
  * [data-testid="file-tree-node"] per tree row (root folder included), each
  * carrying a data-name attribute and, for directories only, a nested
- * [data-testid="file-tree-node-chevron"].
+ * [data-testid="file-tree-node-chevron"], plus per-row action buttons at
+ * [data-testid="file-tree-node-new-file" | "file-tree-node-new-folder"]
+ * (directories only, root included) and
+ * [data-testid="file-tree-node-delete"] (every row except the true root).
  */
 export class ExplorerPanelComponent {
   readonly root: Locator;
   readonly toggle: Locator;
   readonly openFolderButton: Locator;
   readonly reconnectButton: Locator;
+  /** The panel's own app-error-banner, rendered with role="alert" whenever errorMessage() is set. */
+  readonly errorBanner: Locator;
 
   constructor(page: Page) {
     this.root = byTestId(page, 'explorer-panel');
     this.toggle = byTestId(page, 'toolbar-explorer');
     this.openFolderButton = byTestId(page, 'explorer-open-folder');
     this.reconnectButton = byTestId(page, 'explorer-reconnect');
+    this.errorBanner = this.root.locator('[role="alert"]');
   }
 
   /** Opens the Explorer panel via its toolbar rail icon. */
@@ -78,5 +84,39 @@ export class ExplorerPanelComponent {
   /** Reads the name of the currently-open root folder (the first/root tree row's own name). */
   async getOpenFolderName(): Promise<string> {
     return (await this.root.locator('[data-testid="file-tree-node"]').first().getAttribute('data-name')) ?? '';
+  }
+
+  /**
+   * Creates a new file inside the directory row named `rowName` by clicking
+   * its "New File" button and accepting the native `window.prompt` dialog it
+   * triggers with `entryName`. The dialog handler is registered *before* the
+   * click (Playwright requires the listener to already be in place before
+   * the action that opens the dialog fires) -- the same technique already
+   * used by DocumentsPanelComponent's renameDocument and by
+   * explorer-unsaved-changes-guard.spec.ts's own native-dialog handling.
+   */
+  async newFile(rowName: string, entryName: string): Promise<void> {
+    const page = this.root.page();
+    page.once('dialog', (dialog) => void dialog.accept(entryName));
+    await this.row(rowName).locator('[data-testid="file-tree-node-new-file"]').click();
+  }
+
+  /** Creates a new subdirectory inside the directory row named `rowName`. Analogous to newFile above. */
+  async newFolder(rowName: string, entryName: string): Promise<void> {
+    const page = this.root.page();
+    page.once('dialog', (dialog) => void dialog.accept(entryName));
+    await this.row(rowName).locator('[data-testid="file-tree-node-new-folder"]').click();
+  }
+
+  /**
+   * Deletes the row named `rowName` by clicking its "Delete" button and
+   * responding to the native `window.confirm` dialog it triggers --
+   * accepting (the default) or dismissing depending on `options.accept`.
+   */
+  async deleteEntry(rowName: string, options?: { accept?: boolean }): Promise<void> {
+    const accept = options?.accept ?? true;
+    const page = this.root.page();
+    page.once('dialog', (dialog) => void (accept ? dialog.accept() : dialog.dismiss()));
+    await this.row(rowName).locator('[data-testid="file-tree-node-delete"]').click();
   }
 }

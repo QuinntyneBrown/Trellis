@@ -26,6 +26,40 @@
     @if (node.loadState === 'loading') {
       <span class="file-tree-node__spinner" data-testid="file-tree-node-spinner" aria-hidden="true"></span>
     }
+
+    <div class="file-tree-node__actions">
+      @if (node.kind === 'directory') {
+        <button
+          type="button"
+          class="file-tree-node__action"
+          data-testid="file-tree-node-new-file"
+          title="New File"
+          (click)="onNewFileClicked($event)"
+        >
+          New File
+        </button>
+        <button
+          type="button"
+          class="file-tree-node__action"
+          data-testid="file-tree-node-new-folder"
+          title="New Folder"
+          (click)="onNewFolderClicked($event)"
+        >
+          New Folder
+        </button>
+      }
+      @if (parentNode) {
+        <button
+          type="button"
+          class="file-tree-node__action file-tree-node__action--danger"
+          data-testid="file-tree-node-delete"
+          title="Delete"
+          (click)="onDeleteClicked($event)"
+        >
+          Delete
+        </button>
+      }
+    </div>
   </div>
 
   @if (node.kind === 'directory' && node.expanded && node.children) {
@@ -34,8 +68,12 @@
         <app-file-tree-node
           [node]="child"
           [depth]="depth + 1"
+          [parentNode]="node"
           (toggleExpand)="toggleExpand.emit($event)"
           (fileClicked)="fileClicked.emit($event)"
+          (createFile)="createFile.emit($event)"
+          (createFolder)="createFolder.emit($event)"
+          (deleteEntry)="deleteEntry.emit($event)"
         ></app-file-tree-node>
       }
     </div>
