@@ -12,18 +12,18 @@
         label="Explorer"
         testId="toolbar-explorer"
         [active]="activeSidePanel === 'explorer'"
-        (clicked)="onExplorerPanelToggleClicked()"
+        (clicked)="explorerPanelToggle.emit()"
       ></app-rail-button>
     }
 
-    <app-rail-button icon="new" label="New" testId="toolbar-new" (clicked)="onNewClicked()"></app-rail-button>
+    <app-rail-button icon="new" label="New" testId="toolbar-new" (clicked)="newDocument.emit()"></app-rail-button>
 
     <app-rail-button
       icon="save"
       label="Save"
       shortcut="Ctrl+S"
       testId="toolbar-save"
-      (clicked)="onSaveClicked()"
+      (clicked)="save.emit()"
     ></app-rail-button>
 
     <app-rail-button
@@ -41,14 +41,14 @@
       (change)="onFileInputChange($event)"
     />
 
-    <app-template-picker (templateSelected)="onTemplateSelected($event)"></app-template-picker>
+    <app-template-picker (templateSelected)="templateSelected.emit($event)"></app-template-picker>
 
     <app-rail-button
       icon="documents"
       label="Documents"
       testId="documents-panel-toggle"
       [active]="activeSidePanel === 'documents'"
-      (clicked)="onDocumentsPanelToggleClicked()"
+      (clicked)="documentsPanelToggle.emit()"
     ></app-rail-button>
   </div>
 

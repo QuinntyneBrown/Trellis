@@ -1,0 +1,12 @@
+@use '../../../shared/styles/tree-row' as shared;
+
+// `<app-document-tree-node>` itself must not generate its own box:
+// `.document-tree-node` below is the actual flex-column item stacking
+// row-then-children, so all sizing/layout lives on it directly.
+:host {
+  display: block;
+}
+
+// Row/chevron/name/action visuals shared with the Explorer's file-tree-node --
+// one style source for both trees, so the panels read identically.
+@include shared.tree-row(document-tree-node);

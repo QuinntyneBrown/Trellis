@@ -1,0 +1,336 @@
+<!doctype html>
+<!--
+  Trellis mock — component style guide.
+
+  Every specimen below is rendered with the exact class names and rules in
+  assets/mock.css (hand-compiled from the component SCSS). The gray page
+  scaffold (headings, specimen boxes, swatch grid) is mock-only chrome and
+  exists in no app component.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Trellis mock — Component style guide</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="assets/mock.css">
+  <style>
+    /* mock-only scaffold */
+    body { background: #f3f4f6; height: auto; }
+    .guide { max-width: 56rem; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+    .guide h1 { font-size: 1.4rem; margin: 0 0 0.25rem; }
+    .guide__intro { color: #6b7280; font-size: 0.9rem; margin: 0 0 2rem; }
+    .guide h2 { font-size: 1.05rem; margin: 2.25rem 0 0.25rem; }
+    .guide__source { color: #6b7280; font-size: 0.78rem; margin: 0 0 0.75rem; }
+    .guide__source code { background: #e5e7eb; padding: 0.1rem 0.3rem; border-radius: 0.25rem; font-size: 0.75rem; }
+    .specimen { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1.25rem; display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; }
+    .specimen--column { flex-direction: column; align-items: stretch; gap: 0.75rem; }
+    .specimen__label { color: #6b7280; font-size: 0.72rem; margin-top: 0.35rem; text-align: center; }
+    .specimen__item { display: flex; flex-direction: column; align-items: center; }
+    /* rail specimens sit on the rail's own background */
+    .specimen--rail { background: #f9fafb; }
+    /* scaffold: force a tooltip visible without hover */
+    .show-tooltip .rail-button__tooltip { opacity: 1; visibility: visible; }
+    /* scaffold: neutralize the picker panel's pop-out positioning */
+    .specimen-static .template-picker__panel { position: static; left: auto; top: auto; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12); }
+    /* scaffold: two panes with the real dividers between them */
+    .specimen-panes { display: flex; height: 110px; border: 1px solid #e5e7eb; border-radius: 0.35rem; overflow: hidden; flex: 1 1 100%; }
+    .specimen-pane { flex: 1 1 auto; background: #ffffff; }
+    .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: 0.6rem; flex: 1 1 100%; }
+    .swatch { display: flex; align-items: center; gap: 0.6rem; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 0.35rem; padding: 0.45rem 0.6rem; }
+    .swatch__chip { width: 1.6rem; height: 1.6rem; border-radius: 0.3rem; border: 1px solid rgba(17, 24, 39, 0.12); flex: 0 0 auto; }
+    .swatch__meta { min-width: 0; }
+    .swatch__hex { font-family: Consolas, monospace; font-size: 0.75rem; }
+    .swatch__use { color: #6b7280; font-size: 0.7rem; }
+  </style>
+</head>
+<body>
+  <div class="guide">
+    <h1>Trellis — component style guide</h1>
+    <p class="guide__intro">
+      Atoms and molecules reverse-engineered from <code>frontend/src/app</code>. Each specimen uses the
+      real component markup and the shared stylesheet; only the gray scaffold around them is mock-only.
+    </p>
+
+    <h2>Color tokens</h2>
+    <p class="guide__source">Collected from every component SCSS file; the app defines no central palette.</p>
+    <div class="specimen">
+      <div class="swatches">
+        <div class="swatch"><span class="swatch__chip" style="background:#111827"></span><span class="swatch__meta"><span class="swatch__hex">#111827</span><br><span class="swatch__use">primary text, tooltip bg</span></span></div>
+        <div class="swatch"><span class="swatch__chip" style="background:#374151"></span><span class="swatch__meta"><span class="swatch__hex">#374151</span><br><span class="swatch__use">dialog label text</span></span></div>
+        <div class="swatch"><span class="swatch__chip" style="background:#4b5563"></span><span class="swatch__meta"><span class="swatch__hex">#4b5563</span><br><span class="swatch__use">rail icon (resting)</span></span></div>
+        <div class="swatch"><span class="swatch__chip" style="background:#6b7280"></span><span class="swatch__meta"><span class="swatch__hex">#6b7280</span><br><span class="swatch__use">secondary text, chevrons</span></span></div>
+        <div class="swatch"><span class="swatch__chip" style="background:#9ca3af"></span><span class="swatch__meta"><span class="swatch__hex">#9ca3af</span><br><span class="swatch__use">connection dot (default)</span></span></div>
+        <div class="swatch"><span class="swatch__chip" style="background:#d1d5db"></span><span class="swatch__meta"><span class="swatch__hex">#d1d5db</span><br><span class="swatch__use">control borders</span></span></div>
+        <div class="swatch"><span class="swatch__chip" style="background:#e5e7eb"></span><span class="swatch__meta"><span class="swatch__hex">#e5e7eb</span><br><span class="swatch__use">hairlines, pane dividers</span></span></div>
+        <div class="swatch"><span class="swatch__chip" style="background:#f3f4f6"></span><span class="swatch__meta"><span class="swatch__hex">#f3f4f6</span><br><span class="swatch__use">button hover fill</span></span></div>
+        <div class="swatch"><span class="swatch__chip" style="background:#f9fafb"></span><span class="swatch__meta"><span class="swatch__hex">#f9fafb</span><br><span class="swatch__use">rail bg, secondary buttons</span></span></div>
+        <div class="swatch"><span class="swatch__chip" style="background:#3b82f6"></span><span class="swatch__meta"><span class="swatch__hex">#3b82f6</span><br><span class="swatch__use">accent: active rail, divider drag, focus, spinner</span></span></div>
+        <div class="swatch"><span class="swatch__chip" style="background:#2563eb"></span><span class="swatch__meta"><span class="swatch__hex">#2563eb</span><br><span class="swatch__use">primary button (hover #1d4ed8)</span></span></div>
+        <div class="swatch"><span class="swatch__chip" style="background:#22c55e"></span><span class="swatch__meta"><span class="swatch__hex">#22c55e</span><br><span class="swatch__use">hub connected</span></span></div>
+        <div class="swatch"><span class="swatch__chip" style="background:#eab308"></span><span class="swatch__meta"><span class="swatch__hex">#eab308</span><br><span class="swatch__use">hub reconnecting</span></span></div>
+        <div class="swatch"><span class="swatch__chip" style="background:#ef4444"></span><span class="swatch__meta"><span class="swatch__hex">#ef4444</span><br><span class="swatch__use">hub disconnected</span></span></div>
+        <div class="swatch"><span class="swatch__chip" style="background:#b91c1c"></span><span class="swatch__meta"><span class="swatch__hex">#b91c1c</span><br><span class="swatch__use">danger button text (#991b1b banner text)</span></span></div>
+        <div class="swatch"><span class="swatch__chip" style="background:#fecaca"></span><span class="swatch__meta"><span class="swatch__hex">#fecaca</span><br><span class="swatch__use">danger border (#fef2f2 fill)</span></span></div>
+        <div class="swatch"><span class="swatch__chip" style="background:#fffffe"></span><span class="swatch__meta"><span class="swatch__hex">#fffffe</span><br><span class="swatch__use">Monaco 'vs' editor bg</span></span></div>
+        <div class="swatch"><span class="swatch__chip" style="background:#237893"></span><span class="swatch__meta"><span class="swatch__hex">#237893</span><br><span class="swatch__use">Monaco 'vs' line numbers</span></span></div>
+      </div>
+    </div>
+
+    <h2>Rail buttons &amp; icons</h2>
+    <p class="guide__source">
+      <code>shared/components/rail-button/</code> — 40&times;40 icon buttons on the 48px activity rail;
+      hand-authored 24&times;24 outline icons (<code>rail-icons.ts</code>). Panel toggles (Explorer, Documents)
+      get the active accent bar; action buttons never do. Hover any specimen for its tooltip.
+    </p>
+    <div class="specimen specimen--rail">
+      <div class="specimen__item">
+        <button type="button" class="rail-button" aria-label="Explorer">
+          <svg class="rail-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 9a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
+            <path d="M8 5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-1" />
+          </svg>
+          <span class="rail-button__tooltip" aria-hidden="true">Explorer</span>
+        </button>
+        <span class="specimen__label">explorer</span>
+      </div>
+      <div class="specimen__item">
+        <button type="button" class="rail-button" aria-label="New">
+          <svg class="rail-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 2h7l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM13 2v5h5" />
+            <path d="M12 14v6M9 17h6" />
+          </svg>
+          <span class="rail-button__tooltip" aria-hidden="true">New</span>
+        </button>
+        <span class="specimen__label">new</span>
+      </div>
+      <div class="specimen__item">
+        <button type="button" class="rail-button" aria-label="Save (Ctrl+S)">
+          <svg class="rail-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 3h11l3 3v15a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" />
+            <path d="M8 3v5h7V3M7 13h10v8H7z" />
+          </svg>
+          <span class="rail-button__tooltip" aria-hidden="true">Save (Ctrl+S)</span>
+        </button>
+        <span class="specimen__label">save</span>
+      </div>
+      <div class="specimen__item">
+        <button type="button" class="rail-button" aria-label="Upload">
+          <svg class="rail-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 15V4M8 8l4-4 4 4" />
+            <path d="M4 17v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+          </svg>
+          <span class="rail-button__tooltip" aria-hidden="true">Upload</span>
+        </button>
+        <span class="specimen__label">upload</span>
+      </div>
+      <div class="specimen__item">
+        <button type="button" class="rail-button" aria-label="Templates">
+          <svg class="rail-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 4h6v6H4zM14 4h6v6H14zM4 14h6v6H4zM14 14h6v6H14z" />
+          </svg>
+          <span class="rail-button__tooltip" aria-hidden="true">Templates</span>
+        </button>
+        <span class="specimen__label">templates</span>
+      </div>
+      <div class="specimen__item">
+        <button type="button" class="rail-button" aria-label="Documents">
+          <svg class="rail-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7z" />
+          </svg>
+          <span class="rail-button__tooltip" aria-hidden="true">Documents</span>
+        </button>
+        <span class="specimen__label">documents</span>
+      </div>
+      <div class="specimen__item">
+        <button type="button" class="rail-button rail-button--active" aria-label="Explorer">
+          <svg class="rail-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 9a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
+            <path d="M8 5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-1" />
+          </svg>
+          <span class="rail-button__tooltip" aria-hidden="true">Explorer</span>
+        </button>
+        <span class="specimen__label">active (panel open)</span>
+      </div>
+      <div class="specimen__item show-tooltip" style="margin-right: 5.5rem;">
+        <button type="button" class="rail-button" aria-label="Save (Ctrl+S)">
+          <svg class="rail-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 3h11l3 3v15a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" />
+            <path d="M8 3v5h7V3M7 13h10v8H7z" />
+          </svg>
+          <span class="rail-button__tooltip" aria-hidden="true">Save (Ctrl+S)</span>
+        </button>
+        <span class="specimen__label">tooltip (hover/focus)</span>
+      </div>
+    </div>
+
+    <h2>Connection status</h2>
+    <p class="guide__source">
+      <code>shared/components/connection-status/</code> — a 0.65rem dot pinned to the bottom of the rail;
+      the state word stays in the DOM visually hidden (E2E/accessibility contract).
+    </p>
+    <div class="specimen">
+      <div class="specimen__item">
+        <span class="connection-status-indicator connection-status-indicator--connected"><span class="connection-status">connected</span></span>
+        <span class="specimen__label">connected</span>
+      </div>
+      <div class="specimen__item">
+        <span class="connection-status-indicator connection-status-indicator--reconnecting"><span class="connection-status">reconnecting</span></span>
+        <span class="specimen__label">reconnecting</span>
+      </div>
+      <div class="specimen__item">
+        <span class="connection-status-indicator connection-status-indicator--disconnected"><span class="connection-status">disconnected</span></span>
+        <span class="specimen__label">disconnected</span>
+      </div>
+    </div>
+
+    <h2>Loading spinner</h2>
+    <p class="guide__source"><code>shared/components/loading-spinner/</code> — 0.7s rotation, accent top arc.</p>
+    <div class="specimen">
+      <div class="loading-spinner" role="status" aria-live="polite">
+        <span class="loading-spinner__circle"></span>
+        <span class="loading-spinner__label">Loading…</span>
+      </div>
+    </div>
+
+    <h2>Error banner</h2>
+    <p class="guide__source">
+      <code>shared/components/error-banner/</code> — inline in the Explorer panel; fixed top-center toast
+      when hosting a disk-save failure (<code>.editor-page__disk-save-error</code>).
+    </p>
+    <div class="specimen specimen--column">
+      <div class="error-banner" role="alert"><span class="error-banner__message">Could not save "order-flow.puml".</span></div>
+    </div>
+
+    <h2>Buttons</h2>
+    <p class="guide__source">Row actions from <code>document-list-item</code> / <code>file-tree-node</code>, dialog buttons from <code>save-dialog</code>, panel buttons from <code>explorer-panel</code>.</p>
+    <div class="specimen">
+      <div class="specimen__item"><button type="button" class="document-list-item__action">Open</button><span class="specimen__label">row action</span></div>
+      <div class="specimen__item"><button type="button" class="document-list-item__action document-list-item__action--danger">Delete</button><span class="specimen__label">row action, danger</span></div>
+      <div class="specimen__item"><button type="button" class="file-tree-node__action">New File</button><span class="specimen__label">tree action</span></div>
+      <div class="specimen__item"><button type="button" class="file-tree-node__action file-tree-node__action--danger">Delete</button><span class="specimen__label">tree action, danger</span></div>
+      <div class="specimen__item"><button type="button" class="save-dialog__button save-dialog__button--cancel">Cancel</button><span class="specimen__label">dialog secondary</span></div>
+      <div class="specimen__item"><button type="button" class="save-dialog__button save-dialog__button--confirm">Save</button><span class="specimen__label">dialog primary</span></div>
+      <div class="specimen__item"><button type="button" class="explorer-panel__open-folder" style="margin: 0;">Open Folder</button><span class="specimen__label">explorer panel</span></div>
+    </div>
+
+    <h2>Document list item</h2>
+    <p class="guide__source">
+      <code>features/documents/document-list-item/</code> — shared by the Documents page and the Documents
+      side panel. The timestamp renders the API's raw ISO-8601 string (no date pipe).
+    </p>
+    <div class="specimen specimen--column">
+      <ul class="documents-list-page__list" style="max-width: 38rem;">
+        <li class="document-list-item" data-testid="document-item">
+          <div class="document-list-item__details">
+            <span class="document-list-item__name">Order fulfillment sequence</span>
+            <span class="document-list-item__updated-at">Updated 2026-06-30T14:41:09.3021147+00:00</span>
+          </div>
+          <div class="document-list-item__actions">
+            <button type="button" class="document-list-item__action">Open</button>
+            <button type="button" class="document-list-item__action">Rename</button>
+            <button type="button" class="document-list-item__action document-list-item__action--danger">Delete</button>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <h2>File tree rows</h2>
+    <p class="guide__source">
+      <code>features/explorer/file-tree-node/</code> — indent = 8px + 16px&times;depth; CSS-triangle chevron
+      rotates 90&deg; when expanded; the root row has no Delete; a per-row spinner shows while a
+      directory's children load.
+    </p>
+    <div class="specimen specimen--column" style="padding: 0.5rem 0;">
+      <div>
+        <div class="file-tree-node__row file-tree-node__row--directory" style="padding-left: 8px;" aria-expanded="true">
+          <span class="file-tree-node__chevron file-tree-node__chevron--expanded" aria-hidden="true"></span>
+          <span class="file-tree-node__name">diagrams</span>
+          <div class="file-tree-node__actions">
+            <button type="button" class="file-tree-node__action">New File</button>
+            <button type="button" class="file-tree-node__action">New Folder</button>
+          </div>
+        </div>
+        <div class="file-tree-node__row file-tree-node__row--directory" style="padding-left: 24px;" aria-expanded="false">
+          <span class="file-tree-node__chevron" aria-hidden="true"></span>
+          <span class="file-tree-node__name">sequences</span>
+          <div class="file-tree-node__actions">
+            <button type="button" class="file-tree-node__action">New File</button>
+            <button type="button" class="file-tree-node__action">New Folder</button>
+            <button type="button" class="file-tree-node__action file-tree-node__action--danger">Delete</button>
+          </div>
+        </div>
+        <div class="file-tree-node__row file-tree-node__row--directory" style="padding-left: 24px;" aria-expanded="true">
+          <span class="file-tree-node__chevron file-tree-node__chevron--expanded" aria-hidden="true"></span>
+          <span class="file-tree-node__name">c4</span>
+          <span class="file-tree-node__spinner" aria-hidden="true"></span>
+          <div class="file-tree-node__actions">
+            <button type="button" class="file-tree-node__action">New File</button>
+            <button type="button" class="file-tree-node__action">New Folder</button>
+            <button type="button" class="file-tree-node__action file-tree-node__action--danger">Delete</button>
+          </div>
+        </div>
+        <div class="file-tree-node__row file-tree-node__row--file" style="padding-left: 40px;">
+          <span class="file-tree-node__chevron-spacer" aria-hidden="true"></span>
+          <span class="file-tree-node__name">order-flow.puml</span>
+          <div class="file-tree-node__actions">
+            <button type="button" class="file-tree-node__action file-tree-node__action--danger">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2>Template picker panel</h2>
+    <p class="guide__source">
+      <code>features/templates/template-picker/</code> — in the app this pops out to the right of the rail
+      (position neutralized here). Options come from <code>GET /api/templates</code>.
+    </p>
+    <div class="specimen specimen-static">
+      <div class="template-picker__panel" data-testid="template-picker">
+        <button type="button" class="template-picker__option"><span class="template-picker__option-name">Blank</span><span class="template-picker__option-category">General</span></button>
+        <button type="button" class="template-picker__option"><span class="template-picker__option-name">Sequence Diagram</span><span class="template-picker__option-category">General</span></button>
+        <button type="button" class="template-picker__option"><span class="template-picker__option-name">Class Diagram</span><span class="template-picker__option-category">General</span></button>
+        <button type="button" class="template-picker__option"><span class="template-picker__option-name">C4 - Context</span><span class="template-picker__option-category">C4</span></button>
+        <button type="button" class="template-picker__option"><span class="template-picker__option-name">C4 - Container</span><span class="template-picker__option-category">C4</span></button>
+        <button type="button" class="template-picker__option"><span class="template-picker__option-name">C4 - Component</span><span class="template-picker__option-category">C4</span></button>
+      </div>
+    </div>
+
+    <h2>Save dialog panel</h2>
+    <p class="guide__source">
+      <code>features/editor/save-dialog/</code> — shown here without its fixed full-screen backdrop
+      (see <a href="editor-save-dialog.html">editor-save-dialog.html</a> for the modal in place).
+    </p>
+    <div class="specimen">
+      <div class="save-dialog__panel" style="box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);">
+        <h2 class="save-dialog__title" style="margin: 0 0 0.25rem; font-size: 1rem;">Save document</h2>
+        <label class="save-dialog__label" for="specimen-save-name">Name</label>
+        <input id="specimen-save-name" type="text" class="save-dialog__input" value="Untitled diagram" />
+        <div class="save-dialog__actions">
+          <button type="button" class="save-dialog__button save-dialog__button--cancel">Cancel</button>
+          <button type="button" class="save-dialog__button save-dialog__button--confirm">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <h2>Resize dividers</h2>
+    <p class="guide__source">
+      <code>features/editor/resize-divider/</code> (editor/preview, ratio-based) and
+      <code>pixel-resize-divider/</code> (side panel, pixel-based) — a 1px hairline with an invisible 9px
+      grab area; accent-colored on hover/drag; double-click resets. Hover the middle of each seam.
+    </p>
+    <div class="specimen">
+      <div class="specimen-panes">
+        <div class="specimen-pane"></div>
+        <div class="resize-divider" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Resize editor and preview panes">
+          <div class="resize-divider__grab-area"></div>
+        </div>
+        <div class="specimen-pane"></div>
+        <div class="resize-divider resize-divider--active" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Resize editor and preview panes">
+          <div class="resize-divider__grab-area"></div>
+        </div>
+        <div class="specimen-pane"></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

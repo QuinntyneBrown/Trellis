@@ -9,35 +9,46 @@ Angular app
   |-- REST over /api for documents and templates
   |-- SignalR over /hubs/plantuml for render requests
 
-ASP.NET Core API
-  |-- Controllers for document and template APIs
+ASP.NET Core API (single Trellis.Api project)
+  |-- Controllers for document and template APIs (EF Core work inline)
   |-- SignalR hub for render requests
-  |-- Application layer commands and queries
-  |-- Infrastructure layer for SQLite, template catalog, and PlantUML process execution
+  |-- Persistence folder for the SQLite EF Core context and migrations
+  |-- PlantUml folder for the renderer and its options
+  |-- Templates folder for the vendored starter-template catalog
 
 Vendored renderer assets
   |-- plantuml.jar
   |-- C4-PlantUML include files
-  |-- starter templates and manifest
+  |-- starter templates
 ```
 
-## Backend Layers
+## Backend Structure
 
-The backend follows a layered structure:
+The backend is a single `Trellis.Api` project, deliberately kept as plain
+controllers + services (no mediator, no separate Application/Domain/
+Infrastructure projects — the app has one entity and nine operations):
 
-- `Trellis.Api` owns HTTP controllers, SignalR hubs, API contracts, exception handling, configuration, and startup.
-- `Trellis.Application` owns commands, queries, validation, application models, and interfaces.
-- `Trellis.Domain` owns core entities and domain primitives.
-- `Trellis.Infrastructure` owns Entity Framework Core persistence, the template catalog, time provider, and PlantUML renderer implementation.
-
-API endpoints and hubs communicate with the application layer through MediatR. Infrastructure implementations are registered through dependency injection and are consumed behind application interfaces.
+- `Controllers` own the HTTP surface; each action is a few lines of EF Core
+  work against `ApplicationDbContext` directly. Request validation is plain
+  DataAnnotations on the `Contracts` request records; not-found is a null
+  check returning 404.
+- `Hubs/PlantUmlHub` owns the render path and is its single catch-all
+  boundary; it injects `IPlantUmlRenderer` directly, with two inline guards
+  for empty/oversized source.
+- `Domain/PlantUmlDocument` is both the persisted entity and the JSON shape
+  the document endpoints return.
+- `Persistence` holds the EF Core context, entity configuration, migrations,
+  and the startup initialiser; `PlantUml` holds the renderer; `Templates`
+  holds the catalog (six fixed entries, files read eagerly at construction).
+- `IPlantUmlRenderer` is the one deliberate seam, so integration tests can
+  substitute a fake renderer and run without a JVM.
 
 ## Rendering Flow
 
 1. The frontend submits PlantUML source to the SignalR hub method `RenderDiagram`.
-2. The hub dispatches a `RenderDiagramCommand`.
-3. The application layer validates the request and calls the renderer abstraction.
-4. The infrastructure renderer starts the vendored PlantUML JAR through the configured Java executable.
+2. The hub validates the source inline (non-empty, at most 100k characters).
+3. The hub calls the renderer with the connection's abort token, so a render for a disconnected client is cancelled and its process killed.
+4. The renderer starts the vendored PlantUML JAR through the configured Java executable.
 5. PlantUML receives source through standard input and returns SVG through standard output.
 6. The backend returns either SVG content or a structured failure message to the frontend.
 
@@ -51,9 +62,10 @@ Documents are stored in SQLite through Entity Framework Core. The default connec
 
 The Angular application is organized around:
 
-- `core` services, models, resolvers, and routing infrastructure.
-- `features/editor` for the Monaco editor, toolbar, save dialog, and diagram preview.
-- `features/documents` for listing, renaming, opening, and managing saved diagrams.
+- `core` services and models (HTTP, SignalR, Monaco loading, layout preferences, File System Access).
+- `features/editor` for the Monaco editor, toolbar rail, save dialog, resize divider, and diagram preview. The editor page owns document loading directly from the URL's `documentId` — there is no route resolver or custom route-reuse strategy.
+- `features/documents` for the saved-documents side panel (list, open, rename, delete).
+- `features/explorer` for browsing and editing local folders via the File System Access API.
 - `features/templates` for selecting starter diagrams.
 - `shared` components for reusable status, loading, and error UI.
 

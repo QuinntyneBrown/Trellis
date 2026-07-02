@@ -22,7 +22,6 @@ export class DiagramHubService {
 
   readonly connectionState = signal<HubConnectionState>('disconnected');
   readonly renderResult = signal<RenderResult | null>(null);
-  readonly renderError = signal<string | null>(null);
   readonly isRendering = signal<boolean>(false);
 
   constructor() {
@@ -55,8 +54,8 @@ export class DiagramHubService {
    * never rejects for ordinary business-level failures (bad syntax, empty
    * input) -- those come back as a resolved RenderResult with isSuccess
    * false. A rejection here therefore means an actual connection-level
-   * problem, which is reported through renderError instead of renderResult
-   * so the preview pane's render-sequence counter is not incremented for it.
+   * problem, which is funneled into renderResult as a failed result so the
+   * preview pane surfaces it exactly like any other render failure.
    */
   async render(source: string): Promise<void> {
     this.isRendering.set(true);
@@ -64,7 +63,11 @@ export class DiagramHubService {
       const result = await this.connection.invoke<RenderResult>('RenderDiagram', source);
       this.renderResult.set(result);
     } catch (error) {
-      this.renderError.set(error instanceof Error ? error.message : 'Failed to reach the render service.');
+      this.renderResult.set({
+        isSuccess: false,
+        svg: null,
+        errorMessage: error instanceof Error ? error.message : 'Failed to reach the render service.',
+      });
     } finally {
       this.isRendering.set(false);
     }

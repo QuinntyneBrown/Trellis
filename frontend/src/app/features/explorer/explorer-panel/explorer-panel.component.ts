@@ -6,19 +6,21 @@ import { OpenedDiskFile } from '../../../core/models/opened-disk-file.model';
 import { FileSystemAccessService } from '../../../core/services/file-system-access.service';
 import { ErrorBannerComponent } from '../../../shared/components/error-banner/error-banner.component';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
-import { CreateEntryEvent } from '../file-tree-node/create-entry-event.model';
-import { DeleteEntryEvent } from '../file-tree-node/delete-entry-event.model';
-import { FileTreeNodeComponent } from '../file-tree-node/file-tree-node.component';
+import {
+  CreateEntryEvent,
+  DeleteEntryEvent,
+  FileTreeNodeComponent,
+} from '../file-tree-node/file-tree-node.component';
 
 /**
- * Same directories-before-files, then case-insensitive-alphabetical
- * comparator FileSystemAccessService.listChildren() itself sorts with --
- * reused here (rather than reinvented) for the duplicate-name check inside
- * createEntry, since a case-insensitive match against listChildren's own
- * output should agree with listChildren's own notion of "same name".
+ * Case-insensitive but accent-SENSITIVE name equality for the
+ * duplicate-name pre-check inside createEntry: "readme.md" duplicates
+ * "README.md", but "resume.puml" is a legitimately different name from
+ * "résumé.puml" (sensitivity 'base' would wrongly fold the accents away
+ * and reject it).
  */
 function sameNameCaseInsensitive(a: string, b: string): boolean {
-  return a.localeCompare(b, undefined, { sensitivity: 'base' }) === 0;
+  return a.localeCompare(b, undefined, { sensitivity: 'accent' }) === 0;
 }
 
 /**
@@ -48,11 +50,12 @@ export class ExplorerPanelComponent implements OnInit {
   /** Computed once -- the browser either has this API or it doesn't, for the whole session. */
   readonly isSupported = this.fileSystemAccessService.isSupported();
 
-  // Custom equal:()=>false so re-.set()-ing the SAME mutated-in-place root
-  // object reference still notifies subscribers -- toggling expand/loading
-  // state mutates node objects in place, then re-sets the same root
-  // reference, avoiding deep-copy gymnastics for a recursive tree structure.
-  readonly rootNode = signal<ExplorerTreeNode | null>(null, { equal: () => false });
+  // A plain mutable field, mutated in place: zone.js's default change
+  // detection re-checks the tree bindings after every event anyway, so no
+  // signal/immutable-update machinery is needed. NOTE: this couples the
+  // tree to zone.js CD -- an OnPush/zoneless migration would need to
+  // reintroduce signals or immutable updates here.
+  rootNode: ExplorerTreeNode | null = null;
   readonly isLoading = signal(false);
   readonly errorMessage = signal<string | null>(null);
   /** True when a previously-opened root was restored from IndexedDB but its permission has lapsed to 'prompt'. */
@@ -92,7 +95,7 @@ export class ExplorerPanelComponent implements OnInit {
       // than silently calling requestPermission with no user gesture to
       // satisfy the browser, or silently falling back to the Open Folder
       // button and hiding that a previously chosen folder exists.
-      this.rootNode.set(unloadedRootNode(handle));
+      this.rootNode = unloadedRootNode(handle);
       this.needsReconnect.set(true);
     } finally {
       this.isLoading.set(false);
@@ -119,7 +122,7 @@ export class ExplorerPanelComponent implements OnInit {
   }
 
   async onReconnectClicked(): Promise<void> {
-    const node = this.rootNode();
+    const node = this.rootNode;
     if (!node) {
       return;
     }
@@ -147,22 +150,15 @@ export class ExplorerPanelComponent implements OnInit {
 
     if (node.expanded && node.children === undefined) {
       void this.loadChildren(node);
-      return;
     }
-
-    this.rootNode.set(this.rootNode());
   }
 
   onFileClicked(node: ExplorerTreeNode): void {
     void this.openFile(node);
   }
 
-  onCreateFile(event: CreateEntryEvent): void {
-    void this.createEntry(event.parent, event.name, 'file');
-  }
-
-  onCreateFolder(event: CreateEntryEvent): void {
-    void this.createEntry(event.parent, event.name, 'directory');
+  onCreateEntry(event: CreateEntryEvent): void {
+    void this.createEntry(event.parent, event.name, event.kind);
   }
 
   onDeleteEntry(event: DeleteEntryEvent): void {
@@ -173,14 +169,14 @@ export class ExplorerPanelComponent implements OnInit {
   private async populateRoot(handle: FileSystemDirectoryHandle): Promise<void> {
     try {
       const children = await this.fileSystemAccessService.listChildren(handle);
-      this.rootNode.set({
+      this.rootNode = {
         name: handle.name,
         kind: 'directory',
         handle,
         children: children.map(toUnloadedNode),
         loadState: 'loaded',
         expanded: true,
-      });
+      };
     } catch {
       this.errorMessage.set(`Could not read the contents of "${handle.name}".`);
     }
@@ -188,7 +184,6 @@ export class ExplorerPanelComponent implements OnInit {
 
   private async loadChildren(node: ExplorerTreeNode): Promise<void> {
     node.loadState = 'loading';
-    this.rootNode.set(this.rootNode());
 
     try {
       const children = await this.fileSystemAccessService.listChildren(node.handle as FileSystemDirectoryHandle);
@@ -198,8 +193,6 @@ export class ExplorerPanelComponent implements OnInit {
       node.loadState = 'error';
       this.errorMessage.set(`Could not read the contents of "${node.name}".`);
     }
-
-    this.rootNode.set(this.rootNode());
   }
 
   /**

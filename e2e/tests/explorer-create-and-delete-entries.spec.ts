@@ -1,21 +1,12 @@
 import { test, expect } from '@playwright/test';
-import { EditorPage } from '../pom/pages/editor.page';
-import { installFakeDirectoryPicker, readOpfsFile, seedOpfsFixtureTree, OPFS_ROOT_DIR_NAME } from '../utils/opfs-fixture';
+import { openExplorerWithTree, readOpfsFile, OPFS_ROOT_DIR_NAME } from '../utils/opfs-fixture';
 import { normalizeEol } from '../utils/normalize-eol';
 
 const DIAGRAM_CONTENT = ['@startuml', 'actor User', 'User -> System : browse', '@enduml'].join('\n');
 
 test.describe('creating and deleting Explorer files/folders', () => {
   test('creating a file directly in the root adds a row and writes an empty file to disk', async ({ page }) => {
-    await installFakeDirectoryPicker(page);
-
-    const editorPage = new EditorPage(page);
-    await editorPage.goto();
-    await editorPage.waitForAppReady();
-    await seedOpfsFixtureTree(page, { 'existing.puml': DIAGRAM_CONTENT });
-
-    await editorPage.explorerPanel.open();
-    await editorPage.explorerPanel.openFolder();
+    const editorPage = await openExplorerWithTree(page, { 'existing.puml': DIAGRAM_CONTENT });
     await expect(editorPage.explorerPanel.row('existing.puml')).toBeVisible();
 
     await editorPage.explorerPanel.newFile(OPFS_ROOT_DIR_NAME, 'new-file.puml');
@@ -29,15 +20,7 @@ test.describe('creating and deleting Explorer files/folders', () => {
   test('creating a folder then a file inside it auto-expands the folder and nests the new file', async ({
     page,
   }) => {
-    await installFakeDirectoryPicker(page);
-
-    const editorPage = new EditorPage(page);
-    await editorPage.goto();
-    await editorPage.waitForAppReady();
-    await seedOpfsFixtureTree(page, {});
-
-    await editorPage.explorerPanel.open();
-    await editorPage.explorerPanel.openFolder();
+    const editorPage = await openExplorerWithTree(page, {});
 
     await editorPage.explorerPanel.newFolder(OPFS_ROOT_DIR_NAME, 'new-folder');
     await expect(editorPage.explorerPanel.row('new-folder')).toBeVisible();
@@ -53,15 +36,7 @@ test.describe('creating and deleting Explorer files/folders', () => {
   });
 
   test('deleting a file removes its row and the underlying OPFS file', async ({ page }) => {
-    await installFakeDirectoryPicker(page);
-
-    const editorPage = new EditorPage(page);
-    await editorPage.goto();
-    await editorPage.waitForAppReady();
-    await seedOpfsFixtureTree(page, { 'to-delete.puml': DIAGRAM_CONTENT });
-
-    await editorPage.explorerPanel.open();
-    await editorPage.explorerPanel.openFolder();
+    const editorPage = await openExplorerWithTree(page, { 'to-delete.puml': DIAGRAM_CONTENT });
     await expect(editorPage.explorerPanel.row('to-delete.puml')).toBeVisible();
 
     await editorPage.explorerPanel.deleteEntry('to-delete.puml');
@@ -71,12 +46,7 @@ test.describe('creating and deleting Explorer files/folders', () => {
   });
 
   test('deleting a non-empty folder recursively removes it and everything nested inside it', async ({ page }) => {
-    await installFakeDirectoryPicker(page);
-
-    const editorPage = new EditorPage(page);
-    await editorPage.goto();
-    await editorPage.waitForAppReady();
-    await seedOpfsFixtureTree(page, {
+    const editorPage = await openExplorerWithTree(page, {
       'folder-to-delete': {
         'inner.puml': DIAGRAM_CONTENT,
         'nested-dir': {
@@ -84,9 +54,6 @@ test.describe('creating and deleting Explorer files/folders', () => {
         },
       },
     });
-
-    await editorPage.explorerPanel.open();
-    await editorPage.explorerPanel.openFolder();
     await editorPage.explorerPanel.toggleExpand('folder-to-delete');
     await expect(editorPage.explorerPanel.row('inner.puml')).toBeVisible();
     await expect(editorPage.explorerPanel.row('nested-dir')).toBeVisible();
@@ -104,15 +71,7 @@ test.describe('creating and deleting Explorer files/folders', () => {
   test('creating a file whose name already exists as a sibling shows an error and creates no duplicate', async ({
     page,
   }) => {
-    await installFakeDirectoryPicker(page);
-
-    const editorPage = new EditorPage(page);
-    await editorPage.goto();
-    await editorPage.waitForAppReady();
-    await seedOpfsFixtureTree(page, { 'existing.puml': DIAGRAM_CONTENT });
-
-    await editorPage.explorerPanel.open();
-    await editorPage.explorerPanel.openFolder();
+    const editorPage = await openExplorerWithTree(page, { 'existing.puml': DIAGRAM_CONTENT });
     await expect(editorPage.explorerPanel.row('existing.puml')).toBeVisible();
 
     await editorPage.explorerPanel.newFile(OPFS_ROOT_DIR_NAME, 'existing.puml');
@@ -125,15 +84,7 @@ test.describe('creating and deleting Explorer files/folders', () => {
   });
 
   test('deleting the file currently open in the editor resets the editor to its blank state', async ({ page }) => {
-    await installFakeDirectoryPicker(page);
-
-    const editorPage = new EditorPage(page);
-    await editorPage.goto();
-    await editorPage.waitForAppReady();
-    await seedOpfsFixtureTree(page, { 'open-then-delete.puml': DIAGRAM_CONTENT });
-
-    await editorPage.explorerPanel.open();
-    await editorPage.explorerPanel.openFolder();
+    const editorPage = await openExplorerWithTree(page, { 'open-then-delete.puml': DIAGRAM_CONTENT });
     await editorPage.explorerPanel.openFile('open-then-delete.puml');
     await expect
       .poll(async () => normalizeEol(await editorPage.editor.getValue()))
@@ -157,15 +108,7 @@ test.describe('creating and deleting Explorer files/folders', () => {
     // would silently stop matching the moment anything refreshed the open
     // file's parent directory, leaving the editor showing stale content
     // against a handle for a file that no longer exists.
-    await installFakeDirectoryPicker(page);
-
-    const editorPage = new EditorPage(page);
-    await editorPage.goto();
-    await editorPage.waitForAppReady();
-    await seedOpfsFixtureTree(page, { 'open-me.puml': DIAGRAM_CONTENT });
-
-    await editorPage.explorerPanel.open();
-    await editorPage.explorerPanel.openFolder();
+    const editorPage = await openExplorerWithTree(page, { 'open-me.puml': DIAGRAM_CONTENT });
     await editorPage.explorerPanel.openFile('open-me.puml');
     await expect
       .poll(async () => normalizeEol(await editorPage.editor.getValue()))
@@ -193,15 +136,7 @@ test.describe('creating and deleting Explorer files/folders', () => {
     // confirm must never ALSO fire the row's own (click)-driven fileClicked
     // -- which would be observable as this unrelated file's content loading
     // into the editor even though nothing was ever opened.
-    await installFakeDirectoryPicker(page);
-
-    const editorPage = new EditorPage(page);
-    await editorPage.goto();
-    await editorPage.waitForAppReady();
-    await seedOpfsFixtureTree(page, { 'do-not-open.puml': DIAGRAM_CONTENT });
-
-    await editorPage.explorerPanel.open();
-    await editorPage.explorerPanel.openFolder();
+    const editorPage = await openExplorerWithTree(page, { 'do-not-open.puml': DIAGRAM_CONTENT });
     await expect(editorPage.explorerPanel.row('do-not-open.puml')).toBeVisible();
 
     await editorPage.explorerPanel.deleteEntry('do-not-open.puml', { accept: false });

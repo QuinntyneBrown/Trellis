@@ -1,21 +1,13 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{3BDA4042-AF2C-4A3F-B132-65C69E8CA848}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trellis.Domain", "src\Trellis.Domain\Trellis.Domain.csproj", "{BA38AA49-58C1-49BB-BCE2-F5582B0F6D38}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trellis.Application", "src\Trellis.Application\Trellis.Application.csproj", "{6B7E7AAF-323E-4B85-A4B6-93734FC364CC}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trellis.Infrastructure", "src\Trellis.Infrastructure\Trellis.Infrastructure.csproj", "{EB9A4222-2451-4D35-902D-3533EDEC0E2A}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trellis.Api", "src\Trellis.Api\Trellis.Api.csproj", "{60F29D82-CB41-4FB0-8E0A-6C023815F5CA}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{DB692D16-C524-4E99-8FF8-D131229F234B}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trellis.Application.Tests", "tests\Trellis.Application.Tests\Trellis.Application.Tests.csproj", "{338BD1C3-E20B-426B-9A26-74C8CBD417BD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trellis.Api.IntegrationTests", "tests\Trellis.Api.IntegrationTests\Trellis.Api.IntegrationTests.csproj", "{EF23DEE8-756A-4067-A500-F05FB81FAE78}"
 EndProject
@@ -28,37 +20,17 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{BA38AA49-58C1-49BB-BCE2-F5582B0F6D38}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BA38AA49-58C1-49BB-BCE2-F5582B0F6D38}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BA38AA49-58C1-49BB-BCE2-F5582B0F6D38}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BA38AA49-58C1-49BB-BCE2-F5582B0F6D38}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6B7E7AAF-323E-4B85-A4B6-93734FC364CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6B7E7AAF-323E-4B85-A4B6-93734FC364CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6B7E7AAF-323E-4B85-A4B6-93734FC364CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6B7E7AAF-323E-4B85-A4B6-93734FC364CC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{EB9A4222-2451-4D35-902D-3533EDEC0E2A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EB9A4222-2451-4D35-902D-3533EDEC0E2A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EB9A4222-2451-4D35-902D-3533EDEC0E2A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EB9A4222-2451-4D35-902D-3533EDEC0E2A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{60F29D82-CB41-4FB0-8E0A-6C023815F5CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{60F29D82-CB41-4FB0-8E0A-6C023815F5CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{60F29D82-CB41-4FB0-8E0A-6C023815F5CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{60F29D82-CB41-4FB0-8E0A-6C023815F5CA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{338BD1C3-E20B-426B-9A26-74C8CBD417BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{338BD1C3-E20B-426B-9A26-74C8CBD417BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{338BD1C3-E20B-426B-9A26-74C8CBD417BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{338BD1C3-E20B-426B-9A26-74C8CBD417BD}.Release|Any CPU.Build.0 = Release|Any CPU
 		{EF23DEE8-756A-4067-A500-F05FB81FAE78}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{EF23DEE8-756A-4067-A500-F05FB81FAE78}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EF23DEE8-756A-4067-A500-F05FB81FAE78}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EF23DEE8-756A-4067-A500-F05FB81FAE78}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{BA38AA49-58C1-49BB-BCE2-F5582B0F6D38} = {3BDA4042-AF2C-4A3F-B132-65C69E8CA848}
-		{6B7E7AAF-323E-4B85-A4B6-93734FC364CC} = {3BDA4042-AF2C-4A3F-B132-65C69E8CA848}
-		{EB9A4222-2451-4D35-902D-3533EDEC0E2A} = {3BDA4042-AF2C-4A3F-B132-65C69E8CA848}
 		{60F29D82-CB41-4FB0-8E0A-6C023815F5CA} = {3BDA4042-AF2C-4A3F-B132-65C69E8CA848}
-		{338BD1C3-E20B-426B-9A26-74C8CBD417BD} = {DB692D16-C524-4E99-8FF8-D131229F234B}
 		{EF23DEE8-756A-4067-A500-F05FB81FAE78} = {DB692D16-C524-4E99-8FF8-D131229F234B}
 	EndGlobalSection
 EndGlobal

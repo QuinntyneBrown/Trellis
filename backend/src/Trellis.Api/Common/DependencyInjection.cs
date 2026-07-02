@@ -1,9 +1,15 @@
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using Trellis.Api.ErrorHandling;
+using Trellis.Api.Persistence;
+using Trellis.Api.Persistence.Initialisation;
+using Trellis.Api.PlantUml;
+using Trellis.Api.Templates;
 
 namespace Trellis.Api.Common;
 
 /// <summary>
-/// Registers Api layer (presentation) services with the dependency injection container.
+/// Registers every service the application needs with the dependency injection container.
 /// </summary>
 public static class DependencyInjection
 {
@@ -13,13 +19,14 @@ public static class DependencyInjection
     public const string CorsPolicyName = "TrellisCors";
 
     /// <summary>
-    /// Wires controllers, Swagger, the custom exception handler, SignalR (with a raised
-    /// maximum receive message size) and the CORS policy required by the frontend.
+    /// Wires controllers, Swagger, the exception handler, SignalR (with a raised
+    /// maximum receive message size), CORS, the EF Core SQLite database context,
+    /// the PlantUML renderer and the template catalog.
     /// </summary>
     /// <param name="services">The service collection to add registrations to.</param>
     /// <param name="configuration">The application configuration.</param>
     /// <returns>The same service collection, for chaining.</returns>
-    public static IServiceCollection AddApiServices(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddTrellisServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddControllers();
         services.AddEndpointsApiExplorer();
@@ -52,6 +59,50 @@ public static class DependencyInjection
 
         services.AddHealthChecks();
 
+        var connectionString = ResolveToAbsoluteConnectionString(
+            configuration.GetConnectionString("DefaultConnection") ?? "Data Source=App_Data/trellis.db");
+
+        services.AddDbContext<ApplicationDbContext>(options => options.UseSqlite(connectionString));
+        services.AddScoped<ApplicationDbContextInitialiser>();
+
+        services.Configure<PlantUmlOptions>(configuration.GetSection(PlantUmlOptions.SectionName));
+        services.AddSingleton<IPlantUmlRenderer, PlantUmlRenderer>();
+        services.AddSingleton<TemplateCatalog>();
+
         return services;
+    }
+
+    /// <summary>
+    /// Rewrites a SQLite connection string so its Data Source path is always absolute,
+    /// anchored at <see cref="AppContext.BaseDirectory"/>, and ensures the containing
+    /// directory exists. This avoids a common pitfall where a relative SQLite path is
+    /// resolved by the driver against the process's current working directory (which
+    /// varies between `dotnet run`, a published exe, and a test host) rather than the
+    /// application's own base directory.
+    /// </summary>
+    /// <param name="connectionString">The raw connection string from configuration.</param>
+    /// <returns>The connection string with an absolute Data Source path.</returns>
+    private static string ResolveToAbsoluteConnectionString(string connectionString)
+    {
+        var builder = new SqliteConnectionStringBuilder(connectionString);
+
+        // In-memory databases have no path to anchor.
+        if (builder.Mode == SqliteOpenMode.Memory || string.IsNullOrWhiteSpace(builder.DataSource) || builder.DataSource == ":memory:")
+        {
+            return connectionString;
+        }
+
+        if (!Path.IsPathRooted(builder.DataSource))
+        {
+            builder.DataSource = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, builder.DataSource));
+        }
+
+        var directory = Path.GetDirectoryName(builder.DataSource);
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        return builder.ConnectionString;
     }
 }

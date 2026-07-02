@@ -1,17 +1,13 @@
 import { Injectable } from '@angular/core';
 
 const STORAGE_KEY = 'trellis.editorLayout.v1';
-const DEFAULT_EDITOR_PANE_RATIO = 0.5;
-const DEFAULT_SIDE_PANEL_WIDTH_PX = 260;
 
 interface StoredEditorLayout {
   editorPaneRatio: number;
   /**
    * Additive field: older stored blobs (from before the Explorer/Documents
-   * side panel existed) simply lack this key, and getSidePanelWidthPx()
-   * falls back to the default for them exactly like a corrupt/out-of-range
-   * value -- no STORAGE_KEY version bump needed for this to stay backward
-   * compatible.
+   * side panel existed) simply lack this key and read back as null -- no
+   * STORAGE_KEY version bump needed for this to stay backward compatible.
    */
   sidePanelWidthPx?: number;
 }
@@ -21,14 +17,10 @@ interface StoredEditorLayout {
  * and the Explorer/Documents side panel width) across sessions via
  * localStorage, both fields sharing the one STORAGE_KEY JSON blob.
  *
- * Deliberately does NOT know about MIN_EDITOR_PANE_RATIO/MAX_EDITOR_PANE_RATIO
- * or MIN/MAX_SIDE_PANEL_WIDTH_PX -- those are UX-level bounds owned by the
- * resize-divider/editor-page layer, applied via clampRatio/clampWidthPx when
- * seeding the editor page's signals from this service's getters. This
- * service only knows much looser structural invariants ("a ratio is a
- * finite number strictly between 0 and 1", "a width is a finite number
- * greater than 0"), and falls back to the relevant default for anything
- * else (missing key, corrupt JSON, or an out-of-range value).
+ * Deliberately dumb storage: getters return the stored number or null
+ * (missing key, corrupt JSON, or a non-finite value from a hand-edited
+ * blob). Defaults and UX-level min/max bounds are owned by the editor page,
+ * which seeds its signals with clamp(stored ?? DEFAULT, MIN, MAX).
  *
  * Every localStorage access is wrapped in try/catch: private-browsing modes
  * (and storage-quota exhaustion) can make getItem/setItem throw, and that
@@ -38,24 +30,16 @@ interface StoredEditorLayout {
   providedIn: 'root',
 })
 export class EditorLayoutPreferencesService {
-  getEditorPaneRatio(): number {
-    const ratio = this.readStored()?.editorPaneRatio;
-    if (typeof ratio !== 'number' || !Number.isFinite(ratio) || ratio <= 0 || ratio >= 1) {
-      return DEFAULT_EDITOR_PANE_RATIO;
-    }
-    return ratio;
+  getEditorPaneRatio(): number | null {
+    return asFiniteNumber(this.readStored()?.editorPaneRatio);
   }
 
   setEditorPaneRatio(ratio: number): void {
     this.writeStored({ editorPaneRatio: ratio });
   }
 
-  getSidePanelWidthPx(): number {
-    const widthPx = this.readStored()?.sidePanelWidthPx;
-    if (typeof widthPx !== 'number' || !Number.isFinite(widthPx) || widthPx <= 0) {
-      return DEFAULT_SIDE_PANEL_WIDTH_PX;
-    }
-    return widthPx;
+  getSidePanelWidthPx(): number | null {
+    return asFiniteNumber(this.readStored()?.sidePanelWidthPx);
   }
 
   setSidePanelWidthPx(px: number): void {
@@ -93,4 +77,9 @@ export class EditorLayoutPreferencesService {
       // reload this time.
     }
   }
+}
+
+/** Guards against NaN/Infinity/strings from a hand-edited localStorage blob. */
+function asFiniteNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }

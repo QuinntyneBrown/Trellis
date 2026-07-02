@@ -1,8 +1,6 @@
-using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Trellis.Application.Common.Models;
-using Trellis.Application.Templates.Queries.GetTemplateByKey;
-using Trellis.Application.Templates.Queries.GetTemplates;
+using Trellis.Api.Models;
+using Trellis.Api.Templates;
 
 namespace Trellis.Api.Controllers;
 
@@ -13,40 +11,24 @@ namespace Trellis.Api.Controllers;
 [Route("api/templates")]
 public class TemplatesController : ControllerBase
 {
-    private readonly ISender mediator;
+    private readonly TemplateCatalog catalog;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TemplatesController"/> class.
     /// </summary>
-    /// <param name="mediator">The MediatR sender.</param>
-    public TemplatesController(ISender mediator)
+    /// <param name="catalog">The template catalog.</param>
+    public TemplatesController(TemplateCatalog catalog)
     {
-        this.mediator = mediator;
+        this.catalog = catalog;
     }
 
     /// <summary>
-    /// Gets every available template.
+    /// Gets every available template, including its full starter content.
     /// </summary>
-    /// <param name="cancellationToken">A token used to observe cancellation requests.</param>
     /// <returns>The list of templates.</returns>
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<TemplateDto>>> GetAll(CancellationToken cancellationToken)
+    public ActionResult<IReadOnlyList<TemplateDto>> GetAll()
     {
-        var templates = await this.mediator.Send(new GetTemplatesQuery(), cancellationToken);
-        return this.Ok(templates);
-    }
-
-    /// <summary>
-    /// Gets a single template by its key.
-    /// </summary>
-    /// <param name="key">The kebab-case template key.</param>
-    /// <param name="cancellationToken">A token used to observe cancellation requests.</param>
-    /// <returns>The template, or 404 if it does not exist.</returns>
-    [HttpGet("{key}")]
-    public async Task<ActionResult<TemplateDto>> GetByKey(string key, CancellationToken cancellationToken)
-    {
-        var template = await this.mediator.Send(new GetTemplateByKeyQuery { Key = key }, cancellationToken);
-
-        return template is null ? this.NotFound() : this.Ok(template);
+        return this.Ok(this.catalog.GetAll());
     }
 }

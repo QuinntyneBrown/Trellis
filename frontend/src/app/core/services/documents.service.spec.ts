@@ -26,7 +26,7 @@ describe('DocumentsService', () => {
 
   it('lists document summaries', () => {
     const summaries: DocumentSummary[] = [
-      { id: '1', name: 'Doc 1', updatedAt: '2026-01-01T00:00:00Z' },
+      { id: '1', name: 'Doc 1', updatedAt: '2026-01-01T00:00:00Z', folderId: null },
     ];
 
     service.list().subscribe((result) => {
@@ -45,6 +45,7 @@ describe('DocumentsService', () => {
       content: '@startuml\n@enduml',
       createdAt: '2026-01-01T00:00:00Z',
       updatedAt: null,
+      folderId: null,
     };
 
     service.getById('1').subscribe((result) => {
@@ -56,12 +57,20 @@ describe('DocumentsService', () => {
     req.flush(document);
   });
 
-  it('creates a document', () => {
-    service.create({ name: 'New', content: 'x' }).subscribe();
+  it('creates a document at the root', () => {
+    service.create({ name: 'New', content: 'x', folderId: null }).subscribe();
 
     const req = httpMock.expectOne(baseUrl);
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ name: 'New', content: 'x' });
+    expect(req.request.body).toEqual({ name: 'New', content: 'x', folderId: null });
+    req.flush({});
+  });
+
+  it('creates a document inside a folder', () => {
+    service.create({ name: 'New', content: 'x', folderId: 'folder-1' }).subscribe();
+
+    const req = httpMock.expectOne(baseUrl);
+    expect(req.request.body).toEqual({ name: 'New', content: 'x', folderId: 'folder-1' });
     req.flush({});
   });
 
@@ -80,6 +89,25 @@ describe('DocumentsService', () => {
     const req = httpMock.expectOne(`${baseUrl}/42`);
     expect(req.request.method).toBe('DELETE');
     req.flush(null);
+  });
+
+  it('renames a document by fetching it and echoing its content back through update', () => {
+    service.rename('42', 'New name').subscribe();
+
+    const getReq = httpMock.expectOne(`${baseUrl}/42`);
+    expect(getReq.request.method).toBe('GET');
+    getReq.flush({
+      id: '42',
+      name: 'Old name',
+      content: 'existing content',
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: null,
+    });
+
+    const putReq = httpMock.expectOne(`${baseUrl}/42`);
+    expect(putReq.request.method).toBe('PUT');
+    expect(putReq.request.body).toEqual({ name: 'New name', content: 'existing content' });
+    putReq.flush({});
   });
 
   it('uploads a file with an optional documentId field', () => {

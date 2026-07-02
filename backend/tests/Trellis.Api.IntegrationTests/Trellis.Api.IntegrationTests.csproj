@@ -31,8 +31,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Trellis.Api\Trellis.Api.csproj" />
-    <ProjectReference Include="..\..\src\Trellis.Application\Trellis.Application.csproj" />
-    <ProjectReference Include="..\..\src\Trellis.Infrastructure\Trellis.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

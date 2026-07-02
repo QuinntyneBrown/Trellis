@@ -1,0 +1,824 @@
+/*
+ * Trellis frontend mocks — shared stylesheet.
+ *
+ * Hand-compiled from the Angular component SCSS under
+ * frontend/src/app/** so the static mocks in docs/mocks render
+ * pixel-equivalent to the real app. Every rule block below is annotated
+ * with the source file it was compiled from; class names, colors and
+ * sizes are copied verbatim.
+ *
+ * Rules on custom-element selectors (app-editor-toolbar, app-rail-button,
+ * ...) reproduce each component's `:host` styles: the mocks mirror the
+ * exact DOM Angular renders, including the component host elements.
+ *
+ * Blocks marked "mock-only" have no counterpart in the app; they stand in
+ * for DOM that is produced at runtime by third-party code (Monaco).
+ */
+
+/* == frontend/src/styles.scss ============================================ */
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+  color: #111827;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body.is-resizing-panes {
+  cursor: col-resize !important;
+  user-select: none;
+}
+
+/* == component :host styles ============================================== */
+
+/* editor-toolbar.component.scss :host */
+app-editor-toolbar {
+  display: flex;
+  flex: 0 0 48px;
+  min-width: 0;
+}
+
+/* rail-button.component.scss :host */
+app-rail-button {
+  display: contents;
+}
+
+/* resize-divider.component.scss / pixel-resize-divider.component.scss :host */
+app-resize-divider,
+app-pixel-resize-divider {
+  display: contents;
+}
+
+/* monaco-editor.component.scss :host */
+app-monaco-editor {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+/* explorer-panel.component.scss :host */
+app-explorer-panel {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* file-tree-node.component.scss :host */
+app-file-tree-node {
+  display: block;
+}
+
+/* == editor-page.component.scss ========================================== */
+
+.editor-page {
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+}
+
+.editor-page__body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
+.editor-page__side-panel {
+  position: relative;
+  flex: 0 0 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Both panels stay mounted, stacked, only one visible at a time. */
+.editor-page__side-panel app-explorer-panel,
+.editor-page__side-panel app-documents-panel {
+  position: absolute;
+  inset: 0;
+}
+
+.editor-page__editor-pane {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.editor-page__preview-pane {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Fixed toast anchor for the disk-save failure banner. */
+.editor-page__disk-save-error {
+  position: fixed;
+  top: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  max-width: min(32rem, calc(100vw - 2rem));
+}
+
+/* == editor-toolbar.component.scss ======================================= */
+
+.editor-toolbar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  background-color: #f9fafb;
+  border-right: 1px solid #e5e7eb;
+}
+
+.editor-toolbar__group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.editor-toolbar__group--bottom {
+  margin-top: auto;
+}
+
+.editor-toolbar__upload-input {
+  display: none;
+}
+
+/* == rail-button.component.scss ========================================== */
+
+.rail-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 0.35rem;
+  background-color: transparent;
+  color: #4b5563;
+  cursor: pointer;
+}
+
+.rail-button:hover,
+.rail-button.rail-button--active {
+  background-color: rgba(17, 24, 39, 0.08);
+}
+
+.rail-button:focus-visible {
+  background-color: rgba(17, 24, 39, 0.08);
+  outline: 2px solid #3b82f6;
+  outline-offset: -2px;
+}
+
+.rail-button.rail-button--active {
+  color: #3b82f6;
+}
+
+.rail-button.rail-button--active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  border-radius: 0.35rem 0 0 0.35rem;
+  background-color: #3b82f6;
+}
+
+.rail-button__icon {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.rail-button__tooltip {
+  position: absolute;
+  left: calc(100% + 0.5rem);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  background-color: #111827;
+  color: #ffffff;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s ease, visibility 0.12s ease;
+  pointer-events: none;
+}
+
+.rail-button:hover .rail-button__tooltip,
+.rail-button:focus-visible .rail-button__tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* == connection-status.component.scss ==================================== */
+
+.connection-status-indicator {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 0.65rem;
+  height: 0.65rem;
+}
+
+.connection-status-indicator::before {
+  content: '';
+  display: block;
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  background-color: #9ca3af;
+}
+
+.connection-status-indicator--connected::before {
+  background-color: #22c55e;
+}
+
+.connection-status-indicator--disconnected::before {
+  background-color: #ef4444;
+}
+
+.connection-status-indicator--reconnecting::before {
+  background-color: #eab308;
+}
+
+/* Visually hidden but present for the accessibility tree / E2E contract. */
+.connection-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* == template-picker.component.scss ====================================== */
+
+.template-picker {
+  position: relative;
+  display: inline-block;
+}
+
+.template-picker__panel {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 0.5rem);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  min-width: 14rem;
+  max-height: 20rem;
+  overflow-y: auto;
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 0.35rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.template-picker__option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.template-picker__option:hover {
+  background-color: #f3f4f6;
+}
+
+.template-picker__option-name {
+  font-weight: 500;
+}
+
+.template-picker__option-category {
+  color: #6b7280;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+
+/* == monaco-editor.component.scss ======================================== */
+
+.monaco-editor-wrapper__surface {
+  height: 100%;
+  width: 100%;
+}
+
+/* -- mock-only: static facsimile of the Monaco editor surface ------------
+ * The real app instantiates monaco-editor (language 'plaintext', theme 'vs',
+ * minimap disabled, scrollBeyondLastLine false) inside
+ * .monaco-editor-wrapper__surface at runtime. These classes approximate
+ * that rendered surface for the static mocks. */
+
+.mock-monaco {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background-color: #fffffe; /* Monaco 'vs' editor background */
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 19px;
+  color: #000000;
+  cursor: text;
+}
+
+.mock-monaco__gutter {
+  flex: 0 0 64px;
+  padding-right: 26px;
+  text-align: right;
+  color: #237893; /* Monaco 'vs' line-number foreground */
+  user-select: none;
+  white-space: pre;
+}
+
+.mock-monaco__code {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: pre;
+  overflow: hidden;
+}
+
+.mock-monaco__cursor {
+  display: inline-block;
+  width: 2px;
+  height: 18px;
+  margin-bottom: -3px;
+  background-color: #000000;
+}
+
+/* == diagram-preview.component.scss ====================================== */
+
+.diagram-preview {
+  position: relative;
+  display: flex;
+  height: 100%;
+  width: 100%;
+  overflow: auto;
+  background-color: #ffffff;
+}
+
+.diagram-preview__placeholder {
+  color: #6b7280;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 1rem;
+}
+
+.diagram-preview__error {
+  margin: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.25rem;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  white-space: pre-wrap;
+  font-size: 0.85rem;
+}
+
+.diagram-preview__svg {
+  margin: auto;
+}
+
+.diagram-preview__spinner-overlay {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+}
+
+/* == resize-divider.component.scss ======================================= */
+
+.resize-divider {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  width: 1px;
+  background-color: #e5e7eb;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.resize-divider:hover,
+.resize-divider.resize-divider--active {
+  background-color: #3b82f6;
+}
+
+.resize-divider__grab-area {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 9px;
+  height: 100%;
+  cursor: col-resize;
+}
+
+/* == pixel-resize-divider.component.scss ================================= */
+
+.pixel-resize-divider {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  width: 1px;
+  background-color: #e5e7eb;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.pixel-resize-divider:hover,
+.pixel-resize-divider.pixel-resize-divider--active {
+  background-color: #3b82f6;
+}
+
+.pixel-resize-divider__grab-area {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 9px;
+  height: 100%;
+  cursor: col-resize;
+}
+
+/* == save-dialog.component.scss ========================================== */
+
+.save-dialog {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.save-dialog__backdrop {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.save-dialog__panel {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 20rem;
+  padding: 1.25rem;
+  border-radius: 0.5rem;
+  background-color: #ffffff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.save-dialog__title {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.save-dialog__label {
+  font-size: 0.8rem;
+  color: #374151;
+}
+
+.save-dialog__input {
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.25rem;
+  border: 1px solid #d1d5db;
+  font-size: 0.9rem;
+}
+
+.save-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.save-dialog__button {
+  padding: 0.35rem 0.85rem;
+  border-radius: 0.25rem;
+  border: 1px solid #d1d5db;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.save-dialog__button--confirm {
+  background-color: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.save-dialog__button--confirm:hover {
+  background-color: #1d4ed8;
+}
+
+.save-dialog__button--cancel {
+  background-color: #ffffff;
+}
+
+.save-dialog__button--cancel:hover {
+  background-color: #f3f4f6;
+}
+
+/* == error-banner.component.scss ========================================= */
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.25rem;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  font-size: 0.85rem;
+}
+
+.error-banner__message {
+  white-space: pre-wrap;
+}
+
+/* == loading-spinner.component.scss ====================================== */
+
+.loading-spinner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.loading-spinner__circle {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  border: 0.15rem solid rgba(0, 0, 0, 0.15);
+  border-top-color: #3b82f6;
+  animation: loading-spinner-rotate 0.7s linear infinite;
+}
+
+.loading-spinner__label {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+@keyframes loading-spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* == documents-panel.component.scss ====================================== */
+
+.documents-panel {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  background-color: #ffffff;
+  border-left: 1px solid #e5e7eb;
+}
+
+.documents-panel__empty {
+  padding: 1rem;
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+/* == explorer-panel.component.scss ======================================= */
+
+.explorer-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  background-color: #ffffff;
+  border-left: 1px solid #e5e7eb;
+}
+
+.explorer-panel__error {
+  margin: 0.5rem;
+}
+
+.explorer-panel__loading {
+  padding: 1rem;
+}
+
+.explorer-panel__tree {
+  display: block;
+  flex: 1 1 auto;
+}
+
+.explorer-panel__open-folder,
+.explorer-panel__reconnect {
+  margin: 0.75rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.35rem;
+  background-color: #f9fafb;
+  color: #111827;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.explorer-panel__open-folder:hover,
+.explorer-panel__reconnect:hover {
+  background-color: rgba(17, 24, 39, 0.06);
+}
+
+/* == shared/styles/_tree-row.scss ========================================
+   Emitted (per BEM block) by both tree components' SCSS: the Explorer's
+   file-tree-node and the Documents panel's document-tree-node share this
+   one tree-row style source, so the selectors below are grouped in pairs.
+   (.file-tree-node__spinner + its keyframes stay explorer-only.) */
+
+.file-tree-node__row,
+.document-tree-node__row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding-top: 0.15rem;
+  padding-bottom: 0.15rem;
+  padding-right: 0.5rem;
+  font-size: 0.85rem;
+  color: #111827;
+  cursor: pointer;
+  user-select: none;
+}
+
+.file-tree-node__row:hover,
+.document-tree-node__row:hover {
+  background-color: rgba(17, 24, 39, 0.06);
+}
+
+.file-tree-node__chevron,
+.file-tree-node__chevron-spacer,
+.document-tree-node__chevron,
+.document-tree-node__chevron-spacer {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+}
+
+.file-tree-node__chevron::before,
+.document-tree-node__chevron::before {
+  content: '';
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0.3rem 0 0.3rem 0.4rem;
+  border-color: transparent transparent transparent #6b7280;
+}
+
+.file-tree-node__chevron,
+.document-tree-node__chevron {
+  transition: transform 0.1s ease;
+}
+
+.file-tree-node__chevron--expanded,
+.document-tree-node__chevron--expanded {
+  transform: rotate(90deg);
+}
+
+.file-tree-node__name,
+.document-tree-node__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 1 auto;
+}
+
+.file-tree-node__actions,
+.document-tree-node__actions {
+  display: flex;
+  gap: 0.25rem;
+  flex: 0 0 auto;
+}
+
+.file-tree-node__action,
+.document-tree-node__action {
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.25rem;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  cursor: pointer;
+  font-size: 0.7rem;
+  line-height: 1.3;
+}
+
+.file-tree-node__action:hover,
+.document-tree-node__action:hover {
+  background-color: #f3f4f6;
+}
+
+.file-tree-node__action--danger,
+.document-tree-node__action--danger {
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.file-tree-node__action--danger:hover,
+.document-tree-node__action--danger:hover {
+  background-color: #fef2f2;
+}
+
+.file-tree-node__spinner {
+  flex: 0 0 auto;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  border: 0.1rem solid rgba(0, 0, 0, 0.15);
+  border-top-color: #3b82f6;
+  animation: file-tree-node-spin 0.7s linear infinite;
+}
+
+@keyframes file-tree-node-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* == documents-panel.component.scss (folder-tree additions) ============== */
+/* Panel header, tree container, and (below) the save dialog's folder
+   select for the virtual-folders Documents panel. Tree row visuals live in
+   the shared _tree-row.scss section above. */
+
+.documents-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.documents-panel__header-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+/* Matches .file-tree-node__action so header and row actions read as one family. */
+.documents-panel__header-action {
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.25rem;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  cursor: pointer;
+  font-size: 0.7rem;
+  line-height: 1.3;
+}
+
+.documents-panel__header-action:hover {
+  background-color: #f3f4f6;
+}
+
+.documents-panel__tree {
+  padding: 0.25rem 0;
+}
+
+/* Matches .save-dialog__input. */
+.save-dialog__select {
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.25rem;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  font-size: 0.9rem;
+}

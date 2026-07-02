@@ -1,6 +1,6 @@
 import { Page, test, expect } from '@playwright/test';
 import { EditorPage } from '../pom/pages/editor.page';
-import { installFakeDirectoryPicker, seedOpfsFixtureTree } from '../utils/opfs-fixture';
+import { openExplorerWithTree } from '../utils/opfs-fixture';
 import { normalizeEol } from '../utils/normalize-eol';
 
 const CONTENT_A = ['@startuml', 'A -> B : first file', '@enduml'].join('\n');
@@ -8,24 +8,17 @@ const CONTENT_B = ['@startuml', 'C -> D : second file', '@enduml'].join('\n');
 const UNSAVED_EDIT = ['@startuml', 'A -> B : first file', 'B --> A : not yet saved', '@enduml'].join('\n');
 
 /**
- * Mirrors the exact confirm-dialog testing technique already used
- * elsewhere in this suite (see documents-panel.component.ts's
- * deleteDocument/renameDocument): the app uses a native `window.confirm`
- * dialog rather than an in-DOM affordance, so these tests register a
- * one-shot `page.once('dialog', ...)` handler rather than querying for an
- * inline confirmation element.
+ * The app uses a native `window.confirm` dialog rather than an in-DOM
+ * affordance, so these tests handle Playwright `dialog` events rather than
+ * querying for an inline confirmation element. The decline test awaits the
+ * dialog explicitly (waitForEvent registered BEFORE the click) so it fails
+ * loudly if the confirm guard is ever removed -- window.confirm returns
+ * synchronously, so once the dialog has been dismissed the decline path has
+ * already run and the content can be asserted immediately, no sleep needed.
  */
 test.describe('unsaved-changes guard when opening a different Explorer file', () => {
   async function setUpWithUnsavedEdit(page: Page): Promise<EditorPage> {
-    await installFakeDirectoryPicker(page);
-
-    const editorPage = new EditorPage(page);
-    await editorPage.goto();
-    await editorPage.waitForAppReady();
-    await seedOpfsFixtureTree(page, { 'a.puml': CONTENT_A, 'b.puml': CONTENT_B });
-
-    await editorPage.explorerPanel.open();
-    await editorPage.explorerPanel.openFolder();
+    const editorPage = await openExplorerWithTree(page, { 'a.puml': CONTENT_A, 'b.puml': CONTENT_B });
     await editorPage.explorerPanel.openFile('a.puml');
     await expect
       .poll(async () => normalizeEol(await editorPage.editor.getValue()))
@@ -38,12 +31,12 @@ test.describe('unsaved-changes guard when opening a different Explorer file', ()
   test('declining the confirm dialog keeps the unsaved content untouched', async ({ page }) => {
     const editorPage = await setUpWithUnsavedEdit(page);
 
-    page.once('dialog', (dialog) => void dialog.dismiss());
+    // Registered before the click; once pending, the dialog MUST be handled
+    // (as it is below) or later page.evaluate calls would hang.
+    const dialogPromise = page.waitForEvent('dialog');
     await editorPage.explorerPanel.openFile('b.puml');
+    await (await dialogPromise).dismiss();
 
-    // Give the (declined) confirm a real chance to have taken effect before
-    // asserting the content survived.
-    await page.waitForTimeout(300);
     expect(normalizeEol(await editorPage.editor.getValue())).toBe(UNSAVED_EDIT);
   });
 

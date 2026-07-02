@@ -1,0 +1,136 @@
+<!doctype html>
+<!--
+  Trellis mock gallery — entry point for the reverse-engineered HTML mocks
+  of the Angular frontend (frontend/src/app). Each card embeds the actual
+  mock page scaled to 25%; click through for the full-size screen.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Trellis — frontend HTML mocks</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    /* mock-only gallery chrome */
+    html, body { margin: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #111827;
+      background: #f3f4f6;
+    }
+    .gallery { max-width: 71rem; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+    .gallery h1 { font-size: 1.5rem; margin: 0 0 0.25rem; }
+    .gallery__intro { color: #6b7280; font-size: 0.9rem; margin: 0 0 1rem; max-width: 46rem; }
+    .gallery__intro code { background: #e5e7eb; padding: 0.1rem 0.3rem; border-radius: 0.25rem; font-size: 0.8rem; }
+    .gallery h2 { font-size: 1.05rem; margin: 2rem 0 0.75rem; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, 320px); gap: 1.25rem; }
+    .card {
+      display: block;
+      width: 320px;
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      transition: box-shadow 0.12s ease, border-color 0.12s ease;
+    }
+    .card:hover { border-color: #3b82f6; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
+    .card__thumb { width: 320px; height: 200px; overflow: hidden; position: relative; background: #ffffff; border-bottom: 1px solid #e5e7eb; }
+    .card__thumb iframe {
+      width: 1280px;
+      height: 800px;
+      border: 0;
+      transform: scale(0.25);
+      transform-origin: top left;
+      pointer-events: none;
+    }
+    .card__caption { padding: 0.6rem 0.75rem 0.7rem; }
+    .card__title { font-size: 0.9rem; font-weight: 600; margin: 0; }
+    .card__desc { font-size: 0.75rem; color: #6b7280; margin: 0.2rem 0 0; }
+  </style>
+</head>
+<body>
+  <div class="gallery">
+    <h1>Trellis — frontend HTML mocks</h1>
+    <p class="gallery__intro">
+      Static HTML mocks reverse-engineered from the Angular frontend (<code>frontend/src/app</code>).
+      Every page mirrors the DOM the app actually renders — same component tags, class names,
+      <code>data-testid</code>s and ARIA attributes — styled by <code>assets/mock.css</code>, which is
+      hand-compiled from the component SCSS. See <code>README.md</code> for the mock-to-component mapping
+      and fidelity notes. Cards below are live 25% previews; click through for full size.
+    </p>
+
+    <h2>Editor — rendering flow</h2>
+    <div class="cards">
+      <a class="card" href="editor-blank.html">
+        <div class="card__thumb"><iframe src="editor-blank.html" tabindex="-1" loading="lazy" title="Editor, blank"></iframe></div>
+        <div class="card__caption"><p class="card__title">Editor — initial state</p><p class="card__desc">/editor with an untitled blank document; preview placeholder before the first Ctrl+Enter.</p></div>
+      </a>
+      <a class="card" href="editor-rendered.html">
+        <div class="card__thumb"><iframe src="editor-rendered.html" tabindex="-1" loading="lazy" title="Editor, rendered diagram"></iframe></div>
+        <div class="card__caption"><p class="card__title">Editor — rendered diagram</p><p class="card__desc">Sequence template rendered over the SignalR hub; SVG centered in the preview pane.</p></div>
+      </a>
+      <a class="card" href="editor-rendering.html">
+        <div class="card__thumb"><iframe src="editor-rendering.html" tabindex="-1" loading="lazy" title="Editor, render in flight"></iframe></div>
+        <div class="card__caption"><p class="card__title">Editor — render in flight</p><p class="card__desc">Spinner overlays the preview's top-right corner while the previous diagram stays visible.</p></div>
+      </a>
+      <a class="card" href="editor-render-error.html">
+        <div class="card__thumb"><iframe src="editor-render-error.html" tabindex="-1" loading="lazy" title="Editor, render error"></iframe></div>
+        <div class="card__caption"><p class="card__title">Editor — render error</p><p class="card__desc">PlantUML syntax error surfaced in the preview pane ("Syntax Error?").</p></div>
+      </a>
+    </div>
+
+    <h2>Editor — side panels</h2>
+    <div class="cards">
+      <a class="card" href="editor-explorer-panel.html">
+        <div class="card__thumb"><iframe src="editor-explorer-panel.html" tabindex="-1" loading="lazy" title="Editor, explorer panel"></iframe></div>
+        <div class="card__caption"><p class="card__title">Explorer — file tree</p><p class="card__desc">Local folder via the File System Access API: dirs first, per-row New File / New Folder / Delete.</p></div>
+      </a>
+      <a class="card" href="editor-explorer-open-folder.html">
+        <div class="card__thumb"><iframe src="editor-explorer-open-folder.html" tabindex="-1" loading="lazy" title="Editor, explorer before folder"></iframe></div>
+        <div class="card__caption"><p class="card__title">Explorer — no folder yet</p><p class="card__desc">First open: only the "Open Folder" button, which triggers the browser directory picker.</p></div>
+      </a>
+      <a class="card" href="editor-explorer-reconnect.html">
+        <div class="card__thumb"><iframe src="editor-explorer-reconnect.html" tabindex="-1" loading="lazy" title="Editor, explorer reconnect"></iframe></div>
+        <div class="card__caption"><p class="card__title">Explorer — reconnect</p><p class="card__desc">Folder handle restored from IndexedDB; a click must re-grant permission after reload.</p></div>
+      </a>
+      <a class="card" href="editor-documents-tree.html">
+        <div class="card__thumb"><iframe src="editor-documents-tree.html" tabindex="-1" loading="lazy" title="Editor, documents folder tree"></iframe></div>
+        <div class="card__caption"><p class="card__title">Documents — folder tree</p><p class="card__desc">Saved documents in virtual DB folders: expand/collapse, per-row Open / Rename / Delete, New Folder.</p></div>
+      </a>
+      <a class="card" href="editor-documents-tree-empty.html">
+        <div class="card__thumb"><iframe src="editor-documents-tree-empty.html" tabindex="-1" loading="lazy" title="Editor, documents folder tree, empty"></iframe></div>
+        <div class="card__caption"><p class="card__title">Documents — empty</p><p class="card__desc">No documents or folders yet; New Folder is available before the first save.</p></div>
+      </a>
+    </div>
+
+    <h2>Editor — dialogs &amp; overlays</h2>
+    <div class="cards">
+      <a class="card" href="editor-template-picker.html">
+        <div class="card__thumb"><iframe src="editor-template-picker.html" tabindex="-1" loading="lazy" title="Editor, template picker"></iframe></div>
+        <div class="card__caption"><p class="card__title">Template picker</p><p class="card__desc">Catalog panel (3 General + 3 C4 starters) popping out to the right of the rail.</p></div>
+      </a>
+      <a class="card" href="editor-save-dialog.html">
+        <div class="card__thumb"><iframe src="editor-save-dialog.html" tabindex="-1" loading="lazy" title="Editor, save dialog"></iframe></div>
+        <div class="card__caption"><p class="card__title">Save dialog</p><p class="card__desc">Modal name prompt for first-time saves, seeded with the current document name.</p></div>
+      </a>
+      <a class="card" href="editor-documents-tree-save-dialog.html">
+        <div class="card__thumb"><iframe src="editor-documents-tree-save-dialog.html" tabindex="-1" loading="lazy" title="Save dialog with folder select"></iframe></div>
+        <div class="card__caption"><p class="card__title">Save dialog — folder select</p><p class="card__desc">First-time save picks a destination folder; the id is sent as folderId on create.</p></div>
+      </a>
+      <a class="card" href="editor-disk-save-error.html">
+        <div class="card__thumb"><iframe src="editor-disk-save-error.html" tabindex="-1" loading="lazy" title="Editor, disk save error"></iframe></div>
+        <div class="card__caption"><p class="card__title">Disk save failure</p><p class="card__desc">Fixed top-center error toast when a Ctrl+S write to a local file fails.</p></div>
+      </a>
+    </div>
+
+    <h2>Reference</h2>
+    <div class="cards">
+      <a class="card" href="components.html">
+        <div class="card__thumb"><iframe src="components.html" tabindex="-1" loading="lazy" title="Component style guide"></iframe></div>
+        <div class="card__caption"><p class="card__title">Component style guide</p><p class="card__desc">Color tokens, rail icons, buttons, tree rows, dialogs — every atom with its source path.</p></div>
+      </a>
+    </div>
+  </div>
+</body>
+</html>

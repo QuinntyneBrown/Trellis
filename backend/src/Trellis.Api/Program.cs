@@ -1,14 +1,10 @@
 using Trellis.Api.Common;
 using Trellis.Api.Hubs;
-using Trellis.Application;
-using Trellis.Infrastructure;
-using Trellis.Infrastructure.Persistence.Initialisation;
+using Trellis.Api.Persistence.Initialisation;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddApplicationServices();
-builder.Services.AddInfrastructureServices(builder.Configuration);
-builder.Services.AddApiServices(builder.Configuration);
+builder.Services.AddTrellisServices(builder.Configuration);
 
 var app = builder.Build();
 

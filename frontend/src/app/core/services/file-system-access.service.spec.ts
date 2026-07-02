@@ -351,17 +351,6 @@ describe('FileSystemAccessService', () => {
       expect(loaded).toBeNull();
     });
 
-    it('clearRootHandle removes a previously saved handle', async () => {
-      const { indexedDbMock } = createFakeIndexedDb();
-      (globalThis as { indexedDB?: unknown }).indexedDB = indexedDbMock;
-      const handle = {} as FileSystemDirectoryHandle;
-      await service.saveRootHandle(handle);
-
-      await service.clearRootHandle();
-
-      expect(await service.loadRootHandle()).toBeNull();
-    });
-
     it('saveRootHandle swallows a failing indexedDB.open and never throws', async () => {
       (globalThis as { indexedDB?: unknown }).indexedDB = rejectingOpen();
 
@@ -372,12 +361,6 @@ describe('FileSystemAccessService', () => {
       (globalThis as { indexedDB?: unknown }).indexedDB = rejectingOpen();
 
       await expect(service.loadRootHandle()).resolves.toBeNull();
-    });
-
-    it('clearRootHandle swallows a failing indexedDB.open and never throws', async () => {
-      (globalThis as { indexedDB?: unknown }).indexedDB = rejectingOpen();
-
-      await expect(service.clearRootHandle()).resolves.toBeUndefined();
     });
   });
 });

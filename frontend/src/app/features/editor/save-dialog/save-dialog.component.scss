@@ -44,6 +44,15 @@
   font-size: 0.9rem;
 }
 
+// Matches __input so the two controls read as one form.
+.save-dialog__select {
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.25rem;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  font-size: 0.9rem;
+}
+
 .save-dialog__actions {
   display: flex;
   justify-content: flex-end;

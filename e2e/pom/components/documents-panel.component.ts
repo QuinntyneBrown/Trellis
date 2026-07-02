@@ -82,4 +82,85 @@ export class DocumentsPanelComponent {
     page.once('dialog', (dialog) => void dialog.accept(newName));
     await byTestId(row, 'document-item-rename').click();
   }
+
+  // ---- Virtual folder tree -------------------------------------------------
+  // Folder rows live at [data-testid="document-folder"] with a
+  // data-folder-name attribute and nested
+  // [data-testid="document-folder-new-folder" | "document-folder-rename" |
+  // "document-folder-delete"] action buttons; the panel header hosts the
+  // root-level [data-testid="documents-new-folder"] button. All folder
+  // create/rename/delete flows use the same native window.prompt/confirm
+  // convention documented in the INTEGRATION NOTE above.
+
+  /** Locator for a single folder row by its exact folder name. */
+  folder(name: string): Locator {
+    return this.root.locator(
+      `[data-testid="document-folder"][data-folder-name="${name}"]`
+    );
+  }
+
+  /** Asserts a folder with the given name is listed in the panel. */
+  async expectFolderListed(name: string): Promise<void> {
+    await expect(this.folder(name)).toBeVisible();
+  }
+
+  /** Asserts a folder with the given name is NOT listed in the panel. */
+  async expectFolderNotListed(name: string): Promise<void> {
+    await expect(this.folder(name)).toHaveCount(0);
+  }
+
+  /**
+   * Creates a root-level folder via the panel header's New Folder button,
+   * answering the native window.prompt with the given name.
+   */
+  async createRootFolder(name: string): Promise<void> {
+    const page = this.root.page();
+    page.once('dialog', (dialog) => void dialog.accept(name));
+    await byTestId(this.root, 'documents-new-folder').click();
+  }
+
+  /**
+   * Creates a subfolder inside the folder named `parentName` via its row's
+   * New Folder button.
+   */
+  async createSubfolder(parentName: string, name: string): Promise<void> {
+    const row = this.folder(parentName);
+    const page = this.root.page();
+    page.once('dialog', (dialog) => void dialog.accept(name));
+    await byTestId(row, 'document-folder-new-folder').click();
+  }
+
+  /**
+   * Expands or collapses a folder by clicking its chevron -- not the row
+   * itself, whose center point can land on the row's action buttons at
+   * narrow panel widths (the same idiom ExplorerPanelComponent.toggleExpand
+   * uses).
+   */
+  async toggleFolder(name: string): Promise<void> {
+    await this.folder(name).locator('[data-testid="document-folder-chevron"]').click();
+  }
+
+  /** Renames the folder currently named `oldName` to `newName` via its prompt. */
+  async renameFolder(oldName: string, newName: string): Promise<void> {
+    const row = this.folder(oldName);
+    const page = this.root.page();
+    page.once('dialog', (dialog) => void dialog.accept(newName));
+    await byTestId(row, 'document-folder-rename').click();
+  }
+
+  /**
+   * Deletes the folder with the given name, asserting the native confirm
+   * actually carries the cascade warning ("...and everything inside it")
+   * before accepting it -- deleting a folder deletes its contents too, and
+   * the warning wording is part of the product contract.
+   */
+  async deleteFolder(name: string): Promise<void> {
+    const row = this.folder(name);
+    const page = this.root.page();
+    page.once('dialog', (dialog) => {
+      expect(dialog.message()).toContain('and everything inside it');
+      void dialog.accept();
+    });
+    await byTestId(row, 'document-folder-delete').click();
+  }
 }

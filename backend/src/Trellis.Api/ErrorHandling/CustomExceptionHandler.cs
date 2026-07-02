@@ -1,17 +1,21 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using Trellis.Application.Common.Exceptions;
-using ValidationException = Trellis.Application.Common.Exceptions.ValidationException;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 
 namespace Trellis.Api.ErrorHandling;
 
 /// <summary>
-/// Central exception-to-response translator. Maps <see cref="ValidationException"/>
-/// to a 400 validation problem, <see cref="NotFoundException"/> to a 404 problem, and
-/// anything else to a generic 500 problem that never leaks internal exception details.
+/// Last-resort exception-to-response translator: logs the failure and returns a
+/// generic 500 problem that never leaks internal exception details. Expected
+/// failures (validation, not-found) are handled inline by the controllers -
+/// except for the two delete-race shapes below, which can only surface here.
 /// </summary>
 public class CustomExceptionHandler : IExceptionHandler
 {
+    /// <summary>SQLite's SQLITE_CONSTRAINT primary result code (FK violations and friends).</summary>
+    private const int SqliteConstraintErrorCode = 19;
+
     private readonly ILogger<CustomExceptionHandler> logger;
 
     /// <summary>
@@ -26,51 +30,41 @@ public class CustomExceptionHandler : IExceptionHandler
     /// <inheritdoc />
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
-        switch (exception)
+        // Both shapes mean "the row this request depends on was deleted while
+        // the request was in flight" - e.g. inserting a document into a folder
+        // that a concurrent request just cascade-deleted (FK violation), or
+        // renaming/deleting a row a concurrent folder cascade already removed
+        // (0 rows affected). The controllers' inline existence checks cannot
+        // close that race window, so it is translated to the same 404 the
+        // request would have received a moment later.
+        if (exception is DbUpdateConcurrencyException
+            || (exception is DbUpdateException { InnerException: SqliteException { SqliteErrorCode: SqliteConstraintErrorCode } }))
         {
-            case ValidationException validationException:
-                await WriteProblemAsync(
-                    httpContext,
-                    new ValidationProblemDetails(validationException.Errors)
-                    {
-                        Status = StatusCodes.Status400BadRequest,
-                        Title = "One or more validation errors occurred.",
-                    },
-                    StatusCodes.Status400BadRequest,
-                    cancellationToken);
-                return true;
+            this.logger.LogWarning(exception, "Delete race processing {Path}; returning 404.", httpContext.Request.Path);
 
-            case NotFoundException notFoundException:
-                await WriteProblemAsync(
-                    httpContext,
-                    new ProblemDetails
-                    {
-                        Status = StatusCodes.Status404NotFound,
-                        Title = "The requested resource was not found.",
-                        Detail = notFoundException.Message,
-                    },
-                    StatusCodes.Status404NotFound,
-                    cancellationToken);
-                return true;
+            httpContext.Response.StatusCode = StatusCodes.Status404NotFound;
+            await httpContext.Response.WriteAsJsonAsync(
+                new ProblemDetails
+                {
+                    Status = StatusCodes.Status404NotFound,
+                    Title = "The requested resource no longer exists.",
+                },
+                cancellationToken);
 
-            default:
-                this.logger.LogError(exception, "Unhandled exception processing {Path}: {Message}", httpContext.Request.Path, exception.Message);
-                await WriteProblemAsync(
-                    httpContext,
-                    new ProblemDetails
-                    {
-                        Status = StatusCodes.Status500InternalServerError,
-                        Title = "An unexpected error occurred.",
-                    },
-                    StatusCodes.Status500InternalServerError,
-                    cancellationToken);
-                return true;
+            return true;
         }
-    }
 
-    private static async Task WriteProblemAsync(HttpContext httpContext, ProblemDetails problemDetails, int statusCode, CancellationToken cancellationToken)
-    {
-        httpContext.Response.StatusCode = statusCode;
-        await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
+        this.logger.LogError(exception, "Unhandled exception processing {Path}: {Message}", httpContext.Request.Path, exception.Message);
+
+        httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        await httpContext.Response.WriteAsJsonAsync(
+            new ProblemDetails
+            {
+                Status = StatusCodes.Status500InternalServerError,
+                Title = "An unexpected error occurred.",
+            },
+            cancellationToken);
+
+        return true;
     }
 }

@@ -10,14 +10,45 @@
   border-left: 1px solid #e5e7eb;
 }
 
+.documents-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.documents-panel__header-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+// Matches the tree rows' __action buttons (see shared/styles/_tree-row.scss)
+// so the header and row actions read as one family.
+.documents-panel__header-action {
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.25rem;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  cursor: pointer;
+  font-size: 0.7rem;
+  line-height: 1.3;
+
+  &:hover {
+    background-color: #f3f4f6;
+  }
+}
+
 .documents-panel__empty {
   padding: 1rem;
   color: #6b7280;
   font-size: 0.85rem;
 }
 
-.documents-panel__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.documents-panel__tree {
+  padding: 0.25rem 0;
 }

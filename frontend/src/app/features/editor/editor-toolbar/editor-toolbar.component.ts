@@ -34,14 +34,6 @@ export class EditorToolbarComponent {
 
   @ViewChild('fileInput') private readonly fileInputRef!: ElementRef<HTMLInputElement>;
 
-  onNewClicked(): void {
-    this.newDocument.emit();
-  }
-
-  onSaveClicked(): void {
-    this.save.emit();
-  }
-
   onUploadClicked(): void {
     this.fileInputRef.nativeElement.click();
   }
@@ -53,17 +45,5 @@ export class EditorToolbarComponent {
       this.fileSelected.emit(file);
     }
     input.value = '';
-  }
-
-  onTemplateSelected(template: Template): void {
-    this.templateSelected.emit(template);
-  }
-
-  onExplorerPanelToggleClicked(): void {
-    this.explorerPanelToggle.emit();
-  }
-
-  onDocumentsPanelToggleClicked(): void {
-    this.documentsPanelToggle.emit();
   }
 }

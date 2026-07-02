@@ -1,6 +1,6 @@
 <div
   class="resize-divider"
-  data-testid="resize-divider"
+  [attr.data-testid]="testId"
   [class.resize-divider--active]="isDragging()"
   role="separator"
   [attr.aria-orientation]="'vertical'"
@@ -8,7 +8,7 @@
   [attr.aria-valuenow]="ariaValueNow"
   [attr.aria-valuemin]="ariaValueMin"
   [attr.aria-valuemax]="ariaValueMax"
-  aria-label="Resize editor and preview panes"
+  [attr.aria-label]="ariaLabel"
   (pointerdown)="onPointerDown($event)"
   (pointermove)="onPointerMove($event)"
   (pointerup)="onPointerUp($event)"

@@ -16,11 +16,11 @@ const DEFAULT_PERMISSION_MODE: FileSystemPermissionMode = 'readwrite';
  * can structured-clone these handle objects directly into IndexedDB, so no
  * serialization of paths/permissions is needed on top.
  *
- * Every IndexedDB-backed method (saveRootHandle/loadRootHandle/
- * clearRootHandle) wraps its work in try/catch and swallows failures the
- * same way EditorLayoutPreferencesService swallows localStorage failures: a
- * failed persist/rehydrate must never crash boot or throw out to a caller,
- * it just behaves as though nothing had ever been stored.
+ * Both IndexedDB-backed methods (saveRootHandle/loadRootHandle) wrap their
+ * work in try/catch and swallow failures the same way
+ * EditorLayoutPreferencesService swallows localStorage failures: a failed
+ * persist/rehydrate must never crash boot or throw out to a caller, it just
+ * behaves as though nothing had ever been stored.
  */
 @Injectable({ providedIn: 'root' })
 export class FileSystemAccessService {
@@ -155,19 +155,6 @@ export class FileSystemAccessService {
       }
     } catch {
       return null;
-    }
-  }
-
-  async clearRootHandle(): Promise<void> {
-    try {
-      const db = await this.openDatabase();
-      try {
-        await runRequest(db, 'readwrite', (store) => store.delete(RECORD_KEY));
-      } finally {
-        db.close();
-      }
-    } catch {
-      // Swallowed deliberately -- see class doc.
     }
   }
 

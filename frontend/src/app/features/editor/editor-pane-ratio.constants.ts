@@ -7,3 +7,5 @@
 export const MIN_EDITOR_PANE_RATIO = 0.2;
 export const MAX_EDITOR_PANE_RATIO = 0.8;
 export const DEFAULT_EDITOR_PANE_RATIO = 0.5;
+/** Ratio applied per arrow-key nudge of the editor/preview divider. */
+export const EDITOR_PANE_RATIO_KEYBOARD_STEP = 0.02;

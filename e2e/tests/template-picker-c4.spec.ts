@@ -20,15 +20,16 @@ test.describe('template picker - C4 templates', () => {
       await editorPage.goto();
       await editorPage.waitForAppReady();
 
-      // Fetch the template directly from the backend so this test
-      // verifies against the real source of truth rather than a
+      // Fetch the template list directly from the backend (the same list
+      // endpoint the app itself uses; it already includes full content) so
+      // this test verifies against the real source of truth rather than a
       // hardcoded copy of expected content.
-      const apiResponse = await request.get(
-        `http://localhost:5000/api/templates/${key}`
-      );
+      const apiResponse = await request.get('http://localhost:5000/api/templates');
       expect(apiResponse.ok()).toBe(true);
-      const template = await apiResponse.json();
-      expect(template.category).toBe('C4');
+      const templates = (await apiResponse.json()) as Array<{ key: string; category: string; content: string }>;
+      const template = templates.find((t) => t.key === key);
+      expect(template).toBeDefined();
+      expect(template!.category).toBe('C4');
 
       await editorPage.toolbar.openTemplatePicker();
       await expect(editorPage.templatePicker.root).toBeVisible();
@@ -36,7 +37,7 @@ test.describe('template picker - C4 templates', () => {
       await expect(editorPage.templatePicker.root).toBeHidden();
 
       const editorContent = (await editorPage.editor.getValue()).trim();
-      expect(editorContent).toBe((template.content as string).trim());
+      expect(editorContent).toBe(template!.content.trim());
 
       await editorPage.editor.pressRender();
 

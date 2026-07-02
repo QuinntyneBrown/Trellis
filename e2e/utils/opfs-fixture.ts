@@ -1,4 +1,5 @@
 import { Page } from '@playwright/test';
+import { EditorPage } from '../pom/pages/editor.page';
 
 /**
  * Fixed OPFS-relative directory name used as the "picked" folder root for
@@ -76,6 +77,33 @@ export async function seedOpfsFixtureTree(page: Page, tree: OpfsTreeNode): Promi
     },
     { rootDirName: OPFS_ROOT_DIR_NAME, tree },
   );
+}
+
+/**
+ * The one shared Explorer boot ritual: installs the fake directory picker,
+ * navigates to the editor, waits for the app, seeds the given OPFS tree,
+ * then opens the Explorer panel and the (fake-picked) folder.
+ *
+ * The two ordering constraints live here so no spec has to re-learn them:
+ * installFakeDirectoryPicker MUST precede goto() (an addInitScript only
+ * takes effect starting with the next navigation), and seedOpfsFixtureTree
+ * MUST follow goto() (page.evaluate needs a loaded page to run in).
+ *
+ * Deliberately NOT used by explorer-auto-reopen.spec.ts -- its regression
+ * value depends on the picker never being patched.
+ */
+export async function openExplorerWithTree(page: Page, tree: OpfsTreeNode): Promise<EditorPage> {
+  await installFakeDirectoryPicker(page);
+
+  const editorPage = new EditorPage(page);
+  await editorPage.goto();
+  await editorPage.waitForAppReady();
+  await seedOpfsFixtureTree(page, tree);
+
+  await editorPage.explorerPanel.open();
+  await editorPage.explorerPanel.openFolder();
+
+  return editorPage;
 }
 
 /**

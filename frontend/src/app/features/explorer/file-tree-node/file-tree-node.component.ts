@@ -1,13 +1,24 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 import { ExplorerTreeNode } from '../../../core/models/explorer-tree-node.model';
-import { CreateEntryEvent } from './create-entry-event.model';
-import { DeleteEntryEvent } from './delete-entry-event.model';
 
 /** Fixed per-level indent, in px, applied via [style.padding-left.px]. */
 const INDENT_STEP_PX = 16;
 /** Base left padding (depth 0), in px, so even root rows aren't flush against the panel edge. */
 const BASE_PADDING_PX = 8;
+
+/** Emitted by FileTreeNodeComponent's New File/New Folder row buttons. */
+export interface CreateEntryEvent {
+  parent: ExplorerTreeNode;
+  name: string;
+  kind: 'file' | 'directory';
+}
+
+/** Emitted by FileTreeNodeComponent's Delete row button. */
+export interface DeleteEntryEvent {
+  node: ExplorerTreeNode;
+  parentNode: ExplorerTreeNode;
+}
 
 /**
  * Recursive, deliberately "dumb" tree row.
@@ -23,9 +34,9 @@ const BASE_PADDING_PX = 8;
  * re-emitted from a nested child instance) to ExplorerPanelComponent, which
  * centralizes all File System Access calls and owns the tree's actual node
  * state. The New File/New Folder/Delete row buttons use native
- * window.prompt()/window.confirm() for naming/confirmation -- matching
- * DocumentListItemComponent's onRenameClicked()/onDeleteClicked() convention
- * exactly -- rather than an inline editable tree row.
+ * window.prompt()/window.confirm() for naming/confirmation -- the app-wide
+ * convention, shared with DocumentTreeNodeComponent -- rather than an inline
+ * editable tree row.
  */
 @Component({
   selector: 'app-file-tree-node',
@@ -44,10 +55,8 @@ export class FileTreeNodeComponent {
   @Output() readonly toggleExpand = new EventEmitter<ExplorerTreeNode>();
   /** Fires for this row (file) or is re-emitted, untouched, from a descendant row. */
   @Output() readonly fileClicked = new EventEmitter<ExplorerTreeNode>();
-  /** Fires when this row's "New File" button is used, or is re-emitted, untouched, from a descendant row. */
-  @Output() readonly createFile = new EventEmitter<CreateEntryEvent>();
-  /** Fires when this row's "New Folder" button is used, or is re-emitted, untouched, from a descendant row. */
-  @Output() readonly createFolder = new EventEmitter<CreateEntryEvent>();
+  /** Fires when this row's "New File"/"New Folder" button is used (the event's `kind` discriminates), or is re-emitted, untouched, from a descendant row. */
+  @Output() readonly createEntry = new EventEmitter<CreateEntryEvent>();
   /** Fires when this row's "Delete" button is used, or is re-emitted, untouched, from a descendant row. */
   @Output() readonly deleteEntry = new EventEmitter<DeleteEntryEvent>();
 
@@ -64,17 +73,17 @@ export class FileTreeNodeComponent {
   }
 
   /**
-   * Prompts for a new file name via the native window.prompt -- matching
-   * DocumentListItemComponent's onRenameClicked() convention exactly, rather
-   * than an inline editable tree row. event.stopPropagation() runs first so
-   * this button click never also triggers the row's own (click), which
-   * would otherwise toggle-expand/open this directory/file.
+   * Prompts for a new file name via the native window.prompt -- the app-wide
+   * convention, rather than an inline editable tree row.
+   * event.stopPropagation() runs first so this button click never also
+   * triggers the row's own (click), which would otherwise
+   * toggle-expand/open this directory/file.
    */
   onNewFileClicked(event: MouseEvent): void {
     event.stopPropagation();
     const name = window.prompt('New file name')?.trim();
     if (name) {
-      this.createFile.emit({ parent: this.node, name });
+      this.createEntry.emit({ parent: this.node, name, kind: 'file' });
     }
   }
 
@@ -83,13 +92,12 @@ export class FileTreeNodeComponent {
     event.stopPropagation();
     const name = window.prompt('New folder name')?.trim();
     if (name) {
-      this.createFolder.emit({ parent: this.node, name });
+      this.createEntry.emit({ parent: this.node, name, kind: 'directory' });
     }
   }
 
   /**
-   * Confirms via the native window.confirm -- matching
-   * DocumentListItemComponent's onDeleteClicked() convention exactly.
+   * Confirms via the native window.confirm -- the app-wide convention.
    * No-ops when parentNode is null: shouldn't be reachable since the
    * Delete button itself is never rendered at the true root, but this
    * guards defensively against a stray call.

@@ -1,29 +1,42 @@
 import { Location } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
+import { of } from 'rxjs';
+import { catchError, switchMap } from 'rxjs/operators';
 
 import { Document } from '../../../core/models/document.model';
 import { DocumentSummary } from '../../../core/models/document-summary.model';
 import { OpenedDiskFile } from '../../../core/models/opened-disk-file.model';
 import { Template } from '../../../core/models/template.model';
+import { Folder } from '../../../core/models/folder.model';
 import { DiagramHubService } from '../../../core/services/diagram-hub.service';
 import { DocumentsService } from '../../../core/services/documents.service';
 import { EditorLayoutPreferencesService } from '../../../core/services/editor-layout-preferences.service';
 import { FileSystemAccessService } from '../../../core/services/file-system-access.service';
+import { FoldersService } from '../../../core/services/folders.service';
 import { ErrorBannerComponent } from '../../../shared/components/error-banner/error-banner.component';
 import { DocumentsPanelComponent } from '../../documents/documents-panel/documents-panel.component';
 import { ExplorerPanelComponent } from '../../explorer/explorer-panel/explorer-panel.component';
 import { DiagramPreviewComponent } from '../diagram-preview/diagram-preview.component';
-import { MIN_EDITOR_PANE_RATIO, MAX_EDITOR_PANE_RATIO } from '../editor-pane-ratio.constants';
+import {
+  DEFAULT_EDITOR_PANE_RATIO,
+  EDITOR_PANE_RATIO_KEYBOARD_STEP,
+  MAX_EDITOR_PANE_RATIO,
+  MIN_EDITOR_PANE_RATIO,
+} from '../editor-pane-ratio.constants';
 import { EditorToolbarComponent } from '../editor-toolbar/editor-toolbar.component';
 import { MonacoEditorComponent } from '../monaco-editor/monaco-editor.component';
-import { clampWidthPx } from '../pixel-resize-divider/clamp-width';
-import { PixelResizeDividerComponent } from '../pixel-resize-divider/pixel-resize-divider.component';
 import { ResizeDividerComponent } from '../resize-divider/resize-divider.component';
-import { clampRatio } from '../resize-divider/clamp-ratio';
+import { clamp } from '../resize-divider/clamp';
 import { SaveDialogComponent } from '../save-dialog/save-dialog.component';
-import { MIN_SIDE_PANEL_WIDTH_PX, MAX_SIDE_PANEL_WIDTH_PX } from '../side-panel-width.constants';
+import {
+  DEFAULT_SIDE_PANEL_WIDTH_PX,
+  MAX_SIDE_PANEL_WIDTH_PX,
+  MIN_SIDE_PANEL_WIDTH_PX,
+  SIDE_PANEL_WIDTH_KEYBOARD_STEP_PX,
+} from '../side-panel-width.constants';
 
 const BLANK_DOCUMENT_NAME = 'Untitled diagram';
 
@@ -44,7 +57,6 @@ export type SidePanel = 'explorer' | 'documents' | null;
     EditorToolbarComponent,
     DiagramPreviewComponent,
     ResizeDividerComponent,
-    PixelResizeDividerComponent,
     SaveDialogComponent,
     DocumentsPanelComponent,
     ExplorerPanelComponent,
@@ -57,19 +69,24 @@ export class EditorPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly location = inject(Location);
   private readonly documentsService = inject(DocumentsService);
+  private readonly foldersService = inject(FoldersService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly layoutPreferences = inject(EditorLayoutPreferencesService);
   private readonly fileSystemAccessService = inject(FileSystemAccessService);
   readonly hubService = inject(DiagramHubService);
 
   // Exposed as fields (rather than referenced as free module-level constants)
-  // because the template binds [minRatio]/[maxRatio]/[minWidthPx]/
-  // [maxWidthPx] on <app-resize-divider>/<app-pixel-resize-divider>, and
-  // Angular templates can only bind to members of the component instance.
+  // because the template binds them onto the two <app-resize-divider>
+  // instances, and Angular templates can only bind to members of the
+  // component instance.
   readonly MIN_EDITOR_PANE_RATIO = MIN_EDITOR_PANE_RATIO;
   readonly MAX_EDITOR_PANE_RATIO = MAX_EDITOR_PANE_RATIO;
+  readonly DEFAULT_EDITOR_PANE_RATIO = DEFAULT_EDITOR_PANE_RATIO;
+  readonly EDITOR_PANE_RATIO_KEYBOARD_STEP = EDITOR_PANE_RATIO_KEYBOARD_STEP;
   readonly MIN_SIDE_PANEL_WIDTH_PX = MIN_SIDE_PANEL_WIDTH_PX;
   readonly MAX_SIDE_PANEL_WIDTH_PX = MAX_SIDE_PANEL_WIDTH_PX;
+  readonly DEFAULT_SIDE_PANEL_WIDTH_PX = DEFAULT_SIDE_PANEL_WIDTH_PX;
+  readonly SIDE_PANEL_WIDTH_KEYBOARD_STEP_PX = SIDE_PANEL_WIDTH_KEYBOARD_STEP_PX;
 
   readonly documentId = signal<string | null>(null);
   readonly documentName = signal<string>(BLANK_DOCUMENT_NAME);
@@ -78,6 +95,13 @@ export class EditorPageComponent implements OnInit {
   readonly savedSourceCode = signal<string>('');
 
   readonly isSaveDialogOpen = signal(false);
+  /**
+   * The folder list handed to the save dialog's destination select --
+   * re-fetched every time the dialog opens so just-created folders always
+   * appear. A fetch failure degrades to an empty list (the dialog stays
+   * usable with "(No folder)") rather than blocking the save.
+   */
+  readonly saveDialogFolders = signal<Folder[]>([]);
 
   /**
    * The single shared selection behind both the Explorer and Documents rail
@@ -93,14 +117,18 @@ export class EditorPageComponent implements OnInit {
 
   /** Set when the currently-open document/content came from a local disk file rather than the SQLite backend. */
   readonly openFileHandle = signal<FileSystemFileHandle | null>(null);
-  /** Surfaced through app-error-banner when a direct disk write (see performDiskSave) fails. */
-  readonly diskSaveError = signal<string | null>(null);
+  /** Surfaced through the app-error-banner toast when a save/upload/open/load request fails. */
+  readonly saveError = signal<string | null>(null);
 
-  // Seeded from persisted preferences (clamped to the divider's own UX
-  // bounds, since the preferences service only enforces the much looser
-  // (0, 1) structural invariant, not these product-level min/max).
+  // Seeded from persisted preferences: the preferences service is dumb
+  // storage (stored number or null), so the default and the product-level
+  // min/max bounds are applied here.
   readonly editorPaneRatio = signal(
-    clampRatio(this.layoutPreferences.getEditorPaneRatio(), MIN_EDITOR_PANE_RATIO, MAX_EDITOR_PANE_RATIO),
+    clamp(
+      this.layoutPreferences.getEditorPaneRatio() ?? DEFAULT_EDITOR_PANE_RATIO,
+      MIN_EDITOR_PANE_RATIO,
+      MAX_EDITOR_PANE_RATIO,
+    ),
   );
   readonly editorPaneRatioPercent = computed(() => this.editorPaneRatio() * 100);
 
@@ -108,24 +136,52 @@ export class EditorPageComponent implements OnInit {
   // the side panel's width is bound directly in px, not as a flex-basis
   // percentage of its container).
   readonly sidePanelWidthPx = signal(
-    clampWidthPx(this.layoutPreferences.getSidePanelWidthPx(), MIN_SIDE_PANEL_WIDTH_PX, MAX_SIDE_PANEL_WIDTH_PX),
+    clamp(
+      this.layoutPreferences.getSidePanelWidthPx() ?? DEFAULT_SIDE_PANEL_WIDTH_PX,
+      MIN_SIDE_PANEL_WIDTH_PX,
+      MAX_SIDE_PANEL_WIDTH_PX,
+    ),
   );
 
   /** Monotonically increasing token identifying the most recent upload; see onFileSelected. */
   private uploadSequence = 0;
+
+  /** Same token pattern for the save dialog's folder fetch: only the most recent open's response is applied. */
+  private folderFetchSequence = 0;
 
   readonly hasUnsavedChanges = computed(
     () => this.sourceCode().trim().length > 0 && this.sourceCode() !== this.savedSourceCode(),
   );
 
   ngOnInit(): void {
-    // Subscribed (rather than a one-off snapshot read) because Angular's
-    // default route reuse strategy keeps this component alive when
-    // navigating between 'editor/:documentId' instances -- only the
-    // resolved route data changes, ngOnInit does not re-run.
-    this.route.data.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((data) => {
-      this.applyDocument((data['document'] as Document | null | undefined) ?? null);
-    });
+    // The documentId in the URL is the single source of truth for which
+    // SQLite-backed document is open: this component fetches it directly
+    // (there is no route resolver or custom route-reuse machinery). In-app
+    // URL updates go through location.go, which deliberately does not
+    // re-emit paramMap -- those flows already hold the loaded document.
+    this.route.paramMap
+      .pipe(
+        switchMap((params) => {
+          const documentId = params.get('documentId');
+          if (!documentId) {
+            return of(null);
+          }
+
+          return this.documentsService.getById(documentId).pipe(
+            catchError((error: unknown) => {
+              if (error instanceof HttpErrorResponse && error.status === 404) {
+                // A stale or mistyped deep link: fall back to a blank editor.
+                this.location.go('/editor');
+              } else {
+                this.saveError.set('Could not load the requested document.');
+              }
+              return of(null);
+            }),
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((document) => this.applyDocument(document));
   }
 
   private applyDocument(document: Document | null): void {
@@ -152,40 +208,17 @@ export class EditorPageComponent implements OnInit {
     }
   }
 
-  onEditorValueChange(value: string): void {
-    this.sourceCode.set(value);
-  }
+  // Live drag/nudge updates bind straight to the signals in the template and
+  // deliberately do NOT persist -- a drag can fire dozens of times per
+  // second, and calling localStorage.setItem that often would be wasteful.
+  // Only the two resizeEnd handlers below (fired exactly once per completed
+  // gesture) persist the chosen value.
 
-  onRenderRequested(value: string): void {
-    void this.hubService.render(value);
-  }
-
-  /**
-   * Live layout updates during an in-progress drag/nudge -- deliberately
-   * does NOT persist. A drag can fire this dozens of times per second, and
-   * calling localStorage.setItem that often would be wasteful (and, in the
-   * worst case, noticeably janky).
-   */
-  onDividerRatioChange(ratio: number): void {
-    this.editorPaneRatio.set(ratio);
-  }
-
-  /**
-   * Fired exactly once per completed resize gesture (pointerup, a single
-   * arrow-key nudge, or a dblclick-reset) -- the only point at which the
-   * chosen ratio is persisted.
-   */
   onDividerResizeEnd(ratio: number): void {
     this.editorPaneRatio.set(ratio);
     this.layoutPreferences.setEditorPaneRatio(ratio);
   }
 
-  /** Live layout updates during an in-progress side-panel drag/nudge -- deliberately does NOT persist; see onDividerRatioChange. */
-  onSidePanelDividerWidthChange(px: number): void {
-    this.sidePanelWidthPx.set(px);
-  }
-
-  /** Fired exactly once per completed side-panel resize gesture -- the only point at which the chosen width is persisted. */
   onSidePanelDividerResizeEnd(px: number): void {
     this.sidePanelWidthPx.set(px);
     this.layoutPreferences.setSidePanelWidthPx(px);
@@ -204,15 +237,25 @@ export class EditorPageComponent implements OnInit {
       this.performDiskSave();
       return;
     }
+
+    // Opened immediately (not gated on the folder fetch) so a slow or failing
+    // folders request can never delay or block saving. The token guards
+    // against a slow earlier open's response arriving after (and clobbering)
+    // a more recent one.
     this.isSaveDialogOpen.set(true);
-  }
-
-  onSaveConfirm(name: string): void {
-    this.performSave(name);
-  }
-
-  onSaveCancel(): void {
-    this.isSaveDialogOpen.set(false);
+    const fetchToken = ++this.folderFetchSequence;
+    this.foldersService.list().subscribe({
+      next: (folders) => {
+        if (fetchToken === this.folderFetchSequence) {
+          this.saveDialogFolders.set(folders);
+        }
+      },
+      error: () => {
+        if (fetchToken === this.folderFetchSequence) {
+          this.saveDialogFolders.set([]);
+        }
+      },
+    });
   }
 
   /**
@@ -256,40 +299,49 @@ export class EditorPageComponent implements OnInit {
   }
 
   /**
-   * Shared by the save dialog's confirm and the Ctrl/Cmd+S quick-save: not
-   * closed until the request actually succeeds -- closing optimistically
-   * here would let a caller (or a test) observe "dialog is hidden" as a
-   * false signal that the save has landed, while the create/update request
-   * is still in flight.
+   * Shared by the save dialog's confirm and the Ctrl/Cmd+S quick-save: the
+   * dialog is not closed until the request actually succeeds -- closing
+   * optimistically here would let a caller (or a test) observe "dialog is
+   * hidden" as a false signal that the save has landed, while the request is
+   * still in flight. On failure the dialog (if open) stays open and the
+   * error toast reports the failure.
+   *
+   * folderId only matters on the create path (the dialog's destination
+   * select): updates structurally cannot move a document, so quick-saves of
+   * an existing document keep its folder without having to know it.
    */
-  private performSave(name: string): void {
+  performSave(name: string, folderId: string | null = null): void {
+    this.saveError.set(null);
+
     const id = this.documentId();
 
     const request$ = id
       ? this.documentsService.update(id, { name, content: this.sourceCode() })
-      : this.documentsService.create({ name, content: this.sourceCode() });
+      : this.documentsService.create({ name, content: this.sourceCode(), folderId });
 
-    request$.subscribe((saved) => {
-      this.isSaveDialogOpen.set(false);
-      this.documentName.set(saved.name);
-      this.savedSourceCode.set(saved.content);
-      if (!id) {
-        this.documentId.set(saved.id);
-        // Reflects the newly created document's id in the URL (for
-        // deep-linking/refresh) without routing through the Router - we
-        // already have the authoritative saved document in hand, so there is
-        // nothing for a resolver-driven re-fetch to usefully add, and doing
-        // one here would race any content change already in flight (see
-        // onFileSelected).
-        this.location.go(`/editor/${saved.id}`);
-      }
+    request$.subscribe({
+      next: (saved) => {
+        this.isSaveDialogOpen.set(false);
+        this.documentName.set(saved.name);
+        this.savedSourceCode.set(saved.content);
+        if (!id) {
+          this.documentId.set(saved.id);
+          // Reflects the newly created document's id in the URL (for
+          // deep-linking/refresh) without routing through the Router - we
+          // already have the authoritative saved document in hand, so a
+          // re-fetch would add nothing and would race any content change
+          // already in flight (see onFileSelected).
+          this.location.go(`/editor/${saved.id}`);
+        }
+      },
+      error: () => this.saveError.set(`Could not save "${name}".`),
     });
   }
 
   /**
    * Writes the current editor content straight to the open disk file handle
    * -- no dialog, no name prompt, exactly VS Code's Ctrl+S-on-an-open-file
-   * behavior. Failures are surfaced via diskSaveError (rendered through
+   * behavior. Failures are surfaced via saveError (rendered through
    * app-error-banner) rather than thrown, since this runs from a
    * HostListener/click handler with no caller to catch a rejection.
    */
@@ -299,35 +351,36 @@ export class EditorPageComponent implements OnInit {
       return;
     }
 
-    this.diskSaveError.set(null);
+    this.saveError.set(null);
     void this.fileSystemAccessService
       .writeTextFile(handle, this.sourceCode())
       .then(() => this.savedSourceCode.set(this.sourceCode()))
       .catch((error: unknown) => {
-        this.diskSaveError.set(error instanceof Error ? error.message : `Could not save "${this.documentName()}".`);
+        this.saveError.set(error instanceof Error ? error.message : `Could not save "${this.documentName()}".`);
       });
   }
 
   onFileSelected(file: File): void {
     // Guards against a slow *previous* upload's response arriving after a
     // faster, more recent one and clobbering its result: only the response
-    // matching the most recently initiated upload is ever applied.
+    // (or failure) matching the most recently initiated upload is applied.
     const uploadToken = ++this.uploadSequence;
 
-    // Read via FileReader (rather than the newer Blob.text()) so this also
-    // works against jsdom's FileReader implementation in unit tests.
-    void readFileAsText(file).then((text) => {
-      if (uploadToken === this.uploadSequence) {
-        this.sourceCode.set(text);
-      }
-    });
+    this.saveError.set(null);
 
-    this.documentsService.upload(file, this.documentId() ?? undefined).subscribe((saved) => {
-      if (uploadToken !== this.uploadSequence) {
-        return;
-      }
-      this.applyDocument(saved);
-      this.location.go(`/editor/${saved.id}`);
+    this.documentsService.upload(file, this.documentId() ?? undefined).subscribe({
+      next: (saved) => {
+        if (uploadToken !== this.uploadSequence) {
+          return;
+        }
+        this.applyDocument(saved);
+        this.location.go(`/editor/${saved.id}`);
+      },
+      error: () => {
+        if (uploadToken === this.uploadSequence) {
+          this.saveError.set(`Could not upload "${file.name}".`);
+        }
+      },
     });
   }
 
@@ -346,25 +399,24 @@ export class EditorPageComponent implements OnInit {
     this.activeSidePanel.update((current) => (current === panel ? null : panel));
   }
 
-  onExplorerPanelToggle(): void {
-    this.toggleSidePanel('explorer');
-  }
-
-  onDocumentsPanelToggle(): void {
-    this.toggleSidePanel('documents');
-  }
-
   onDocumentOpenedFromPanel(document: DocumentSummary): void {
     this.activeSidePanel.set(null);
+    this.saveError.set(null);
 
     // Always fetches directly (rather than routing through the Router,
     // whose default onSameUrlNavigation is 'ignore' and would otherwise
     // silently no-op when re-opening the document that is already active)
-    // so "open" always reloads the real saved content from the server, and
-    // updates the URL via Location rather than Router.navigate so this
-    // can never race a resolver-driven re-fetch of possibly-stale data.
-    this.documentsService.getById(document.id).subscribe((full) => this.applyDocument(full));
-    this.location.go(`/editor/${document.id}`);
+    // so "open" always reloads the real saved content from the server. The
+    // URL is only rewritten once the document has actually arrived -- a
+    // failed open must not leave it pointing at a document that never
+    // loaded.
+    this.documentsService.getById(document.id).subscribe({
+      next: (full) => {
+        this.applyDocument(full);
+        this.location.go(`/editor/${document.id}`);
+      },
+      error: () => this.saveError.set(`Could not open "${document.name}".`),
+    });
   }
 
   /**
@@ -416,13 +468,4 @@ export class EditorPageComponent implements OnInit {
       this.location.go('/editor');
     }
   }
-}
-
-function readFileAsText(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsText(file);
-  });
 }

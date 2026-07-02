@@ -51,12 +51,6 @@ export class MonacoLoaderService {
         window.require(['vs/editor/editor.main'], () => resolve(window.monaco), reject);
       };
 
-      const existingScript = document.getElementById(LOADER_SCRIPT_ID);
-      if (existingScript) {
-        existingScript.addEventListener('load', onAmdLoaderReady, { once: true });
-        return;
-      }
-
       const script = document.createElement('script');
       script.id = LOADER_SCRIPT_ID;
       script.src = `${MONACO_BASE_PATH}/loader.js`;

@@ -1,0 +1,94 @@
+// The one shared visual definition of a tree row, used by BOTH tree panels --
+// the Explorer's file-tree-node (disk directories via the File System Access
+// API) and the Documents panel's document-tree-node (virtual DB folders) --
+// so the two trees read identically without duplicating these rules.
+//
+// Emitted as a mixin parameterized by the caller's BEM block name: each
+// component keeps block-correct class names (.file-tree-node__row vs
+// .document-tree-node__row) while sharing one style source.
+@mixin tree-row($block) {
+  .#{$block}__row {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding-top: 0.15rem;
+    padding-bottom: 0.15rem;
+    padding-right: 0.5rem;
+    font-size: 0.85rem;
+    color: #111827;
+    cursor: pointer;
+    user-select: none;
+
+    &:hover {
+      background-color: rgba(17, 24, 39, 0.06);
+    }
+  }
+
+  .#{$block}__chevron,
+  .#{$block}__chevron-spacer {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1rem;
+    height: 1rem;
+  }
+
+  // A simple right-pointing CSS triangle, rotated 90deg when expanded to
+  // point down -- the same idiom VS Code's own Explorer chevrons use.
+  .#{$block}__chevron::before {
+    content: '';
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0.3rem 0 0.3rem 0.4rem;
+    border-color: transparent transparent transparent #6b7280;
+  }
+
+  .#{$block}__chevron {
+    transition: transform 0.1s ease;
+  }
+
+  .#{$block}__chevron--expanded {
+    transform: rotate(90deg);
+  }
+
+  .#{$block}__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    // Lets the actions group below sit flush to the row's own right edge
+    // instead of hugging the (possibly short) name.
+    flex: 1 1 auto;
+  }
+
+  // Always visible (not hover-revealed) -- just a plain per-button :hover tweak.
+  .#{$block}__actions {
+    display: flex;
+    gap: 0.25rem;
+    flex: 0 0 auto;
+  }
+
+  .#{$block}__action {
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.25rem;
+    border: 1px solid #d1d5db;
+    background-color: #ffffff;
+    cursor: pointer;
+    font-size: 0.7rem;
+    line-height: 1.3;
+
+    &:hover {
+      background-color: #f3f4f6;
+    }
+  }
+
+  .#{$block}__action--danger {
+    color: #b91c1c;
+    border-color: #fecaca;
+
+    &:hover {
+      background-color: #fef2f2;
+    }
+  }
+}

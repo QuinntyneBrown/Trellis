@@ -6,25 +6,24 @@
 
     @if (isLoading()) {
       <app-loading-spinner class="explorer-panel__loading"></app-loading-spinner>
-    } @else if (needsReconnect() && rootNode()) {
+    } @else if (needsReconnect() && rootNode) {
       <button
         type="button"
         class="explorer-panel__reconnect"
         data-testid="explorer-reconnect"
         (click)="onReconnectClicked()"
       >
-        Reconnect to {{ rootNode()!.name }}
+        Reconnect to {{ rootNode.name }}
       </button>
-    } @else if (rootNode()) {
+    } @else if (rootNode) {
       <app-file-tree-node
         class="explorer-panel__tree"
-        [node]="rootNode()!"
+        [node]="rootNode"
         [depth]="0"
         [parentNode]="null"
         (toggleExpand)="onToggleExpand($event)"
         (fileClicked)="onFileClicked($event)"
-        (createFile)="onCreateFile($event)"
-        (createFolder)="onCreateFolder($event)"
+        (createEntry)="onCreateEntry($event)"
         (deleteEntry)="onDeleteEntry($event)"
       ></app-file-tree-node>
     } @else {

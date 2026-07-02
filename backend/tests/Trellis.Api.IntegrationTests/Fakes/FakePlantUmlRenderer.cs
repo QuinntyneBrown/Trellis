@@ -1,5 +1,5 @@
-using Trellis.Application.Common.Interfaces;
-using Trellis.Application.Common.Models;
+using Trellis.Api.Models;
+using Trellis.Api.PlantUml;
 
 namespace Trellis.Api.IntegrationTests.Fakes;
 

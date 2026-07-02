@@ -4,12 +4,8 @@ The Trellis backend is an ASP.NET Core 8 application that exposes document APIs,
 
 ## Projects
 
-- `src/Trellis.Api` - HTTP API, SignalR hub, configuration, startup, and exception handling.
-- `src/Trellis.Application` - commands, queries, validation, application models, and interfaces.
-- `src/Trellis.Domain` - core domain entities.
-- `src/Trellis.Infrastructure` - Entity Framework Core, template catalog, PlantUML renderer, and infrastructure services.
-- `tests/Trellis.Application.Tests` - application-level unit tests.
-- `tests/Trellis.Api.IntegrationTests` - API integration tests.
+- `src/Trellis.Api` - the whole backend: HTTP controllers (EF Core work inline), the SignalR render hub, the SQLite persistence layer, the PlantUML renderer, the template catalog, configuration, and startup.
+- `tests/Trellis.Api.IntegrationTests` - full HTTP round-trip tests (in-memory SQLite, fake renderer) plus hub-level tests.
 
 ## Run
 

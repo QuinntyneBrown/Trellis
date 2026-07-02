@@ -3,8 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DirectoryChildEntry } from '../../../core/models/directory-child-entry.model';
 import { ExplorerTreeNode } from '../../../core/models/explorer-tree-node.model';
 import { FileSystemAccessService } from '../../../core/services/file-system-access.service';
-import { CreateEntryEvent } from '../file-tree-node/create-entry-event.model';
-import { DeleteEntryEvent } from '../file-tree-node/delete-entry-event.model';
+import { CreateEntryEvent, DeleteEntryEvent } from '../file-tree-node/file-tree-node.component';
 import { ExplorerPanelComponent } from './explorer-panel.component';
 
 function fakeDirHandle(name: string): FileSystemDirectoryHandle {
@@ -31,7 +30,6 @@ describe('ExplorerPanelComponent', () => {
     requestPermission: jest.Mock;
     saveRootHandle: jest.Mock;
     loadRootHandle: jest.Mock;
-    clearRootHandle: jest.Mock;
   };
 
   beforeEach(async () => {
@@ -48,7 +46,6 @@ describe('ExplorerPanelComponent', () => {
       requestPermission: jest.fn(),
       saveRootHandle: jest.fn().mockResolvedValue(undefined),
       loadRootHandle: jest.fn().mockResolvedValue(null),
-      clearRootHandle: jest.fn().mockResolvedValue(undefined),
     };
 
     await TestBed.configureTestingModule({
@@ -132,9 +129,9 @@ describe('ExplorerPanelComponent', () => {
       fixture.detectChanges();
 
       expect(fileSystemAccessServiceMock.saveRootHandle).toHaveBeenCalledWith(handle);
-      expect(component.rootNode()?.name).toBe('my-project');
-      expect(component.rootNode()?.expanded).toBe(true);
-      expect(component.rootNode()?.children?.length).toBe(1);
+      expect(component.rootNode?.name).toBe('my-project');
+      expect(component.rootNode?.expanded).toBe(true);
+      expect(component.rootNode?.children?.length).toBe(1);
       expect(byTestId('explorer-open-folder')).toBeNull();
       // One root <app-file-tree-node> plus one for its single a.puml child.
       expect(fixture.nativeElement.querySelectorAll('app-file-tree-node').length).toBe(2);
@@ -169,7 +166,7 @@ describe('ExplorerPanelComponent', () => {
 
       expect(fileSystemAccessServiceMock.queryPermission).toHaveBeenCalledWith(handle, 'readwrite');
       expect(fileSystemAccessServiceMock.pickDirectory).not.toHaveBeenCalled();
-      expect(component.rootNode()?.name).toBe('restored-project');
+      expect(component.rootNode?.name).toBe('restored-project');
       expect(component.needsReconnect()).toBe(false);
       expect(byTestId('explorer-reconnect')).toBeNull();
     });
@@ -253,10 +250,10 @@ describe('ExplorerPanelComponent', () => {
       createFixture();
       fixture.detectChanges();
       await flush();
-      component.rootNode.set(loadedRoot());
+      component.rootNode = loadedRoot();
       fixture.detectChanges();
 
-      const subdirNode = component.rootNode()!.children![0];
+      const subdirNode = component.rootNode!.children![0];
       fileSystemAccessServiceMock.listChildren.mockResolvedValue([
         { name: 'nested.puml', kind: 'file', handle: fakeFileHandle('nested.puml') },
       ] as DirectoryChildEntry[]);
@@ -284,8 +281,8 @@ describe('ExplorerPanelComponent', () => {
       createFixture();
       fixture.detectChanges();
       await flush();
-      component.rootNode.set(loadedRoot());
-      const subdirNode = component.rootNode()!.children![0];
+      component.rootNode = loadedRoot();
+      const subdirNode = component.rootNode!.children![0];
       fileSystemAccessServiceMock.listChildren.mockRejectedValue(new Error('permission revoked'));
 
       component.onToggleExpand(subdirNode);
@@ -367,15 +364,15 @@ describe('ExplorerPanelComponent', () => {
       fixture.detectChanges();
       await flush();
       const root = loadedRootWithChildren();
-      component.rootNode.set(root);
+      component.rootNode = root;
       fileSystemAccessServiceMock.createFile.mockResolvedValue(fakeFileHandle('new.puml'));
       fileSystemAccessServiceMock.listChildren.mockResolvedValue([
         { name: 'existing.puml', kind: 'file', handle: fakeFileHandle('existing.puml') },
         { name: 'new.puml', kind: 'file', handle: fakeFileHandle('new.puml') },
       ] as DirectoryChildEntry[]);
 
-      const event: CreateEntryEvent = { parent: root, name: 'new.puml' };
-      component.onCreateFile(event);
+      const event: CreateEntryEvent = { parent: root, name: 'new.puml', kind: 'file' };
+      component.onCreateEntry(event);
       await flush();
 
       expect(fileSystemAccessServiceMock.createFile).toHaveBeenCalledWith(root.handle, 'new.puml');
@@ -388,15 +385,15 @@ describe('ExplorerPanelComponent', () => {
       fixture.detectChanges();
       await flush();
       const root = loadedRootWithChildren();
-      component.rootNode.set(root);
+      component.rootNode = root;
       fileSystemAccessServiceMock.createDirectory.mockResolvedValue(fakeDirHandle('new-folder'));
       fileSystemAccessServiceMock.listChildren.mockResolvedValue([
         { name: 'new-folder', kind: 'directory', handle: fakeDirHandle('new-folder') },
         { name: 'existing.puml', kind: 'file', handle: fakeFileHandle('existing.puml') },
       ] as DirectoryChildEntry[]);
 
-      const event: CreateEntryEvent = { parent: root, name: 'new-folder' };
-      component.onCreateFolder(event);
+      const event: CreateEntryEvent = { parent: root, name: 'new-folder', kind: 'directory' };
+      component.onCreateEntry(event);
       await flush();
 
       expect(fileSystemAccessServiceMock.createDirectory).toHaveBeenCalledWith(root.handle, 'new-folder');
@@ -408,15 +405,40 @@ describe('ExplorerPanelComponent', () => {
       fixture.detectChanges();
       await flush();
       const root = loadedRootWithChildren();
-      component.rootNode.set(root);
+      component.rootNode = root;
 
-      const event: CreateEntryEvent = { parent: root, name: 'EXISTING.puml' };
-      component.onCreateFile(event);
+      const event: CreateEntryEvent = { parent: root, name: 'EXISTING.puml', kind: 'file' };
+      component.onCreateEntry(event);
       await flush();
 
       expect(fileSystemAccessServiceMock.createFile).not.toHaveBeenCalled();
       expect(fileSystemAccessServiceMock.createDirectory).not.toHaveBeenCalled();
       expect(component.errorMessage()).toBe('"EXISTING.puml" already exists in "root".');
+    });
+
+    it('treats an accented name as distinct from its unaccented lookalike (case-insensitive, accent-sensitive)', async () => {
+      createFixture();
+      fixture.detectChanges();
+      await flush();
+      const root: ExplorerTreeNode = {
+        name: 'root',
+        kind: 'directory',
+        handle: fakeDirHandle('root'),
+        children: [
+          { name: 'résumé.puml', kind: 'file', handle: fakeFileHandle('résumé.puml'), loadState: 'unloaded', expanded: false, children: undefined },
+        ],
+        loadState: 'loaded',
+        expanded: true,
+      };
+      component.rootNode = root;
+      fileSystemAccessServiceMock.createFile.mockResolvedValue(fakeFileHandle('resume.puml'));
+      fileSystemAccessServiceMock.listChildren.mockResolvedValue([] as DirectoryChildEntry[]);
+
+      component.onCreateEntry({ parent: root, name: 'resume.puml', kind: 'file' });
+      await flush();
+
+      expect(component.errorMessage()).toBeNull();
+      expect(fileSystemAccessServiceMock.createFile).toHaveBeenCalledWith(root.handle, 'resume.puml');
     });
 
     it('force-loads children first (calling listChildren) when creating inside a directory whose children are undefined', async () => {
@@ -431,14 +453,14 @@ describe('ExplorerPanelComponent', () => {
         loadState: 'unloaded',
         expanded: false,
       };
-      component.rootNode.set({
+      component.rootNode = {
         name: 'root',
         kind: 'directory',
         handle: fakeDirHandle('root'),
         children: [unloadedDir],
         loadState: 'loaded',
         expanded: true,
-      });
+      };
 
       fileSystemAccessServiceMock.listChildren
         .mockResolvedValueOnce([] as DirectoryChildEntry[])
@@ -447,8 +469,8 @@ describe('ExplorerPanelComponent', () => {
         ] as DirectoryChildEntry[]);
       fileSystemAccessServiceMock.createFile.mockResolvedValue(fakeFileHandle('new.puml'));
 
-      const event: CreateEntryEvent = { parent: unloadedDir, name: 'new.puml' };
-      component.onCreateFile(event);
+      const event: CreateEntryEvent = { parent: unloadedDir, name: 'new.puml', kind: 'file' };
+      component.onCreateEntry(event);
       await flush();
 
       expect(fileSystemAccessServiceMock.listChildren).toHaveBeenCalledWith(unloadedDir.handle);
@@ -462,11 +484,11 @@ describe('ExplorerPanelComponent', () => {
       fixture.detectChanges();
       await flush();
       const root = loadedRootWithChildren();
-      component.rootNode.set(root);
+      component.rootNode = root;
       fileSystemAccessServiceMock.createFile.mockRejectedValue(new Error('boom'));
 
-      const event: CreateEntryEvent = { parent: root, name: 'new.puml' };
-      expect(() => component.onCreateFile(event)).not.toThrow();
+      const event: CreateEntryEvent = { parent: root, name: 'new.puml', kind: 'file' };
+      expect(() => component.onCreateEntry(event)).not.toThrow();
       await flush();
 
       expect(component.errorMessage()).toBe('Could not create "new.puml" in "root".');
@@ -493,7 +515,7 @@ describe('ExplorerPanelComponent', () => {
       fixture.detectChanges();
       await flush();
       const root = loadedRootWithFileAndDir();
-      component.rootNode.set(root);
+      component.rootNode = root;
       const fileNode = root.children!.find((c) => c.name === 'diagram.puml')!;
       fileSystemAccessServiceMock.removeEntry.mockResolvedValue(undefined);
       fileSystemAccessServiceMock.listChildren.mockResolvedValue([
@@ -516,7 +538,7 @@ describe('ExplorerPanelComponent', () => {
       fixture.detectChanges();
       await flush();
       const root = loadedRootWithFileAndDir();
-      component.rootNode.set(root);
+      component.rootNode = root;
       const dirNode = root.children!.find((c) => c.name === 'subdir')!;
       fileSystemAccessServiceMock.removeEntry.mockResolvedValue(undefined);
       fileSystemAccessServiceMock.listChildren.mockResolvedValue([
@@ -538,7 +560,7 @@ describe('ExplorerPanelComponent', () => {
       fixture.detectChanges();
       await flush();
       const root = loadedRootWithFileAndDir();
-      component.rootNode.set(root);
+      component.rootNode = root;
       const fileNode = root.children!.find((c) => c.name === 'diagram.puml')!;
       fileSystemAccessServiceMock.removeEntry.mockRejectedValue(new Error('boom'));
       const fileDeletedSpy = jest.fn();

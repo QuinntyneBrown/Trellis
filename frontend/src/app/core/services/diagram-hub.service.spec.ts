@@ -74,23 +74,33 @@ describe('DiagramHubService', () => {
     expect(service.isRendering()).toBe(false);
   });
 
-  it('surfaces a resolved business-level failure without touching renderError', async () => {
+  it('surfaces a resolved business-level failure through renderResult', async () => {
     const result: RenderResult = { isSuccess: false, svg: null, errorMessage: 'Syntax error at line 2' };
     fakeConnection.invoke.mockResolvedValue(result);
 
     await service.render('bad source');
 
     expect(service.renderResult()).toEqual(result);
-    expect(service.renderError()).toBeNull();
   });
 
-  it('captures a connection-level rejection as renderError without setting renderResult', async () => {
+  it('funnels a connection-level rejection into renderResult as a failed result', async () => {
     fakeConnection.invoke.mockRejectedValue(new Error('connection lost'));
 
     await service.render('@startuml\n@enduml');
 
-    expect(service.renderResult()).toBeNull();
-    expect(service.renderError()).toBe('connection lost');
+    expect(service.renderResult()).toEqual({
+      isSuccess: false,
+      svg: null,
+      errorMessage: 'connection lost',
+    });
     expect(service.isRendering()).toBe(false);
+  });
+
+  it('uses a generic message when a rejection carries no Error instance', async () => {
+    fakeConnection.invoke.mockRejectedValue('boom');
+
+    await service.render('@startuml\n@enduml');
+
+    expect(service.renderResult()?.errorMessage).toBe('Failed to reach the render service.');
   });
 });

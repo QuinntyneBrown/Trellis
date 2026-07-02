@@ -202,64 +202,64 @@ describe('FileTreeNodeComponent', () => {
       expect(deleteButton()).toBeTruthy();
     });
 
-    it('clicking New File prompts and emits createFile with the trimmed name, without also emitting toggleExpand', () => {
+    it('clicking New File prompts and emits createEntry (kind: file) with the trimmed name, without also emitting toggleExpand', () => {
       const node = fakeNode({ kind: 'directory' });
       component.node = node;
       fixture.detectChanges();
       const promptSpy = jest.spyOn(window, 'prompt').mockReturnValue('  new-file.puml  ');
-      const createFileSpy = jest.fn();
-      component.createFile.subscribe(createFileSpy);
+      const createEntrySpy = jest.fn();
+      component.createEntry.subscribe(createEntrySpy);
       const toggleSpy = jest.fn();
       component.toggleExpand.subscribe(toggleSpy);
 
       newFileButton()!.click();
 
       expect(promptSpy).toHaveBeenCalledWith('New file name');
-      expect(createFileSpy).toHaveBeenCalledWith({ parent: node, name: 'new-file.puml' });
+      expect(createEntrySpy).toHaveBeenCalledWith({ parent: node, name: 'new-file.puml', kind: 'file' });
       expect(toggleSpy).not.toHaveBeenCalled();
       promptSpy.mockRestore();
     });
 
-    it('does not emit createFile when the New File prompt is cancelled (null)', () => {
+    it('does not emit createEntry when the New File prompt is cancelled (null)', () => {
       component.node = fakeNode({ kind: 'directory' });
       fixture.detectChanges();
       const promptSpy = jest.spyOn(window, 'prompt').mockReturnValue(null);
-      const createFileSpy = jest.fn();
-      component.createFile.subscribe(createFileSpy);
+      const createEntrySpy = jest.fn();
+      component.createEntry.subscribe(createEntrySpy);
 
       newFileButton()!.click();
 
-      expect(createFileSpy).not.toHaveBeenCalled();
+      expect(createEntrySpy).not.toHaveBeenCalled();
       promptSpy.mockRestore();
     });
 
-    it('does not emit createFile when the New File prompt result is blank', () => {
+    it('does not emit createEntry when the New File prompt result is blank', () => {
       component.node = fakeNode({ kind: 'directory' });
       fixture.detectChanges();
       const promptSpy = jest.spyOn(window, 'prompt').mockReturnValue('   ');
-      const createFileSpy = jest.fn();
-      component.createFile.subscribe(createFileSpy);
+      const createEntrySpy = jest.fn();
+      component.createEntry.subscribe(createEntrySpy);
 
       newFileButton()!.click();
 
-      expect(createFileSpy).not.toHaveBeenCalled();
+      expect(createEntrySpy).not.toHaveBeenCalled();
       promptSpy.mockRestore();
     });
 
-    it('clicking New Folder prompts and emits createFolder with the trimmed name, without also emitting toggleExpand', () => {
+    it('clicking New Folder prompts and emits createEntry (kind: directory) with the trimmed name, without also emitting toggleExpand', () => {
       const node = fakeNode({ kind: 'directory' });
       component.node = node;
       fixture.detectChanges();
       const promptSpy = jest.spyOn(window, 'prompt').mockReturnValue('new-folder');
-      const createFolderSpy = jest.fn();
-      component.createFolder.subscribe(createFolderSpy);
+      const createEntrySpy = jest.fn();
+      component.createEntry.subscribe(createEntrySpy);
       const toggleSpy = jest.fn();
       component.toggleExpand.subscribe(toggleSpy);
 
       newFolderButton()!.click();
 
       expect(promptSpy).toHaveBeenCalledWith('New folder name');
-      expect(createFolderSpy).toHaveBeenCalledWith({ parent: node, name: 'new-folder' });
+      expect(createEntrySpy).toHaveBeenCalledWith({ parent: node, name: 'new-folder', kind: 'directory' });
       expect(toggleSpy).not.toHaveBeenCalled();
       promptSpy.mockRestore();
     });
@@ -319,17 +319,15 @@ describe('FileTreeNodeComponent', () => {
     });
   });
 
-  describe('bubbling createFile/createFolder/deleteEntry through one level of recursion', () => {
-    it('re-emits a nested child createFile/createFolder/deleteEntry event through its own outputs untouched', () => {
+  describe('bubbling createEntry/deleteEntry through one level of recursion', () => {
+    it('re-emits a nested child createEntry/deleteEntry event through its own outputs untouched', () => {
       const grandchildFile = fakeNode({ name: 'deep.puml', kind: 'file' });
       component.node = fakeNode({ name: 'root', expanded: true, children: [grandchildFile] });
       fixture.detectChanges();
 
-      const createFileSpy = jest.fn();
-      const createFolderSpy = jest.fn();
+      const createEntrySpy = jest.fn();
       const deleteEntrySpy = jest.fn();
-      component.createFile.subscribe(createFileSpy);
-      component.createFolder.subscribe(createFolderSpy);
+      component.createEntry.subscribe(createEntrySpy);
       component.deleteEntry.subscribe(deleteEntrySpy);
 
       const childRow = fixture.nativeElement.querySelectorAll('[data-testid="file-tree-node"]')[1] as HTMLElement;

@@ -1,3 +1,5 @@
+@use '../../../shared/styles/tree-row' as shared;
+
 // `<app-file-tree-node>` itself must not generate its own box: `.file-tree-node`
 // below is the actual flex-column item stacking row-then-children, so all
 // sizing/layout lives on it directly.
@@ -5,92 +7,9 @@
   display: block;
 }
 
-.file-tree-node__row {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding-top: 0.15rem;
-  padding-bottom: 0.15rem;
-  padding-right: 0.5rem;
-  font-size: 0.85rem;
-  color: #111827;
-  cursor: pointer;
-  user-select: none;
-
-  &:hover {
-    background-color: rgba(17, 24, 39, 0.06);
-  }
-}
-
-.file-tree-node__chevron,
-.file-tree-node__chevron-spacer {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1rem;
-  height: 1rem;
-}
-
-// A simple right-pointing CSS triangle, rotated 90deg when expanded to
-// point down -- the same idiom VS Code's own Explorer chevrons use.
-.file-tree-node__chevron::before {
-  content: '';
-  width: 0;
-  height: 0;
-  border-style: solid;
-  border-width: 0.3rem 0 0.3rem 0.4rem;
-  border-color: transparent transparent transparent #6b7280;
-}
-
-.file-tree-node__chevron {
-  transition: transform 0.1s ease;
-}
-
-.file-tree-node__chevron--expanded {
-  transform: rotate(90deg);
-}
-
-.file-tree-node__name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  // Lets the actions group below sit flush to the row's own right edge
-  // instead of hugging the (possibly short) name.
-  flex: 1 1 auto;
-}
-
-// Always visible (not hover-revealed) -- mirrors
-// DocumentListItemComponent's own row actions, which likewise have no
-// opacity/hover-reveal treatment, just a plain per-button :hover tweak.
-.file-tree-node__actions {
-  display: flex;
-  gap: 0.25rem;
-  flex: 0 0 auto;
-}
-
-.file-tree-node__action {
-  padding: 0.1rem 0.4rem;
-  border-radius: 0.25rem;
-  border: 1px solid #d1d5db;
-  background-color: #ffffff;
-  cursor: pointer;
-  font-size: 0.7rem;
-  line-height: 1.3;
-
-  &:hover {
-    background-color: #f3f4f6;
-  }
-}
-
-.file-tree-node__action--danger {
-  color: #b91c1c;
-  border-color: #fecaca;
-
-  &:hover {
-    background-color: #fef2f2;
-  }
-}
+// Row/chevron/name/action visuals shared with the Documents panel's
+// document-tree-node -- one style source for both trees.
+@include shared.tree-row(file-tree-node);
 
 .file-tree-node__spinner {
   flex: 0 0 auto;

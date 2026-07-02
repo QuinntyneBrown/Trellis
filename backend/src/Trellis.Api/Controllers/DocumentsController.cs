@@ -1,48 +1,60 @@
 using System.Text;
-using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Trellis.Api.Contracts;
-using Trellis.Application.Common.Models;
-using Trellis.Application.Documents.Commands.CreateDocument;
-using Trellis.Application.Documents.Commands.DeleteDocument;
-using Trellis.Application.Documents.Commands.UpdateDocument;
-using Trellis.Application.Documents.Commands.UploadDocument;
-using Trellis.Application.Documents.Queries.GetDocumentById;
-using Trellis.Application.Documents.Queries.GetDocumentList;
+using Trellis.Api.Domain;
+using Trellis.Api.Models;
+using Trellis.Api.Persistence;
 
 namespace Trellis.Api.Controllers;
 
 /// <summary>
-/// Exposes CRUD and file-upload operations over PlantUML documents.
+/// Exposes CRUD and file-upload operations over PlantUML documents. Each action is
+/// a few lines of EF Core work against <see cref="ApplicationDbContext"/> directly.
 /// </summary>
 [ApiController]
 [Route("api/documents")]
 public class DocumentsController : ControllerBase
 {
-    private static readonly string[] AllowedUploadExtensions = { ".puml", ".txt" };
     private const long MaxUploadSizeBytes = 1 * 1024 * 1024;
+    private const int MaxNameLength = 200;
 
-    private readonly ISender mediator;
+    private static readonly string[] AllowedUploadExtensions = { ".puml", ".txt" };
+
+    private readonly ApplicationDbContext context;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DocumentsController"/> class.
     /// </summary>
-    /// <param name="mediator">The MediatR sender.</param>
-    public DocumentsController(ISender mediator)
+    /// <param name="context">The application database context.</param>
+    public DocumentsController(ApplicationDbContext context)
     {
-        this.mediator = mediator;
+        this.context = context;
     }
 
     /// <summary>
-    /// Gets the lightweight list of every document.
+    /// Gets the lightweight list of every document, most recently touched first.
     /// </summary>
     /// <param name="cancellationToken">A token used to observe cancellation requests.</param>
     /// <returns>The list of documents.</returns>
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<DocumentListItemDto>>> GetList(CancellationToken cancellationToken)
     {
-        var documents = await this.mediator.Send(new GetDocumentListQuery(), cancellationToken);
-        return this.Ok(documents);
+        // Projected directly in the query so the (potentially large) Content column
+        // is never fetched for a list view. The ordering itself is applied client-side
+        // after projection, because the SQLite provider cannot translate an ORDER BY
+        // over a DateTimeOffset expression into SQL.
+        var documents = await this.context.Documents
+            .Select(d => new DocumentListItemDto
+            {
+                Id = d.Id,
+                Name = d.Name,
+                UpdatedAt = d.UpdatedAt ?? d.CreatedAt,
+                FolderId = d.FolderId,
+            })
+            .ToListAsync(cancellationToken);
+
+        return this.Ok(documents.OrderByDescending(d => d.UpdatedAt).ToList());
     }
 
     /// <summary>
@@ -52,40 +64,73 @@ public class DocumentsController : ControllerBase
     /// <param name="cancellationToken">A token used to observe cancellation requests.</param>
     /// <returns>The document, or 404 if it does not exist.</returns>
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<DocumentDto>> GetById(Guid id, CancellationToken cancellationToken)
+    public async Task<ActionResult<PlantUmlDocument>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var document = await this.mediator.Send(new GetDocumentByIdQuery { Id = id }, cancellationToken);
+        var document = await this.context.Documents
+            .AsNoTracking()
+            .FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
 
         return document is null ? this.NotFound() : this.Ok(document);
     }
 
     /// <summary>
-    /// Creates a new document.
+    /// Creates a new document, optionally inside a virtual folder.
     /// </summary>
-    /// <param name="command">The document to create.</param>
+    /// <param name="request">The document to create.</param>
     /// <param name="cancellationToken">A token used to observe cancellation requests.</param>
-    /// <returns>The created document.</returns>
+    /// <returns>The created document, or 404 if the destination folder does not exist.</returns>
     [HttpPost]
-    public async Task<ActionResult<DocumentDto>> Create(CreateDocumentCommand command, CancellationToken cancellationToken)
+    public async Task<ActionResult<PlantUmlDocument>> Create(CreateDocumentRequest request, CancellationToken cancellationToken)
     {
-        var document = await this.mediator.Send(command, cancellationToken);
+        // Checked explicitly (mirroring Upload's unknown-documentId handling) so a
+        // stale folder id yields a 404 rather than a SQLite FK violation -> 500.
+        if (request.FolderId.HasValue
+            && !await this.context.Folders.AnyAsync(f => f.Id == request.FolderId.Value, cancellationToken))
+        {
+            return this.NotFound();
+        }
+
+        var document = new PlantUmlDocument
+        {
+            Id = Guid.NewGuid(),
+            Name = request.Name,
+            Content = request.Content,
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = null,
+            FolderId = request.FolderId,
+        };
+
+        this.context.Documents.Add(document);
+        await this.context.SaveChangesAsync(cancellationToken);
 
         return this.CreatedAtAction(nameof(this.GetById), new { id = document.Id }, document);
     }
 
     /// <summary>
     /// Replaces an existing document's name and content. The route id always wins
-    /// over any id that might otherwise appear in the request body.
+    /// over any id that might otherwise appear in the request body. The document's
+    /// folder is never changed here - it is chosen at creation only.
     /// </summary>
     /// <param name="id">The identifier of the document to update.</param>
-    /// <param name="body">The new name and content.</param>
+    /// <param name="request">The new name and content.</param>
     /// <param name="cancellationToken">A token used to observe cancellation requests.</param>
-    /// <returns>The updated document.</returns>
+    /// <returns>The updated document, or 404 if it does not exist.</returns>
     [HttpPut("{id:guid}")]
-    public async Task<ActionResult<DocumentDto>> Update(Guid id, UpdateDocumentRequestBody body, CancellationToken cancellationToken)
+    public async Task<ActionResult<PlantUmlDocument>> Update(Guid id, UpdateDocumentRequest request, CancellationToken cancellationToken)
     {
-        var command = new UpdateDocumentCommand { Id = id, Name = body.Name, Content = body.Content };
-        var document = await this.mediator.Send(command, cancellationToken);
+        var document = await this.context.Documents
+            .FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
+
+        if (document is null)
+        {
+            return this.NotFound();
+        }
+
+        document.Name = request.Name;
+        document.Content = request.Content;
+        document.UpdatedAt = DateTimeOffset.UtcNow;
+
+        await this.context.SaveChangesAsync(cancellationToken);
 
         return this.Ok(document);
     }
@@ -95,18 +140,26 @@ public class DocumentsController : ControllerBase
     /// </summary>
     /// <param name="id">The identifier of the document to delete.</param>
     /// <param name="cancellationToken">A token used to observe cancellation requests.</param>
-    /// <returns>204 No Content.</returns>
+    /// <returns>204 No Content, or 404 if it does not exist.</returns>
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        await this.mediator.Send(new DeleteDocumentCommand { Id = id }, cancellationToken);
+        var document = await this.context.Documents
+            .FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
+
+        if (document is null)
+        {
+            return this.NotFound();
+        }
+
+        this.context.Documents.Remove(document);
+        await this.context.SaveChangesAsync(cancellationToken);
+
         return this.NoContent();
     }
 
     /// <summary>
-    /// Creates or replaces a document from an uploaded .puml/.txt file. The uploaded
-    /// <see cref="IFormFile"/> never leaves this action - it is read into plain text
-    /// before being dispatched as an <see cref="UploadDocumentCommand"/>.
+    /// Creates or replaces a document from an uploaded .puml/.txt file.
     /// </summary>
     /// <param name="file">The uploaded file, under form field "file".</param>
     /// <param name="documentId">
@@ -115,7 +168,7 @@ public class DocumentsController : ControllerBase
     /// <param name="cancellationToken">A token used to observe cancellation requests.</param>
     /// <returns>The created or updated document.</returns>
     [HttpPost("upload")]
-    public async Task<ActionResult<DocumentDto>> Upload(IFormFile file, [FromForm] Guid? documentId, CancellationToken cancellationToken)
+    public async Task<ActionResult<PlantUmlDocument>> Upload(IFormFile file, [FromForm] Guid? documentId, CancellationToken cancellationToken)
     {
         if (file is null || file.Length == 0)
         {
@@ -133,20 +186,51 @@ public class DocumentsController : ControllerBase
             return this.BadRequest("Only .puml or .txt files may be uploaded.");
         }
 
+        var name = Path.GetFileNameWithoutExtension(file.FileName);
+        if (string.IsNullOrWhiteSpace(name) || name.Length > MaxNameLength)
+        {
+            return this.BadRequest($"The uploaded file must have a name of 1 to {MaxNameLength} characters.");
+        }
+
         string content;
         using (var reader = new StreamReader(file.OpenReadStream(), Encoding.UTF8))
         {
             content = await reader.ReadToEndAsync(cancellationToken);
         }
 
-        var command = new UploadDocumentCommand
-        {
-            DocumentId = documentId,
-            FileName = Path.GetFileNameWithoutExtension(file.FileName),
-            Content = content,
-        };
+        PlantUmlDocument document;
 
-        var document = await this.mediator.Send(command, cancellationToken);
+        if (documentId.HasValue)
+        {
+            var existing = await this.context.Documents
+                .FirstOrDefaultAsync(d => d.Id == documentId.Value, cancellationToken);
+
+            if (existing is null)
+            {
+                return this.NotFound();
+            }
+
+            // A replacing upload keeps the document's existing name - only the
+            // content (and the touched timestamp) change.
+            existing.Content = content;
+            existing.UpdatedAt = DateTimeOffset.UtcNow;
+            document = existing;
+        }
+        else
+        {
+            document = new PlantUmlDocument
+            {
+                Id = Guid.NewGuid(),
+                Name = name,
+                Content = content,
+                CreatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = null,
+            };
+
+            this.context.Documents.Add(document);
+        }
+
+        await this.context.SaveChangesAsync(cancellationToken);
 
         return documentId.HasValue
             ? this.Ok(document)

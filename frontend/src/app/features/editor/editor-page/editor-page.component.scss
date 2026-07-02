@@ -60,10 +60,10 @@
 
 // A fixed-position toast, not an in-flow element -- app-error-banner itself
 // already renders nothing when there's no message, so this simply overlays
-// the page, centered near the top, only while a disk save has actually
-// failed. z-index is kept above the rail's own tooltip (5) and the template
-// picker panel (10) so a disk-save failure is never hidden behind either.
-.editor-page__disk-save-error {
+// the page, centered near the top, only while a save/upload/open has
+// actually failed. z-index is kept above the rail's own tooltip (5) and the
+// template picker panel (10) so a failure is never hidden behind either.
+.editor-page__save-error {
   position: fixed;
   top: 0.75rem;
   left: 50%;

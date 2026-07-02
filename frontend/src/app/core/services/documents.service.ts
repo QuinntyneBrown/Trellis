@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 
 import { environment } from '../../../environments/environment';
 import { CreateDocumentRequest } from '../models/create-document-request.model';
@@ -29,6 +30,15 @@ export class DocumentsService {
 
   update(id: string, request: UpdateDocumentRequest): Observable<Document> {
     return this.http.put<Document>(`${this.baseUrl}/${id}`, request);
+  }
+
+  /**
+   * Renames a document. The update endpoint requires both name and content,
+   * so this hides the fetch-then-echo-the-content choreography that a
+   * name-only change forces.
+   */
+  rename(id: string, newName: string): Observable<Document> {
+    return this.getById(id).pipe(switchMap((full) => this.update(id, { name: newName, content: full.content })));
   }
 
   delete(id: string): Observable<void> {

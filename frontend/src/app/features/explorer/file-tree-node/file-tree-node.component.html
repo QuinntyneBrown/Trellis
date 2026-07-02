@@ -71,8 +71,7 @@
           [parentNode]="node"
           (toggleExpand)="toggleExpand.emit($event)"
           (fileClicked)="fileClicked.emit($event)"
-          (createFile)="createFile.emit($event)"
-          (createFolder)="createFolder.emit($event)"
+          (createEntry)="createEntry.emit($event)"
           (deleteEntry)="deleteEntry.emit($event)"
         ></app-file-tree-node>
       }

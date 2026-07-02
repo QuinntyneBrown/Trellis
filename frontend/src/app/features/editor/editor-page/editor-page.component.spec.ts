@@ -1,8 +1,10 @@
 import { Location } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute } from '@angular/router';
-import { BehaviorSubject, of } from 'rxjs';
+import { By } from '@angular/platform-browser';
+import { ActivatedRoute, ParamMap, convertToParamMap } from '@angular/router';
+import { BehaviorSubject, Subject, of, throwError } from 'rxjs';
 
 import { Document } from '../../../core/models/document.model';
 import { OpenedDiskFile } from '../../../core/models/opened-disk-file.model';
@@ -11,16 +13,25 @@ import { DiagramHubService } from '../../../core/services/diagram-hub.service';
 import { DocumentsService } from '../../../core/services/documents.service';
 import { EditorLayoutPreferencesService } from '../../../core/services/editor-layout-preferences.service';
 import { FileSystemAccessService } from '../../../core/services/file-system-access.service';
+import { FoldersService } from '../../../core/services/folders.service';
 import { MonacoLoaderService } from '../../../core/services/monaco-loader.service';
 import { TemplatesService } from '../../../core/services/templates.service';
 import { MAX_EDITOR_PANE_RATIO, MIN_EDITOR_PANE_RATIO } from '../editor-pane-ratio.constants';
+import { MonacoEditorComponent } from '../monaco-editor/monaco-editor.component';
+import { ResizeDividerComponent } from '../resize-divider/resize-divider.component';
 import { MAX_SIDE_PANEL_WIDTH_PX, MIN_SIDE_PANEL_WIDTH_PX } from '../side-panel-width.constants';
 import { EditorPageComponent } from './editor-page.component';
+
+function ctrlSEvent(): KeyboardEvent {
+  const event = new KeyboardEvent('keydown', { key: 's', ctrlKey: true, cancelable: true });
+  jest.spyOn(event, 'preventDefault');
+  return event;
+}
 
 describe('EditorPageComponent', () => {
   let fixture: ComponentFixture<EditorPageComponent>;
   let component: EditorPageComponent;
-  let routeDataSubject: BehaviorSubject<Record<string, unknown>>;
+  let routeParamMapSubject: BehaviorSubject<ParamMap>;
   let documentsServiceMock: {
     create: jest.Mock;
     update: jest.Mock;
@@ -28,12 +39,13 @@ describe('EditorPageComponent', () => {
     list: jest.Mock;
     delete: jest.Mock;
     getById: jest.Mock;
+    rename: jest.Mock;
   };
   let locationMock: { go: jest.Mock };
+  let foldersServiceMock: { list: jest.Mock; create: jest.Mock; rename: jest.Mock; delete: jest.Mock };
   let hubServiceMock: {
     connectionState: ReturnType<typeof signal<'connected' | 'disconnected' | 'reconnecting'>>;
     renderResult: ReturnType<typeof signal<null>>;
-    renderError: ReturnType<typeof signal<null>>;
     isRendering: ReturnType<typeof signal<boolean>>;
     render: jest.Mock;
   };
@@ -53,52 +65,15 @@ describe('EditorPageComponent', () => {
     requestPermission: jest.Mock;
     saveRootHandle: jest.Mock;
     loadRootHandle: jest.Mock;
-    clearRootHandle: jest.Mock;
   };
 
-  beforeEach(async () => {
-    routeDataSubject = new BehaviorSubject<Record<string, unknown>>({});
-    documentsServiceMock = {
-      create: jest.fn(),
-      update: jest.fn(),
-      upload: jest.fn(),
-      list: jest.fn().mockReturnValue(of([])),
-      delete: jest.fn(),
-      getById: jest.fn(),
-    };
-    locationMock = { go: jest.fn() };
-    hubServiceMock = {
-      connectionState: signal('connected'),
-      renderResult: signal(null),
-      renderError: signal(null),
-      isRendering: signal(false),
-      render: jest.fn().mockResolvedValue(undefined),
-    };
-    layoutPreferencesMock = {
-      getEditorPaneRatio: jest.fn().mockReturnValue(0.4),
-      setEditorPaneRatio: jest.fn(),
-      getSidePanelWidthPx: jest.fn().mockReturnValue(300),
-      setSidePanelWidthPx: jest.fn(),
-    };
-    fileSystemAccessServiceMock = {
-      // ExplorerPanelComponent is always mounted inside EditorPageComponent's
-      // own template now (see Feature 6), so this mock must satisfy its
-      // ngOnInit too, not just the disk-save methods EditorPageComponent
-      // itself calls directly -- loadRootHandle resolving null keeps it
-      // parked on its default "Open Folder" button state, a no-op as far as
-      // these EditorPageComponent-focused tests are concerned.
-      isSupported: jest.fn().mockReturnValue(true),
-      pickDirectory: jest.fn(),
-      listChildren: jest.fn().mockResolvedValue([]),
-      readTextFile: jest.fn(),
-      writeTextFile: jest.fn().mockResolvedValue(undefined),
-      queryPermission: jest.fn(),
-      requestPermission: jest.fn(),
-      saveRootHandle: jest.fn().mockResolvedValue(undefined),
-      loadRootHandle: jest.fn().mockResolvedValue(null),
-      clearRootHandle: jest.fn().mockResolvedValue(undefined),
-    };
-
+  /**
+   * The single source of truth for the TestBed provider list -- the
+   * beforeEach module and the two clamp tests (which must re-create the
+   * module after changing a mock's return value) all build from here, so
+   * the copies can never drift apart again.
+   */
+  function providers(): unknown[] {
     const editorStub = {
       getValue: jest.fn(() => ''),
       setValue: jest.fn(),
@@ -112,18 +87,70 @@ describe('EditorPageComponent', () => {
       KeyCode: { Enter: 3 },
     };
 
+    return [
+      { provide: ActivatedRoute, useValue: { paramMap: routeParamMapSubject.asObservable() } },
+      { provide: Location, useValue: locationMock },
+      { provide: DocumentsService, useValue: documentsServiceMock },
+      { provide: FoldersService, useValue: foldersServiceMock },
+      { provide: DiagramHubService, useValue: hubServiceMock },
+      { provide: EditorLayoutPreferencesService, useValue: layoutPreferencesMock },
+      { provide: FileSystemAccessService, useValue: fileSystemAccessServiceMock },
+      { provide: TemplatesService, useValue: { list: jest.fn().mockReturnValue(of([])) } },
+      { provide: MonacoLoaderService, useValue: { load: jest.fn().mockResolvedValue(fakeMonaco) } },
+    ];
+  }
+
+  beforeEach(async () => {
+    routeParamMapSubject = new BehaviorSubject<ParamMap>(convertToParamMap({}));
+    documentsServiceMock = {
+      create: jest.fn(),
+      update: jest.fn(),
+      upload: jest.fn(),
+      list: jest.fn().mockReturnValue(of([])),
+      delete: jest.fn(),
+      getById: jest.fn(),
+      rename: jest.fn(),
+    };
+    locationMock = { go: jest.fn() };
+    foldersServiceMock = {
+      list: jest.fn().mockReturnValue(of([])),
+      create: jest.fn(),
+      rename: jest.fn(),
+      delete: jest.fn(),
+    };
+    hubServiceMock = {
+      connectionState: signal('connected'),
+      renderResult: signal(null),
+      isRendering: signal(false),
+      render: jest.fn().mockResolvedValue(undefined),
+    };
+    layoutPreferencesMock = {
+      getEditorPaneRatio: jest.fn().mockReturnValue(0.4),
+      setEditorPaneRatio: jest.fn(),
+      getSidePanelWidthPx: jest.fn().mockReturnValue(300),
+      setSidePanelWidthPx: jest.fn(),
+    };
+    fileSystemAccessServiceMock = {
+      // ExplorerPanelComponent is always mounted inside EditorPageComponent's
+      // own template, so this mock must satisfy its ngOnInit too, not just
+      // the disk-save methods EditorPageComponent itself calls directly --
+      // loadRootHandle resolving null keeps it parked on its default
+      // "Open Folder" button state, a no-op as far as these
+      // EditorPageComponent-focused tests are concerned.
+      isSupported: jest.fn().mockReturnValue(true),
+      pickDirectory: jest.fn(),
+      listChildren: jest.fn().mockResolvedValue([]),
+      readTextFile: jest.fn(),
+      writeTextFile: jest.fn().mockResolvedValue(undefined),
+      queryPermission: jest.fn(),
+      requestPermission: jest.fn(),
+      saveRootHandle: jest.fn().mockResolvedValue(undefined),
+      loadRootHandle: jest.fn().mockResolvedValue(null),
+    };
+
     await TestBed.configureTestingModule({
       imports: [EditorPageComponent],
-      providers: [
-        { provide: ActivatedRoute, useValue: { data: routeDataSubject.asObservable() } },
-        { provide: Location, useValue: locationMock },
-        { provide: DocumentsService, useValue: documentsServiceMock },
-        { provide: DiagramHubService, useValue: hubServiceMock },
-        { provide: EditorLayoutPreferencesService, useValue: layoutPreferencesMock },
-        { provide: FileSystemAccessService, useValue: fileSystemAccessServiceMock },
-        { provide: TemplatesService, useValue: { list: jest.fn().mockReturnValue(of([])) } },
-        { provide: MonacoLoaderService, useValue: { load: jest.fn().mockResolvedValue(fakeMonaco) } },
-      ],
+      providers: providers(),
     }).compileComponents();
 
     fixture = TestBed.createComponent(EditorPageComponent);
@@ -132,6 +159,23 @@ describe('EditorPageComponent', () => {
 
   function byTestId(testId: string): HTMLElement | null {
     return fixture.nativeElement.querySelector(`[data-testid="${testId}"]`);
+  }
+
+  function sampleDocument(overrides: Partial<Document> = {}): Document {
+    return {
+      id: '1',
+      name: 'Doc',
+      content: 'old',
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: null,
+      folderId: null,
+      ...overrides,
+    };
+  }
+
+  /** Emits a router paramMap carrying the given documentId (or none). */
+  function emitDocumentId(documentId: string | null): void {
+    routeParamMapSubject.next(convertToParamMap(documentId ? { documentId } : {}));
   }
 
   it('renders the editor-page root and its composed children', () => {
@@ -143,50 +187,75 @@ describe('EditorPageComponent', () => {
     expect(byTestId('preview-pane')).toBeTruthy();
   });
 
-  it('starts blank when the resolver provides no document', () => {
-    fixture.detectChanges();
+  describe('URL-driven document loading', () => {
+    it('starts blank when the URL has no documentId', () => {
+      fixture.detectChanges();
 
-    expect(component.documentId()).toBeNull();
-    expect(component.sourceCode()).toBe('');
-    expect(component.documentName()).toBe('Untitled diagram');
+      expect(documentsServiceMock.getById).not.toHaveBeenCalled();
+      expect(component.documentId()).toBeNull();
+      expect(component.sourceCode()).toBe('');
+      expect(component.documentName()).toBe('Untitled diagram');
+    });
+
+    it('fetches and applies the document referenced by the URL documentId', () => {
+      const document = sampleDocument({ id: '1', name: 'Loaded Doc', content: '@startuml\nfoo\n@enduml' });
+      documentsServiceMock.getById.mockReturnValue(of(document));
+      emitDocumentId('1');
+
+      fixture.detectChanges();
+
+      expect(documentsServiceMock.getById).toHaveBeenCalledWith('1');
+      expect(component.documentId()).toBe('1');
+      expect(component.documentName()).toBe('Loaded Doc');
+      expect(component.sourceCode()).toBe('@startuml\nfoo\n@enduml');
+      expect(hubServiceMock.render).toHaveBeenCalledWith('@startuml\nfoo\n@enduml');
+    });
+
+    it('re-fetches and applies a new document when the URL documentId changes on a live instance', () => {
+      fixture.detectChanges();
+
+      const document = sampleDocument({ id: '2', name: 'Second Doc', content: 'second content' });
+      documentsServiceMock.getById.mockReturnValue(of(document));
+      emitDocumentId('2');
+
+      expect(component.documentId()).toBe('2');
+      expect(component.sourceCode()).toBe('second content');
+    });
+
+    it('falls back to a blank editor and resets the URL when the documentId is unknown (404)', () => {
+      documentsServiceMock.getById.mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 404 })),
+      );
+      emitDocumentId('gone');
+
+      fixture.detectChanges();
+
+      expect(component.documentId()).toBeNull();
+      expect(component.sourceCode()).toBe('');
+      expect(locationMock.go).toHaveBeenCalledWith('/editor');
+      expect(component.saveError()).toBeNull();
+    });
+
+    it('surfaces a non-404 load failure via the error toast and stays blank', () => {
+      documentsServiceMock.getById.mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 500 })),
+      );
+      emitDocumentId('1');
+
+      fixture.detectChanges();
+
+      expect(component.documentId()).toBeNull();
+      expect(component.saveError()).toBe('Could not load the requested document.');
+      expect(locationMock.go).not.toHaveBeenCalled();
+    });
   });
 
-  it('applies the resolved document from route data', () => {
-    const document: Document = {
-      id: '1',
-      name: 'Loaded Doc',
-      content: '@startuml\nfoo\n@enduml',
-      createdAt: '2026-01-01T00:00:00Z',
-      updatedAt: null,
-    };
-    routeDataSubject.next({ document });
+  it('invokes hubService.render when the Monaco editor requests a render (template binding)', () => {
     fixture.detectChanges();
 
-    expect(component.documentId()).toBe('1');
-    expect(component.documentName()).toBe('Loaded Doc');
-    expect(component.sourceCode()).toBe('@startuml\nfoo\n@enduml');
-  });
-
-  it('re-applies a newly resolved document when route data changes on a reused instance', () => {
-    fixture.detectChanges();
-
-    const document: Document = {
-      id: '2',
-      name: 'Second Doc',
-      content: 'second content',
-      createdAt: '2026-01-01T00:00:00Z',
-      updatedAt: null,
-    };
-    routeDataSubject.next({ document });
-
-    expect(component.documentId()).toBe('2');
-    expect(component.sourceCode()).toBe('second content');
-  });
-
-  it('invokes hubService.render when the editor requests a render', () => {
-    fixture.detectChanges();
-
-    component.onRenderRequested('@startuml\n@enduml');
+    const monaco = fixture.debugElement.query(By.directive(MonacoEditorComponent))
+      .componentInstance as MonacoEditorComponent;
+    monaco.renderRequested.emit('@startuml\n@enduml');
 
     expect(hubServiceMock.render).toHaveBeenCalledWith('@startuml\n@enduml');
   });
@@ -194,65 +263,179 @@ describe('EditorPageComponent', () => {
   it('creates a new document on save confirm when there is no existing id', () => {
     fixture.detectChanges();
     documentsServiceMock.create.mockReturnValue(
-      of({ id: 'new-id', name: 'New Doc', content: 'x', createdAt: '2026-01-01T00:00:00Z', updatedAt: null }),
+      of(sampleDocument({ id: 'new-id', name: 'New Doc', content: 'x' })),
     );
 
     component.sourceCode.set('x');
-    component.onSaveConfirm('New Doc');
+    component.performSave('New Doc');
 
-    expect(documentsServiceMock.create).toHaveBeenCalledWith({ name: 'New Doc', content: 'x' });
+    expect(documentsServiceMock.create).toHaveBeenCalledWith({ name: 'New Doc', content: 'x', folderId: null });
     expect(locationMock.go).toHaveBeenCalledWith('/editor/new-id');
     expect(component.documentId()).toBe('new-id');
   });
 
+  it('sends the chosen destination folder on a first-time save', () => {
+    fixture.detectChanges();
+    documentsServiceMock.create.mockReturnValue(
+      of(sampleDocument({ id: 'new-id', name: 'New Doc', content: 'x', folderId: 'folder-1' })),
+    );
+
+    component.sourceCode.set('x');
+    component.performSave('New Doc', 'folder-1');
+
+    expect(documentsServiceMock.create).toHaveBeenCalledWith({ name: 'New Doc', content: 'x', folderId: 'folder-1' });
+  });
+
+  it('fetches the folder list for the save dialog when it opens', () => {
+    fixture.detectChanges();
+    const folders = [{ id: 'f1', name: 'Diagrams', parentFolderId: null }];
+    foldersServiceMock.list.mockReturnValue(of(folders));
+
+    component.onSaveClicked();
+
+    expect(component.isSaveDialogOpen()).toBe(true);
+    expect(foldersServiceMock.list).toHaveBeenCalledTimes(1);
+    expect(component.saveDialogFolders()).toEqual(folders);
+  });
+
+  it('degrades to an empty folder list when the fetch fails, without blocking the dialog', () => {
+    fixture.detectChanges();
+    component.saveDialogFolders.set([{ id: 'stale', name: 'Stale', parentFolderId: null }]);
+    foldersServiceMock.list.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+
+    component.onSaveClicked();
+
+    expect(component.isSaveDialogOpen()).toBe(true);
+    expect(component.saveDialogFolders()).toEqual([]);
+  });
+
   it('updates the existing document on save confirm when an id is already present', () => {
-    const document: Document = {
-      id: '1',
-      name: 'Doc',
-      content: 'old',
-      createdAt: '2026-01-01T00:00:00Z',
-      updatedAt: null,
-    };
-    routeDataSubject.next({ document });
+    documentsServiceMock.getById.mockReturnValue(of(sampleDocument()));
+    emitDocumentId('1');
     fixture.detectChanges();
 
     documentsServiceMock.update.mockReturnValue(
-      of({
-        id: '1',
-        name: 'Renamed',
-        content: 'old',
-        createdAt: '2026-01-01T00:00:00Z',
-        updatedAt: '2026-01-02T00:00:00Z',
-      }),
+      of(sampleDocument({ name: 'Renamed', updatedAt: '2026-01-02T00:00:00Z' })),
     );
 
-    component.onSaveConfirm('Renamed');
+    component.performSave('Renamed');
 
     expect(documentsServiceMock.update).toHaveBeenCalledWith('1', { name: 'Renamed', content: 'old' });
     expect(locationMock.go).not.toHaveBeenCalled();
   });
 
-  it('uploads the selected file, applies its text immediately, and navigates to the created document', async () => {
+  it('keeps the save dialog open and surfaces the failure via the error toast when saving fails', () => {
     fixture.detectChanges();
+    documentsServiceMock.create.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
 
-    const file = new File(['@startuml\nuploaded\n@enduml'], 'diagram.puml');
-    documentsServiceMock.upload.mockReturnValue(
-      of({
-        id: 'uploaded-id',
-        name: 'diagram',
-        content: '@startuml\nuploaded\n@enduml',
-        createdAt: '2026-01-01T00:00:00Z',
-        updatedAt: null,
-      }),
-    );
+    component.sourceCode.set('x');
+    component.isSaveDialogOpen.set(true);
+    component.performSave('Doomed Doc');
 
-    component.onFileSelected(file);
-    await Promise.resolve();
-    await Promise.resolve();
+    expect(component.isSaveDialogOpen()).toBe(true);
+    expect(component.saveError()).toBe('Could not save "Doomed Doc".');
+    expect(locationMock.go).not.toHaveBeenCalled();
+  });
 
-    expect(component.sourceCode()).toBe('@startuml\nuploaded\n@enduml');
-    expect(documentsServiceMock.upload).toHaveBeenCalledWith(file, undefined);
-    expect(locationMock.go).toHaveBeenCalledWith('/editor/uploaded-id');
+  it('clears a previous save error at the start of the next save attempt', () => {
+    fixture.detectChanges();
+    component.saveError.set('stale error');
+    documentsServiceMock.create.mockReturnValue(of(sampleDocument({ id: 'new-id', name: 'Doc', content: 'x' })));
+
+    component.sourceCode.set('x');
+    component.performSave('Doc');
+
+    expect(component.saveError()).toBeNull();
+  });
+
+  describe('upload', () => {
+    it('uploads the selected file and applies the document returned by the server', () => {
+      fixture.detectChanges();
+
+      const file = new File(['@startuml\nuploaded\n@enduml'], 'diagram.puml');
+      documentsServiceMock.upload.mockReturnValue(
+        of(sampleDocument({ id: 'uploaded-id', name: 'diagram', content: '@startuml\nuploaded\n@enduml' })),
+      );
+
+      component.onFileSelected(file);
+
+      expect(component.sourceCode()).toBe('@startuml\nuploaded\n@enduml');
+      expect(documentsServiceMock.upload).toHaveBeenCalledWith(file, undefined);
+      expect(locationMock.go).toHaveBeenCalledWith('/editor/uploaded-id');
+    });
+
+    it('ignores a slow previous upload response that arrives after a newer upload was initiated', () => {
+      fixture.detectChanges();
+
+      const slowResponse = new Subject<Document>();
+      const fastResponse = new Subject<Document>();
+      documentsServiceMock.upload.mockReturnValueOnce(slowResponse).mockReturnValueOnce(fastResponse);
+
+      component.onFileSelected(new File(['slow'], 'slow.puml'));
+      component.onFileSelected(new File(['fast'], 'fast.puml'));
+
+      fastResponse.next(sampleDocument({ id: 'fast-id', name: 'fast', content: 'fast' }));
+      fastResponse.complete();
+      slowResponse.next(sampleDocument({ id: 'slow-id', name: 'slow', content: 'slow' }));
+      slowResponse.complete();
+
+      expect(component.documentId()).toBe('fast-id');
+      expect(component.sourceCode()).toBe('fast');
+    });
+
+    it('surfaces an upload failure via the error toast', () => {
+      fixture.detectChanges();
+
+      documentsServiceMock.upload.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+
+      component.onFileSelected(new File(['x'], 'broken.puml'));
+
+      expect(component.saveError()).toBe('Could not upload "broken.puml".');
+    });
+
+    it('suppresses a superseded upload failure so it cannot clobber a newer attempt', () => {
+      fixture.detectChanges();
+
+      const failing = new Subject<Document>();
+      documentsServiceMock.upload
+        .mockReturnValueOnce(failing)
+        .mockReturnValueOnce(of(sampleDocument({ id: 'ok-id', name: 'ok', content: 'ok' })));
+
+      component.onFileSelected(new File(['a'], 'a.puml'));
+      component.onFileSelected(new File(['b'], 'b.puml'));
+      failing.error(new HttpErrorResponse({ status: 500 }));
+
+      expect(component.saveError()).toBeNull();
+      expect(component.documentId()).toBe('ok-id');
+    });
+  });
+
+  describe('documents panel open', () => {
+    it('loads the picked document, closes the panel, and reflects the id in the URL only after it arrives', () => {
+      fixture.detectChanges();
+      component.toggleSidePanel('documents');
+
+      const document = sampleDocument({ id: 'picked', name: 'Picked', content: 'picked content' });
+      documentsServiceMock.getById.mockReturnValue(of(document));
+
+      component.onDocumentOpenedFromPanel({ id: 'picked', name: 'Picked', updatedAt: '2026-01-01T00:00:00Z', folderId: null });
+
+      expect(component.activeSidePanel()).toBeNull();
+      expect(component.documentId()).toBe('picked');
+      expect(component.sourceCode()).toBe('picked content');
+      expect(locationMock.go).toHaveBeenCalledWith('/editor/picked');
+    });
+
+    it('does not rewrite the URL and surfaces the failure when the open fetch fails', () => {
+      fixture.detectChanges();
+
+      documentsServiceMock.getById.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+
+      component.onDocumentOpenedFromPanel({ id: 'gone', name: 'Gone Doc', updatedAt: '2026-01-01T00:00:00Z', folderId: null });
+
+      expect(locationMock.go).not.toHaveBeenCalled();
+      expect(component.saveError()).toBe('Could not open "Gone Doc".');
+    });
   });
 
   it('guards template selection behind a confirm dialog when there are unsaved changes', () => {
@@ -282,9 +465,9 @@ describe('EditorPageComponent', () => {
     fixture.detectChanges();
 
     expect(component.activeSidePanel()).toBeNull();
-    component.onDocumentsPanelToggle();
+    component.toggleSidePanel('documents');
     expect(component.activeSidePanel()).toBe('documents');
-    component.onDocumentsPanelToggle();
+    component.toggleSidePanel('documents');
     expect(component.activeSidePanel()).toBeNull();
   });
 
@@ -302,15 +485,7 @@ describe('EditorPageComponent', () => {
     await TestBed.resetTestingModule()
       .configureTestingModule({
         imports: [EditorPageComponent],
-        providers: [
-          { provide: ActivatedRoute, useValue: { data: routeDataSubject.asObservable() } },
-          { provide: Location, useValue: locationMock },
-          { provide: DocumentsService, useValue: documentsServiceMock },
-          { provide: DiagramHubService, useValue: hubServiceMock },
-          { provide: EditorLayoutPreferencesService, useValue: layoutPreferencesMock },
-          { provide: FileSystemAccessService, useValue: fileSystemAccessServiceMock },
-          { provide: TemplatesService, useValue: { list: jest.fn().mockReturnValue(of([])) } },
-        ],
+        providers: providers(),
       })
       .compileComponents();
     const clampedFixture = TestBed.createComponent(EditorPageComponent);
@@ -318,10 +493,12 @@ describe('EditorPageComponent', () => {
     expect(clampedFixture.componentInstance.editorPaneRatio()).toBe(MAX_EDITOR_PANE_RATIO);
   });
 
-  it('updates the live ratio/percent used for the editor pane width binding on (ratioChange), without persisting', () => {
+  it('updates the live ratio/percent for the editor pane width binding on the divider valueChange, without persisting', () => {
     fixture.detectChanges();
 
-    component.onDividerRatioChange(0.65);
+    const divider = fixture.debugElement.query(By.directive(ResizeDividerComponent))
+      .componentInstance as ResizeDividerComponent;
+    divider.valueChange.emit(0.65);
 
     expect(component.editorPaneRatio()).toBe(0.65);
     expect(component.editorPaneRatioPercent()).toBe(65);
@@ -334,7 +511,7 @@ describe('EditorPageComponent', () => {
   it('persists the ratio via the layout preferences service on (resizeEnd) only', () => {
     fixture.detectChanges();
 
-    component.onDividerRatioChange(0.3);
+    component.editorPaneRatio.set(0.3);
     expect(layoutPreferencesMock.setEditorPaneRatio).not.toHaveBeenCalled();
 
     component.onDividerResizeEnd(0.3);
@@ -350,31 +527,13 @@ describe('EditorPageComponent', () => {
   });
 
   describe('Ctrl/Cmd+S quick-save', () => {
-    function ctrlSEvent(): KeyboardEvent {
-      const event = new KeyboardEvent('keydown', { key: 's', ctrlKey: true, cancelable: true });
-      jest.spyOn(event, 'preventDefault');
-      return event;
-    }
-
     it('quick-saves the existing document (no dialog) when there are unsaved changes and a documentId', () => {
-      const document: Document = {
-        id: '1',
-        name: 'Doc',
-        content: 'old',
-        createdAt: '2026-01-01T00:00:00Z',
-        updatedAt: null,
-      };
-      routeDataSubject.next({ document });
+      documentsServiceMock.getById.mockReturnValue(of(sampleDocument()));
+      emitDocumentId('1');
       fixture.detectChanges();
       component.sourceCode.set('new content');
       documentsServiceMock.update.mockReturnValue(
-        of({
-          id: '1',
-          name: 'Doc',
-          content: 'new content',
-          createdAt: '2026-01-01T00:00:00Z',
-          updatedAt: '2026-01-02T00:00:00Z',
-        }),
+        of(sampleDocument({ content: 'new content', updatedAt: '2026-01-02T00:00:00Z' })),
       );
 
       const event = ctrlSEvent();
@@ -412,14 +571,8 @@ describe('EditorPageComponent', () => {
     });
 
     it('is a no-op when the save dialog is already open, regardless of documentId/hasUnsavedChanges', () => {
-      const document: Document = {
-        id: '1',
-        name: 'Doc',
-        content: 'old',
-        createdAt: '2026-01-01T00:00:00Z',
-        updatedAt: null,
-      };
-      routeDataSubject.next({ document });
+      documentsServiceMock.getById.mockReturnValue(of(sampleDocument()));
+      emitDocumentId('1');
       fixture.detectChanges();
       component.sourceCode.set('new content');
       component.isSaveDialogOpen.set(true);
@@ -491,14 +644,8 @@ describe('EditorPageComponent', () => {
     }
 
     it('opening a disk file sets openFileHandle, clears documentId, updates content, and resets the URL', () => {
-      const document: Document = {
-        id: '1',
-        name: 'Doc',
-        content: 'old',
-        createdAt: '2026-01-01T00:00:00Z',
-        updatedAt: null,
-      };
-      routeDataSubject.next({ document });
+      documentsServiceMock.getById.mockReturnValue(of(sampleDocument()));
+      emitDocumentId('1');
       fixture.detectChanges();
 
       const file = diskFile();
@@ -549,19 +696,13 @@ describe('EditorPageComponent', () => {
       expect(component.openFileHandle()).toBeNull();
     });
 
-    it('opening a SQLite document (route-resolved) clears a previously open disk file handle', () => {
+    it('loading a SQLite document from the URL clears a previously open disk file handle', () => {
       fixture.detectChanges();
       component.onDiskFileOpened(diskFile());
       expect(component.openFileHandle()).not.toBeNull();
 
-      const document: Document = {
-        id: '1',
-        name: 'Doc',
-        content: 'from db',
-        createdAt: '2026-01-01T00:00:00Z',
-        updatedAt: null,
-      };
-      routeDataSubject.next({ document });
+      documentsServiceMock.getById.mockReturnValue(of(sampleDocument({ content: 'from db' })));
+      emitDocumentId('1');
 
       expect(component.openFileHandle()).toBeNull();
     });
@@ -662,7 +803,7 @@ describe('EditorPageComponent', () => {
       component.onDiskFileOpened(diskFile());
       component.sourceCode.set('edited via ctrl+s');
 
-      const event = ctrlSEventFactory();
+      const event = ctrlSEvent();
       component.onKeyDown(event);
       await Promise.resolve();
       await Promise.resolve();
@@ -687,7 +828,7 @@ describe('EditorPageComponent', () => {
       expect(component.isSaveDialogOpen()).toBe(true);
     });
 
-    it('surfaces a write failure via diskSaveError and does not update savedSourceCode', async () => {
+    it('surfaces a write failure via saveError and does not update savedSourceCode', async () => {
       fileSystemAccessServiceMock.writeTextFile.mockRejectedValue(new Error('disk full'));
       fixture.detectChanges();
       component.onDiskFileOpened(diskFile());
@@ -697,15 +838,9 @@ describe('EditorPageComponent', () => {
       await Promise.resolve();
       await Promise.resolve();
 
-      expect(component.diskSaveError()).toBe('disk full');
+      expect(component.saveError()).toBe('disk full');
       expect(component.savedSourceCode()).not.toBe('will fail to save');
     });
-
-    function ctrlSEventFactory(): KeyboardEvent {
-      const event = new KeyboardEvent('keydown', { key: 's', ctrlKey: true, cancelable: true });
-      jest.spyOn(event, 'preventDefault');
-      return event;
-    }
   });
 
   describe('activeSidePanel exclusivity (Explorer vs. Documents)', () => {
@@ -722,10 +857,10 @@ describe('EditorPageComponent', () => {
     it('clicking the same panel toggle twice collapses back to null', () => {
       fixture.detectChanges();
 
-      component.onExplorerPanelToggle();
+      component.toggleSidePanel('explorer');
       expect(component.activeSidePanel()).toBe('explorer');
 
-      component.onExplorerPanelToggle();
+      component.toggleSidePanel('explorer');
       expect(component.activeSidePanel()).toBeNull();
     });
 
@@ -748,15 +883,7 @@ describe('EditorPageComponent', () => {
       await TestBed.resetTestingModule()
         .configureTestingModule({
           imports: [EditorPageComponent],
-          providers: [
-            { provide: ActivatedRoute, useValue: { data: routeDataSubject.asObservable() } },
-            { provide: Location, useValue: locationMock },
-            { provide: DocumentsService, useValue: documentsServiceMock },
-            { provide: DiagramHubService, useValue: hubServiceMock },
-            { provide: EditorLayoutPreferencesService, useValue: layoutPreferencesMock },
-            { provide: FileSystemAccessService, useValue: fileSystemAccessServiceMock },
-            { provide: TemplatesService, useValue: { list: jest.fn().mockReturnValue(of([])) } },
-          ],
+          providers: providers(),
         })
         .compileComponents();
       const clampedFixture = TestBed.createComponent(EditorPageComponent);
@@ -764,10 +891,16 @@ describe('EditorPageComponent', () => {
       expect(clampedFixture.componentInstance.sidePanelWidthPx()).toBe(MAX_SIDE_PANEL_WIDTH_PX);
     });
 
-    it('updates the live width used for the side panel binding on (widthChange), without persisting', () => {
+    it('updates the live width for the side panel binding on the divider valueChange, without persisting', () => {
+      fixture.detectChanges();
+      component.toggleSidePanel('documents');
       fixture.detectChanges();
 
-      component.onSidePanelDividerWidthChange(350);
+      // With a side panel active, the panel divider renders before the
+      // editor/preview divider in the DOM.
+      const sidePanelDivider = fixture.debugElement.queryAll(By.directive(ResizeDividerComponent))[0]
+        .componentInstance as ResizeDividerComponent;
+      sidePanelDivider.valueChange.emit(350);
 
       expect(component.sidePanelWidthPx()).toBe(350);
       expect(layoutPreferencesMock.setSidePanelWidthPx).not.toHaveBeenCalled();
@@ -776,7 +909,7 @@ describe('EditorPageComponent', () => {
     it('persists the width via the layout preferences service on (resizeEnd) only', () => {
       fixture.detectChanges();
 
-      component.onSidePanelDividerWidthChange(320);
+      component.sidePanelWidthPx.set(320);
       expect(layoutPreferencesMock.setSidePanelWidthPx).not.toHaveBeenCalled();
 
       component.onSidePanelDividerResizeEnd(320);

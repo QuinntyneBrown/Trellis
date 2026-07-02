@@ -7,8 +7,8 @@
     (save)="onSaveClicked()"
     (fileSelected)="onFileSelected($event)"
     (templateSelected)="onTemplateSelected($event)"
-    (explorerPanelToggle)="onExplorerPanelToggle()"
-    (documentsPanelToggle)="onDocumentsPanelToggle()"
+    (explorerPanelToggle)="toggleSidePanel('explorer')"
+    (documentsPanelToggle)="toggleSidePanel('documents')"
   ></app-editor-toolbar>
 
   <div class="editor-page__body">
@@ -30,28 +30,37 @@
     </div>
 
     @if (activeSidePanel()) {
-      <app-pixel-resize-divider
-        [widthPx]="sidePanelWidthPx()"
-        [minWidthPx]="MIN_SIDE_PANEL_WIDTH_PX"
-        [maxWidthPx]="MAX_SIDE_PANEL_WIDTH_PX"
-        (widthChange)="onSidePanelDividerWidthChange($event)"
+      <app-resize-divider
+        [value]="sidePanelWidthPx()"
+        [min]="MIN_SIDE_PANEL_WIDTH_PX"
+        [max]="MAX_SIDE_PANEL_WIDTH_PX"
+        [step]="SIDE_PANEL_WIDTH_KEYBOARD_STEP_PX"
+        [resetValue]="DEFAULT_SIDE_PANEL_WIDTH_PX"
+        ariaLabel="Resize side panel"
+        testId="pixel-resize-divider"
+        (valueChange)="sidePanelWidthPx.set($event)"
         (resizeEnd)="onSidePanelDividerResizeEnd($event)"
-      ></app-pixel-resize-divider>
+      ></app-resize-divider>
     }
 
     <div class="editor-page__editor-pane" [style.flex-basis.%]="editorPaneRatioPercent()">
       <app-monaco-editor
         [value]="sourceCode()"
-        (valueChange)="onEditorValueChange($event)"
-        (renderRequested)="onRenderRequested($event)"
+        (valueChange)="sourceCode.set($event)"
+        (renderRequested)="hubService.render($event)"
       ></app-monaco-editor>
     </div>
 
     <app-resize-divider
-      [ratio]="editorPaneRatio()"
-      [minRatio]="MIN_EDITOR_PANE_RATIO"
-      [maxRatio]="MAX_EDITOR_PANE_RATIO"
-      (ratioChange)="onDividerRatioChange($event)"
+      [value]="editorPaneRatio()"
+      [min]="MIN_EDITOR_PANE_RATIO"
+      [max]="MAX_EDITOR_PANE_RATIO"
+      [step]="EDITOR_PANE_RATIO_KEYBOARD_STEP"
+      [resetValue]="DEFAULT_EDITOR_PANE_RATIO"
+      [scaleToContainerWidth]="true"
+      ariaLabel="Resize editor and preview panes"
+      testId="resize-divider"
+      (valueChange)="editorPaneRatio.set($event)"
       (resizeEnd)="onDividerResizeEnd($event)"
     ></app-resize-divider>
 
@@ -66,16 +75,18 @@
   <app-save-dialog
     [visible]="isSaveDialogOpen()"
     [initialName]="documentName()"
-    (confirm)="onSaveConfirm($event)"
-    (cancel)="onSaveCancel()"
+    [folders]="saveDialogFolders()"
+    [folderSelectionEnabled]="!documentId()"
+    (confirm)="performSave($event.name, $event.folderId)"
+    (cancel)="isSaveDialogOpen.set(false)"
   ></app-save-dialog>
 
   <!--
     A fixed-position toast (rather than an in-flow banner squeezed into the
-    already-tested editor/preview pane layout) so surfacing a disk-write
-    failure can never perturb the existing pane sizing -- shown only while
-    diskSaveError() is set (app-error-banner itself already no-ops when
+    already-tested editor/preview pane layout) so surfacing a save/upload/
+    open failure can never perturb the existing pane sizing -- shown only
+    while saveError() is set (app-error-banner itself already no-ops when
     message is null).
   -->
-  <app-error-banner class="editor-page__disk-save-error" [message]="diskSaveError()"></app-error-banner>
+  <app-error-banner class="editor-page__save-error" [message]="saveError()"></app-error-banner>
 </div>

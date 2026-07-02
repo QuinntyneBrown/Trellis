@@ -1,18 +1,34 @@
 @if (open) {
   <aside class="documents-panel" data-testid="documents-panel">
-    @if (documents().length === 0) {
+    <div class="documents-panel__header">
+      <span class="documents-panel__header-title">Documents</span>
+      <button
+        type="button"
+        class="documents-panel__header-action"
+        data-testid="documents-new-folder"
+        title="New Folder"
+        (click)="onHeaderNewFolderClicked()"
+      >
+        New Folder
+      </button>
+    </div>
+
+    @if (tree().length === 0) {
       <p class="documents-panel__empty">No saved documents yet.</p>
     } @else {
-      <ul class="documents-panel__list">
-        @for (document of documents(); track document.id) {
-          <app-document-list-item
-            [document]="document"
-            (open)="onOpen($event)"
-            (delete)="onDelete($event)"
-            (rename)="onRename($event)"
-          ></app-document-list-item>
+      <div class="documents-panel__tree" data-testid="documents-tree">
+        @for (node of tree(); track node.id) {
+          <app-document-tree-node
+            [node]="node"
+            [depth]="0"
+            (toggleExpand)="onToggleExpand($event)"
+            (openDocument)="onOpenDocument($event)"
+            (createFolder)="onCreateFolder($event)"
+            (renameNode)="onRenameNode($event)"
+            (deleteNode)="onDeleteNode($event)"
+          ></app-document-tree-node>
         }
-      </ul>
+      </div>
     }
   </aside>
 }

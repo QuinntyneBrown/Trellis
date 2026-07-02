@@ -5,8 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Trellis.Api.IntegrationTests.Fakes;
-using Trellis.Application.Common.Interfaces;
-using Trellis.Infrastructure.Persistence;
+using Trellis.Api.Persistence;
+using Trellis.Api.PlantUml;
 
 namespace Trellis.Api.IntegrationTests;
 
