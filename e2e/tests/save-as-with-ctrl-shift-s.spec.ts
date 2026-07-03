@@ -28,7 +28,7 @@ test.describe('Save As with Ctrl+Shift+S', () => {
 
       // Save an original document so the editor holds a document id.
       await editorPage.editor.replaceAllText(ORIGINAL);
-      await editorPage.toolbar.openSaveDialog();
+      await editorPage.fileMenu.openSaveDialog();
       await editorPage.saveDialog.typeName(originalName);
       await editorPage.saveDialog.confirmSave();
       await expect(editorPage.saveDialog.root).toBeHidden();

@@ -27,7 +27,7 @@ test.describe('markdown document round trip', () => {
       await editorPage.editor.replaceAllText(MARKDOWN);
 
       // The save dialog offers a Type select for new documents; pick Markdown.
-      await editorPage.toolbar.openSaveDialog();
+      await editorPage.fileMenu.openSaveDialog();
       await expect(editorPage.saveDialog.kindSelect).toBeVisible();
       await editorPage.saveDialog.selectKind('markdown');
       await editorPage.saveDialog.typeName(documentName);

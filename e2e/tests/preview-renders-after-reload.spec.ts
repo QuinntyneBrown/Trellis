@@ -27,7 +27,7 @@ test.describe('preview renders after reload', () => {
       await editorPage.waitForAppReady();
 
       await editorPage.editor.replaceAllText(DIAGRAM);
-      await editorPage.toolbar.openSaveDialog();
+      await editorPage.fileMenu.openSaveDialog();
       await editorPage.saveDialog.typeName(documentName);
       await editorPage.saveDialog.confirmSave();
       await expect(editorPage.saveDialog.root).toBeHidden();

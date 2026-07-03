@@ -16,31 +16,6 @@
       ></app-rail-button>
     }
 
-    <app-rail-button icon="new" label="New" testId="toolbar-new" (clicked)="newDocument.emit()"></app-rail-button>
-
-    <app-rail-button
-      icon="save"
-      label="Save"
-      shortcut="Ctrl+S"
-      testId="toolbar-save"
-      (clicked)="save.emit()"
-    ></app-rail-button>
-
-    <app-rail-button
-      icon="upload"
-      label="Upload"
-      testId="toolbar-upload"
-      (clicked)="onUploadClicked()"
-    ></app-rail-button>
-    <input
-      #fileInput
-      type="file"
-      class="editor-toolbar__upload-input"
-      data-testid="toolbar-upload-input"
-      accept=".puml,.txt,.plantuml,.md,.markdown"
-      (change)="onFileInputChange($event)"
-    />
-
     <app-rail-button
       icon="templates"
       label="Templates"

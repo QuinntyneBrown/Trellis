@@ -27,7 +27,7 @@ test.describe('side panel persists across reload', () => {
 
       // Save a document, then open it from the Documents panel.
       await editorPage.editor.replaceAllText(DIAGRAM);
-      await editorPage.toolbar.openSaveDialog();
+      await editorPage.fileMenu.openSaveDialog();
       await editorPage.saveDialog.typeName(documentName);
       await editorPage.saveDialog.confirmSave();
       await expect(editorPage.saveDialog.root).toBeHidden();

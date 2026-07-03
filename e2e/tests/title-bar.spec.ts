@@ -25,7 +25,7 @@ test.describe('title bar', () => {
 
       // Saving under a real name flows straight into the command center.
       await editorPage.editor.replaceAllText('@startuml\nAlice -> Bob : title\n@enduml');
-      await editorPage.toolbar.openSaveDialog();
+      await editorPage.fileMenu.openSaveDialog();
       await editorPage.saveDialog.typeName(documentName);
       await editorPage.saveDialog.confirmSave();
       await expect(editorPage.saveDialog.root).toBeHidden();

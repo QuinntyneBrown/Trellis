@@ -4,6 +4,7 @@ import { MonacoEditorComponent } from '../components/monaco-editor.component';
 import { PreviewPaneComponent } from '../components/preview-pane.component';
 import { EditorToolbarComponent } from '../components/editor-toolbar.component';
 import { TemplatesPanelComponent } from '../components/templates-panel.component';
+import { FileMenuComponent } from '../components/file-menu.component';
 import { SaveDocumentDialogComponent } from '../components/save-document-dialog.component';
 import { DocumentsPanelComponent } from '../components/documents-panel.component';
 import { DividerComponent } from '../components/divider.component';
@@ -26,6 +27,7 @@ export class EditorPage extends BasePage {
   readonly preview: PreviewPaneComponent;
   readonly toolbar: EditorToolbarComponent;
   readonly templatesPanel: TemplatesPanelComponent;
+  readonly fileMenu: FileMenuComponent;
   readonly saveDialog: SaveDocumentDialogComponent;
   readonly documentsPanel: DocumentsPanelComponent;
   readonly divider: DividerComponent;
@@ -38,6 +40,7 @@ export class EditorPage extends BasePage {
     this.preview = new PreviewPaneComponent(page);
     this.toolbar = new EditorToolbarComponent(page);
     this.templatesPanel = new TemplatesPanelComponent(page);
+    this.fileMenu = new FileMenuComponent(page);
     this.saveDialog = new SaveDocumentDialogComponent(page);
     this.documentsPanel = new DocumentsPanelComponent(page);
     this.divider = new DividerComponent(page, 'resize-divider');
@@ -50,5 +53,15 @@ export class EditorPage extends BasePage {
     await this.page.goto('/');
     await expect(this.byTestId('editor-page')).toBeVisible();
     await this.editor.waitForReady();
+  }
+
+  /**
+   * Uploads a file by setting the hidden upload input directly
+   * (data-testid="upload-input", owned by the editor page) rather than
+   * driving a native OS picker, per Playwright best practice. `filePath`
+   * must be an absolute path.
+   */
+  async uploadFile(filePath: string): Promise<void> {
+    await this.byTestId('upload-input').setInputFiles(filePath);
   }
 }

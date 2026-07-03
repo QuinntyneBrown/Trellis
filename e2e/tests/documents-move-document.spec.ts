@@ -32,7 +32,7 @@ test.describe('moving documents between folders', () => {
 
       // Save a document at the root.
       await editorPage.editor.replaceAllText('@startuml\nAlice -> Bob : moved\n@enduml');
-      await editorPage.toolbar.openSaveDialog();
+      await editorPage.fileMenu.openSaveDialog();
       await editorPage.saveDialog.typeName(documentName);
       await editorPage.saveDialog.confirmSave();
       await expect(editorPage.saveDialog.root).toBeHidden();
@@ -103,7 +103,7 @@ test.describe('moving documents between folders', () => {
       await editorPage.waitForAppReady();
 
       await editorPage.editor.replaceAllText('@startuml\nAlice -> Bob : dialog\n@enduml');
-      await editorPage.toolbar.openSaveDialog();
+      await editorPage.fileMenu.openSaveDialog();
       await editorPage.saveDialog.typeName(documentName);
       await editorPage.saveDialog.confirmSave();
       await expect(editorPage.saveDialog.root).toBeHidden();
@@ -176,7 +176,7 @@ test.describe('moving documents between folders', () => {
       await expect(editorPage.documentsPanel.root).toBeHidden();
 
       await editorPage.editor.replaceAllText('@startuml\nAlice -> Bob : noop\n@enduml');
-      await editorPage.toolbar.openSaveDialog();
+      await editorPage.fileMenu.openSaveDialog();
       await editorPage.saveDialog.typeName(documentName);
       await editorPage.saveDialog.selectFolder(folderName);
       await editorPage.saveDialog.confirmSave();

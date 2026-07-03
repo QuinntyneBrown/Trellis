@@ -24,7 +24,7 @@ test.describe('save with Ctrl+S', () => {
     // flow -- Ctrl+S's quick-save behavior only applies once a document has
     // already been saved at least once.
     await editorPage.editor.replaceAllText(DIAGRAM);
-    await editorPage.toolbar.openSaveDialog();
+    await editorPage.fileMenu.openSaveDialog();
     await expect(editorPage.saveDialog.root).toBeVisible();
     await editorPage.saveDialog.typeName(documentName);
     await editorPage.saveDialog.confirmSave();

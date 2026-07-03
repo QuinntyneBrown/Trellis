@@ -29,7 +29,7 @@ test.describe('save and reopen a document', () => {
     expect(await editorPage.preview.isErrorVisible()).toBe(false);
 
     // Save the diagram under a name unique to this test run.
-    await editorPage.toolbar.openSaveDialog();
+    await editorPage.fileMenu.openSaveDialog();
     await expect(editorPage.saveDialog.root).toBeVisible();
     await editorPage.saveDialog.typeName(documentName);
     await editorPage.saveDialog.confirmSave();

@@ -30,7 +30,7 @@ test.describe('documents list management', () => {
       await editorPage.editor.replaceAllText(
         '@startuml\nAlice -> Bob : ping\n@enduml'
       );
-      await editorPage.toolbar.openSaveDialog();
+      await editorPage.fileMenu.openSaveDialog();
       await editorPage.saveDialog.typeName(originalName);
       await editorPage.saveDialog.confirmSave();
       await expect(editorPage.saveDialog.root).toBeHidden();

@@ -17,6 +17,10 @@ All notable changes to Trellis are recorded in this file.
 
 ### Changed
 
+- New, Save, and Upload moved from the activity rail into the title bar's
+  now-functional File menu, with Alt+N (New) and Ctrl+U (Upload) keyboard
+  shortcuts joining Ctrl+S / Ctrl+Shift+S. The rail keeps the panel
+  toggles and connection status.
 - The Templates rail icon now opens a side panel (VS Code-style, exclusive
   with the Explorer and Documents panels) instead of a pop-out picker; the
   panel stays open when a template is applied.

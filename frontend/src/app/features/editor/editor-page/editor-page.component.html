@@ -2,6 +2,9 @@
   [documentName]="documentName()"
   [sidePanelOpen]="activeSidePanel() !== null"
   (sidebarToggle)="onTitleBarSidebarToggle()"
+  (newDocument)="onNewDocument()"
+  (save)="onSaveClicked()"
+  (uploadRequested)="onUploadRequested()"
 ></app-title-bar>
 <div class="editor-page" data-testid="editor-page">
   <app-editor-toolbar
@@ -10,11 +13,21 @@
     [activeSidePanel]="activeSidePanel()"
     (newDocument)="onNewDocument()"
     (save)="onSaveClicked()"
-    (fileSelected)="onFileSelected($event)"
     (explorerPanelToggle)="toggleSidePanel('explorer')"
     (documentsPanelToggle)="toggleSidePanel('documents')"
     (templatesPanelToggle)="toggleSidePanel('templates')"
   ></app-editor-toolbar>
+
+  <!-- Hidden target of File > Upload and Ctrl+U; lives here because this
+       component owns the upload flow (onFileSelected). -->
+  <input
+    #uploadInput
+    type="file"
+    class="editor-page__upload-input"
+    data-testid="upload-input"
+    accept=".puml,.txt,.plantuml,.md,.markdown"
+    (change)="onUploadInputChange($event)"
+  />
 
   <div class="editor-page__body">
     <div

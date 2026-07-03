@@ -709,6 +709,77 @@ describe('EditorPageComponent', () => {
     });
   });
 
+  describe('Alt+N (New) and Ctrl+U (Upload) shortcuts', () => {
+    it('Alt+N triggers New with preventDefault (its confirm guard applies)', () => {
+      fixture.detectChanges();
+      component.sourceCode.set('something typed');
+      const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true);
+
+      const event = new KeyboardEvent('keydown', { key: 'n', altKey: true, cancelable: true });
+      jest.spyOn(event, 'preventDefault');
+      component.onKeyDown(event);
+
+      expect(event.preventDefault).toHaveBeenCalled();
+      expect(confirmSpy).toHaveBeenCalled();
+      expect(component.sourceCode()).toBe('');
+      expect(locationMock.go).toHaveBeenCalledWith('/editor');
+    });
+
+    it('plain Ctrl+N is deliberately NOT handled (browser-reserved shortcut)', () => {
+      fixture.detectChanges();
+      component.sourceCode.set('content');
+
+      const event = new KeyboardEvent('keydown', { key: 'n', ctrlKey: true, cancelable: true });
+      jest.spyOn(event, 'preventDefault');
+      component.onKeyDown(event);
+
+      expect(event.preventDefault).not.toHaveBeenCalled();
+      expect(component.sourceCode()).toBe('content');
+    });
+
+    it('Ctrl+U opens the hidden upload input with preventDefault', () => {
+      fixture.detectChanges();
+      const input = fixture.nativeElement.querySelector('[data-testid="upload-input"]') as HTMLInputElement;
+      const clickSpy = jest.spyOn(input, 'click');
+
+      const event = new KeyboardEvent('keydown', { key: 'u', ctrlKey: true, cancelable: true });
+      jest.spyOn(event, 'preventDefault');
+      component.onKeyDown(event);
+
+      expect(event.preventDefault).toHaveBeenCalled();
+      expect(clickSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('Ctrl+Shift+U and Alt+U are no-ops', () => {
+      fixture.detectChanges();
+      const input = fixture.nativeElement.querySelector('[data-testid="upload-input"]') as HTMLInputElement;
+      const clickSpy = jest.spyOn(input, 'click');
+
+      const shifted = new KeyboardEvent('keydown', { key: 'U', ctrlKey: true, shiftKey: true, cancelable: true });
+      jest.spyOn(shifted, 'preventDefault');
+      component.onKeyDown(shifted);
+
+      const alted = new KeyboardEvent('keydown', { key: 'u', altKey: true, ctrlKey: true, cancelable: true });
+      component.onKeyDown(alted);
+
+      expect(shifted.preventDefault).not.toHaveBeenCalled();
+      expect(clickSpy).not.toHaveBeenCalled();
+    });
+
+    it('the upload input change flows into the existing upload path and resets the input', () => {
+      fixture.detectChanges();
+      documentsServiceMock.upload.mockReturnValue(of(sampleDocument({ id: 'up-1', name: 'uploaded' })));
+      const input = fixture.nativeElement.querySelector('[data-testid="upload-input"]') as HTMLInputElement;
+      const file = new File(['@startuml\n@enduml'], 'diagram.puml');
+      Object.defineProperty(input, 'files', { value: [file], configurable: true });
+
+      input.dispatchEvent(new Event('change'));
+
+      expect(documentsServiceMock.upload).toHaveBeenCalledWith(file, undefined);
+      expect(component.documentId()).toBe('up-1');
+    });
+  });
+
   describe('Save As via Ctrl+Shift+S', () => {
     function ctrlShiftSEvent(): KeyboardEvent {
       const event = new KeyboardEvent('keydown', { key: 'S', ctrlKey: true, shiftKey: true, cancelable: true });

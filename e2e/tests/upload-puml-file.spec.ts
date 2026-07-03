@@ -22,7 +22,7 @@ test.describe('upload a .puml file', () => {
     // Editor starts blank in this fresh session.
     expect((await editorPage.editor.getValue()).trim()).toBe('');
 
-    await editorPage.toolbar.uploadFile(SAMPLE_ONE_PATH);
+    await editorPage.uploadFile(SAMPLE_ONE_PATH);
 
     await expect
       .poll(async () => normalizeEol(await editorPage.editor.getValue()))
@@ -30,7 +30,7 @@ test.describe('upload a .puml file', () => {
 
     // Uploading a second, different file must fully replace the prior
     // content, not append to it.
-    await editorPage.toolbar.uploadFile(SAMPLE_TWO_PATH);
+    await editorPage.uploadFile(SAMPLE_TWO_PATH);
 
     await expect
       .poll(async () => normalizeEol(await editorPage.editor.getValue()))

@@ -1,6 +1,6 @@
 import { Location } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, DestroyRef, HostListener, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, HostListener, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { of } from 'rxjs';
@@ -143,6 +143,9 @@ export class EditorPageComponent implements OnInit {
 
   /** Set when the currently-open document/content came from a local disk file rather than the SQLite backend. */
   readonly openFileHandle = signal<FileSystemFileHandle | null>(null);
+
+  /** The hidden file input behind File > Upload and Ctrl+U. */
+  @ViewChild('uploadInput') private readonly uploadInputRef!: ElementRef<HTMLInputElement>;
   /** Surfaced through the app-error-banner toast when a save/upload/open/load request fails. */
   readonly saveError = signal<string | null>(null);
 
@@ -321,7 +324,26 @@ export class EditorPageComponent implements OnInit {
    */
   @HostListener('document:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent): void {
-    if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 's') {
+    const key = event.key.toLowerCase();
+    const primary = event.ctrlKey || event.metaKey;
+
+    // Alt+N = New. Deliberately NOT Ctrl+N: browsers reserve it at the
+    // browser level (new window) and never deliver it to the page, so the
+    // shortcut the File menu advertises must be one that actually works.
+    if (event.altKey && !primary && key === 'n') {
+      event.preventDefault();
+      this.onNewDocument();
+      return;
+    }
+
+    // Ctrl/Cmd+U = Upload (view-source is interceptable, unlike Ctrl+N).
+    if (primary && !event.shiftKey && !event.altKey && key === 'u') {
+      event.preventDefault();
+      this.onUploadRequested();
+      return;
+    }
+
+    if (!primary || key !== 's') {
       return;
     }
 
@@ -435,6 +457,21 @@ export class EditorPageComponent implements OnInit {
       .catch((error: unknown) => {
         this.saveError.set(error instanceof Error ? error.message : `Could not save "${this.documentName()}".`);
       });
+  }
+
+  /** File > Upload / Ctrl+U: opens the native file picker via the hidden input. */
+  onUploadRequested(): void {
+    this.uploadInputRef.nativeElement.click();
+  }
+
+  onUploadInputChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (file) {
+      this.onFileSelected(file);
+    }
+    // Reset so choosing the same file again still fires a change event.
+    input.value = '';
   }
 
   onFileSelected(file: File): void {

@@ -48,7 +48,7 @@ test.describe('documents folder tree', () => {
       await editorPage.editor.replaceAllText(
         '@startuml\nAlice -> Bob : filed\n@enduml'
       );
-      await editorPage.toolbar.openSaveDialog();
+      await editorPage.fileMenu.openSaveDialog();
       await editorPage.saveDialog.typeName(documentName);
       await editorPage.saveDialog.selectFolder(folderName);
       await editorPage.saveDialog.confirmSave();

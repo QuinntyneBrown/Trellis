@@ -36,7 +36,7 @@ test.describe('reveal the active document after reload', () => {
       // Save the document straight into the nested subfolder (its option
       // label is nbsp-indented one level in the save dialog's select).
       await editorPage.editor.replaceAllText('@startuml\nAlice -> Bob : reveal\n@enduml');
-      await editorPage.toolbar.openSaveDialog();
+      await editorPage.fileMenu.openSaveDialog();
       await editorPage.saveDialog.typeName(documentName);
       await editorPage.saveDialog.selectFolder(`${NBSP_INDENT}${childName}`);
       await editorPage.saveDialog.confirmSave();

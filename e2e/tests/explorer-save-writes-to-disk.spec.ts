@@ -44,7 +44,7 @@ test.describe('editing and saving an Explorer-opened file', () => {
       .toBe(ORIGINAL_CONTENT);
 
     await editorPage.editor.replaceAllText(EDITED_CONTENT);
-    await editorPage.toolbar.saveButton.click();
+    await editorPage.fileMenu.clickSave();
 
     await expect(editorPage.saveDialog.root).toBeHidden();
     await expect
