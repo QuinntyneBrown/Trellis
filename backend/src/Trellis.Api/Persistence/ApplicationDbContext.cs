@@ -27,6 +27,11 @@ public class ApplicationDbContext : DbContext
     /// </summary>
     public DbSet<Folder> Folders => this.Set<Folder>();
 
+    /// <summary>
+    /// Gets the set of reusable editor templates.
+    /// </summary>
+    public DbSet<Template> Templates => this.Set<Template>();
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

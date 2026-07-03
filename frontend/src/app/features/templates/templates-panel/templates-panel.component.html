@@ -1,0 +1,63 @@
+@if (open) {
+  <aside class="templates-panel" data-testid="templates-panel">
+    <div class="templates-panel__header">
+      <span class="templates-panel__header-title">Templates</span>
+      <app-tree-action-button
+        icon="new-file"
+        label="New Template from editor"
+        testId="templates-new-template"
+        (clicked)="onNewTemplateClicked()"
+      />
+    </div>
+
+    @if (templates().length === 0) {
+      <p class="templates-panel__empty">No templates yet.</p>
+    } @else {
+      <div class="templates-panel__list" data-testid="templates-list">
+        @for (template of templates(); track template.id) {
+          <div
+            class="templates-panel__row"
+            data-testid="template-item"
+            [attr.data-template-name]="template.name"
+            [title]="'Updated ' + template.updatedAt"
+            (click)="onApplyRowClicked(template)"
+          >
+            <span class="templates-panel__name">{{ template.name }}</span>
+
+            @if (template.kind === 'markdown') {
+              <span class="templates-panel__kind-badge" data-testid="template-kind-badge" aria-label="Markdown template">MD</span>
+            }
+
+            <div class="templates-panel__actions">
+              <app-tree-action-button
+                icon="open"
+                label="Apply to editor"
+                testId="template-item-apply"
+                (clicked)="onApplyClicked($event, template)"
+              />
+              <app-tree-action-button
+                icon="update"
+                label="Update from editor"
+                testId="template-item-update"
+                (clicked)="onUpdateFromEditorClicked($event, template)"
+              />
+              <app-tree-action-button
+                icon="rename"
+                label="Rename"
+                testId="template-item-rename"
+                (clicked)="onRenameClicked($event, template)"
+              />
+              <app-tree-action-button
+                icon="delete"
+                label="Delete"
+                testId="template-item-delete"
+                [danger]="true"
+                (clicked)="onDeleteClicked($event, template)"
+              />
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </aside>
+}

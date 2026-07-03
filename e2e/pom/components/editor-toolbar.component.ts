@@ -14,7 +14,7 @@ export class EditorToolbarComponent {
   readonly saveButton: Locator;
   readonly uploadButton: Locator;
   readonly uploadInput: Locator;
-  readonly templatePickerToggle: Locator;
+  readonly templatesPanelToggle: Locator;
   readonly documentsPanelToggle: Locator;
   readonly connectionStatus: Locator;
 
@@ -25,7 +25,7 @@ export class EditorToolbarComponent {
     this.saveButton = byTestId(page, 'toolbar-save');
     this.uploadButton = byTestId(page, 'toolbar-upload');
     this.uploadInput = byTestId(page, 'toolbar-upload-input');
-    this.templatePickerToggle = byTestId(page, 'template-picker-toggle');
+    this.templatesPanelToggle = byTestId(page, 'templates-panel-toggle');
     this.documentsPanelToggle = byTestId(page, 'documents-panel-toggle');
     this.connectionStatus = byTestId(page, 'connection-status');
   }
@@ -46,8 +46,8 @@ export class EditorToolbarComponent {
   }
 
   /** Opens the template picker dropdown/panel. */
-  async openTemplatePicker(): Promise<void> {
-    await this.templatePickerToggle.click();
+  async openTemplatesPanel(): Promise<void> {
+    await this.templatesPanelToggle.click();
   }
 
   /** Opens the save dialog. */

@@ -41,7 +41,13 @@
       (change)="onFileInputChange($event)"
     />
 
-    <app-template-picker (templateSelected)="templateSelected.emit($event)"></app-template-picker>
+    <app-rail-button
+      icon="templates"
+      label="Templates"
+      testId="templates-panel-toggle"
+      [active]="activeSidePanel === 'templates'"
+      (clicked)="templatesPanelToggle.emit()"
+    ></app-rail-button>
 
     <app-rail-button
       icon="documents"

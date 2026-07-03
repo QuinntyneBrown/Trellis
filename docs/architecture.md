@@ -14,12 +14,11 @@ ASP.NET Core API (single Trellis.Api project)
   |-- SignalR hub for render requests
   |-- Persistence folder for the SQLite EF Core context and migrations
   |-- PlantUml folder for the renderer and its options
-  |-- Templates folder for the vendored starter-template catalog
+  |-- Markdown folder for the Markdig-based markdown renderer
 
 Vendored renderer assets
   |-- plantuml.jar
   |-- C4-PlantUML include files
-  |-- starter templates
 ```
 
 ## Backend Structure
@@ -37,9 +36,10 @@ Infrastructure projects — the app has one entity and nine operations):
   for empty/oversized source.
 - `Domain/PlantUmlDocument` is both the persisted entity and the JSON shape
   the document endpoints return.
-- `Persistence` holds the EF Core context, entity configuration, migrations,
-  and the startup initialiser; `PlantUml` holds the renderer; `Templates`
-  holds the catalog (six fixed entries, files read eagerly at construction).
+- `Persistence` holds the EF Core context, entity configurations, migrations,
+  and the startup initialiser; `PlantUml` holds the PlantUML renderer;
+  `Markdown` holds the Markdig renderer. Templates are ordinary database
+  rows (full CRUD); the six built-in starters are seeded by migration.
 - `IPlantUmlRenderer` is the one deliberate seam, so integration tests can
   substitute a fake renderer and run without a JVM.
 
@@ -66,7 +66,7 @@ The Angular application is organized around:
 - `features/editor` for the Monaco editor, toolbar rail, save dialog, resize divider, and diagram preview. The editor page owns document loading directly from the URL's `documentId` — there is no route resolver or custom route-reuse strategy.
 - `features/documents` for the saved-documents side panel (list, open, rename, delete).
 - `features/explorer` for browsing and editing local folders via the File System Access API.
-- `features/templates` for selecting starter diagrams.
+- `features/templates` for the Templates side panel (apply, create/update from the editor, rename, delete).
 - `shared` components for reusable status, loading, and error UI.
 
 Development uses relative `/api` and `/hubs` URLs with the Angular proxy configuration. Production environment values are expected to be supplied by deployment configuration.

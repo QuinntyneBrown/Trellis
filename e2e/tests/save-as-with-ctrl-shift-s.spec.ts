@@ -34,10 +34,10 @@ test.describe('Save As with Ctrl+Shift+S', () => {
       await expect(editorPage.saveDialog.root).toBeHidden();
       cleanup.push(originalName);
 
-      // Load a template over it -- the D-008 trap state.
-      await editorPage.toolbar.openTemplatePicker();
-      await editorPage.templatePicker.selectTemplate('sequence');
-      await expect(editorPage.templatePicker.root).toBeHidden();
+      // Load a template over it -- the D-008 trap state. (No discard
+      // confirm fires: the document was just saved, nothing is unsaved.)
+      await editorPage.templatesPanel.open();
+      await editorPage.templatesPanel.applyTemplate('Sequence Diagram');
 
       // Ctrl+Shift+S: the save dialog must appear, with the destination
       // folder select visible (Save As always creates a new document).

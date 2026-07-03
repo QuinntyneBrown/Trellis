@@ -37,7 +37,8 @@
   // independently fill the full box, stacked, with only the active one ever
   // actually visible.
   app-explorer-panel,
-  app-documents-panel {
+  app-documents-panel,
+  app-templates-panel {
     position: absolute;
     inset: 0;
   }
@@ -63,8 +64,8 @@
 // A fixed-position toast, not an in-flow element -- app-error-banner itself
 // already renders nothing when there's no message, so this simply overlays
 // the page, centered near the top, only while a save/upload/open has
-// actually failed. z-index is kept above the rail's own tooltip (5) and the
-// template picker panel (10) so a failure is never hidden behind either.
+// actually failed. z-index is kept above the rail's own tooltip (5) so a
+// failure is never hidden behind it.
 .editor-page__save-error {
   position: fixed;
   top: 0.75rem;

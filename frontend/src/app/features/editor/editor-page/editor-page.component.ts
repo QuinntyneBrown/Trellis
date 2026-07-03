@@ -10,16 +10,18 @@ import { Document } from '../../../core/models/document.model';
 import { DocumentKind, inferDocumentKindFromFileName } from '../../../core/models/document-kind.model';
 import { DocumentSummary } from '../../../core/models/document-summary.model';
 import { OpenedDiskFile } from '../../../core/models/opened-disk-file.model';
-import { Template } from '../../../core/models/template.model';
+import { TemplateSummary } from '../../../core/models/template-summary.model';
 import { Folder } from '../../../core/models/folder.model';
 import { DiagramHubService } from '../../../core/services/diagram-hub.service';
 import { DocumentsService } from '../../../core/services/documents.service';
 import { EditorLayoutPreferencesService } from '../../../core/services/editor-layout-preferences.service';
 import { FileSystemAccessService } from '../../../core/services/file-system-access.service';
 import { FoldersService } from '../../../core/services/folders.service';
+import { TemplatesService } from '../../../core/services/templates.service';
 import { ErrorBannerComponent } from '../../../shared/components/error-banner/error-banner.component';
 import { DocumentsPanelComponent } from '../../documents/documents-panel/documents-panel.component';
 import { ExplorerPanelComponent } from '../../explorer/explorer-panel/explorer-panel.component';
+import { TemplatesPanelComponent } from '../../templates/templates-panel/templates-panel.component';
 import { DiagramPreviewComponent } from '../diagram-preview/diagram-preview.component';
 import {
   DEFAULT_EDITOR_PANE_RATIO,
@@ -43,7 +45,7 @@ import {
 const BLANK_DOCUMENT_NAME = 'Untitled diagram';
 
 /** Which (if either) of the exclusive side panels is currently showing. */
-export type SidePanel = 'explorer' | 'documents' | null;
+export type SidePanel = 'explorer' | 'documents' | 'templates' | null;
 
 /**
  * Route root for both 'editor' (blank) and 'editor/:documentId' (resolved
@@ -63,6 +65,7 @@ export type SidePanel = 'explorer' | 'documents' | null;
     SaveDialogComponent,
     DocumentsPanelComponent,
     ExplorerPanelComponent,
+    TemplatesPanelComponent,
     ErrorBannerComponent,
   ],
   templateUrl: './editor-page.component.html',
@@ -73,6 +76,7 @@ export class EditorPageComponent implements OnInit {
   private readonly location = inject(Location);
   private readonly documentsService = inject(DocumentsService);
   private readonly foldersService = inject(FoldersService);
+  private readonly templatesService = inject(TemplatesService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly layoutPreferences = inject(EditorLayoutPreferencesService);
   private readonly fileSystemAccessService = inject(FileSystemAccessService);
@@ -457,16 +461,27 @@ export class EditorPageComponent implements OnInit {
     });
   }
 
-  onTemplateSelected(template: Template): void {
+  /**
+   * Applies a template chosen in the Templates panel. The discard confirm
+   * runs BEFORE the fetch so the dialog stays synchronous with the click;
+   * only then is the full template (content + kind) loaded by id -- the
+   * panel's list rows deliberately carry no content.
+   */
+  onTemplateApplied(summary: TemplateSummary): void {
     if (this.hasUnsavedChanges() && !window.confirm('Discard unsaved changes and load this template?')) {
       return;
     }
-    // Does not route through applyDocument (only sourceCode is touched
-    // here), so openFileHandle and the kind need their own explicit
-    // handling. Every template in the catalog is PlantUML.
-    this.openFileHandle.set(null);
-    this.documentKind.set('plantuml');
-    this.sourceCode.set(template.content);
+
+    this.templatesService.getById(summary.id).subscribe({
+      next: (template) => {
+        // Does not route through applyDocument (no document identity is
+        // involved), so openFileHandle and the kind need explicit handling.
+        this.openFileHandle.set(null);
+        this.documentKind.set(template.kind);
+        this.sourceCode.set(template.content);
+      },
+      error: () => this.saveError.set(`Could not apply "${summary.name}".`),
+    });
   }
 
   /**
@@ -476,7 +491,7 @@ export class EditorPageComponent implements OnInit {
    * been opened yet this session ('explorer' additionally requires the File
    * System Access API).
    */
-  private lastOpenSidePanel: 'explorer' | 'documents' | null = this.activeSidePanel();
+  private lastOpenSidePanel: 'explorer' | 'documents' | 'templates' | null = this.activeSidePanel();
 
   /**
    * Sets the shared selection to `panel`, or clears it if `panel` is already
@@ -484,7 +499,7 @@ export class EditorPageComponent implements OnInit {
    * (including an explicit null for a deliberate close) so the layout comes
    * back identically after a refresh.
    */
-  toggleSidePanel(panel: 'explorer' | 'documents'): void {
+  toggleSidePanel(panel: 'explorer' | 'documents' | 'templates'): void {
     this.activeSidePanel.update((current) => (current === panel ? null : panel));
     const active = this.activeSidePanel();
     if (active) {

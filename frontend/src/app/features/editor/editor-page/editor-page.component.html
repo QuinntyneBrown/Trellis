@@ -11,9 +11,9 @@
     (newDocument)="onNewDocument()"
     (save)="onSaveClicked()"
     (fileSelected)="onFileSelected($event)"
-    (templateSelected)="onTemplateSelected($event)"
     (explorerPanelToggle)="toggleSidePanel('explorer')"
     (documentsPanelToggle)="toggleSidePanel('documents')"
+    (templatesPanelToggle)="toggleSidePanel('templates')"
   ></app-editor-toolbar>
 
   <div class="editor-page__body">
@@ -33,6 +33,13 @@
         [activeDocumentId]="documentId()"
         (documentOpened)="onDocumentOpenedFromPanel($event)"
       ></app-documents-panel>
+      <app-templates-panel
+        [style.display]="activeSidePanel() === 'templates' ? '' : 'none'"
+        [open]="activeSidePanel() === 'templates'"
+        [editorContent]="sourceCode()"
+        [editorKind]="documentKind()"
+        (templateApplied)="onTemplateApplied($event)"
+      ></app-templates-panel>
     </div>
 
     @if (activeSidePanel()) {

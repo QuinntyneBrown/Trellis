@@ -1,7 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
 
-import { TemplatesService } from '../../../core/services/templates.service';
 import { EditorToolbarComponent } from './editor-toolbar.component';
 
 describe('EditorToolbarComponent', () => {
@@ -11,7 +9,6 @@ describe('EditorToolbarComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [EditorToolbarComponent],
-      providers: [{ provide: TemplatesService, useValue: { list: jest.fn().mockReturnValue(of([])) } }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(EditorToolbarComponent);
@@ -29,7 +26,7 @@ describe('EditorToolbarComponent', () => {
     expect(byTestId('toolbar-save')).toBeTruthy();
     expect(byTestId('toolbar-upload')).toBeTruthy();
     expect(byTestId('toolbar-upload-input')).toBeTruthy();
-    expect(byTestId('template-picker-toggle')).toBeTruthy();
+    expect(byTestId('templates-panel-toggle')).toBeTruthy();
     expect(byTestId('documents-panel-toggle')).toBeTruthy();
     expect(byTestId('connection-status')).toBeTruthy();
   });
@@ -59,6 +56,19 @@ describe('EditorToolbarComponent', () => {
     byTestId('documents-panel-toggle').click();
 
     expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('emits templatesPanelToggle and reflects the active state on the templates toggle', () => {
+    const spy = jest.fn();
+    component.templatesPanelToggle.subscribe(spy);
+
+    byTestId('templates-panel-toggle').click();
+    expect(spy).toHaveBeenCalledTimes(1);
+
+    expect(byTestId('templates-panel-toggle').classList).not.toContain('rail-button--active');
+    component.activeSidePanel = 'templates';
+    fixture.detectChanges();
+    expect(byTestId('templates-panel-toggle').classList).toContain('rail-button--active');
   });
 
   it('clicking Upload delegates to the hidden file input', () => {

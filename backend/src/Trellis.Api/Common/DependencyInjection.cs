@@ -5,7 +5,6 @@ using Trellis.Api.Markdown;
 using Trellis.Api.Persistence;
 using Trellis.Api.Persistence.Initialisation;
 using Trellis.Api.PlantUml;
-using Trellis.Api.Templates;
 
 namespace Trellis.Api.Common;
 
@@ -22,7 +21,7 @@ public static class DependencyInjection
     /// <summary>
     /// Wires controllers, Swagger, the exception handler, SignalR (with a raised
     /// maximum receive message size), CORS, the EF Core SQLite database context,
-    /// the PlantUML renderer and the template catalog.
+    /// and the PlantUML and markdown renderers.
     /// </summary>
     /// <param name="services">The service collection to add registrations to.</param>
     /// <param name="configuration">The application configuration.</param>
@@ -69,7 +68,6 @@ public static class DependencyInjection
         services.Configure<PlantUmlOptions>(configuration.GetSection(PlantUmlOptions.SectionName));
         services.AddSingleton<IPlantUmlRenderer, PlantUmlRenderer>();
         services.AddSingleton<IMarkdownRenderer, MarkdigMarkdownRenderer>();
-        services.AddSingleton<TemplateCatalog>();
 
         return services;
     }

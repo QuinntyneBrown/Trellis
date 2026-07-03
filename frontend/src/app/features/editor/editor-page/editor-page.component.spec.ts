@@ -9,6 +9,7 @@ import { BehaviorSubject, Subject, of, throwError } from 'rxjs';
 import { Document } from '../../../core/models/document.model';
 import { OpenedDiskFile } from '../../../core/models/opened-disk-file.model';
 import { Template } from '../../../core/models/template.model';
+import { TemplateSummary } from '../../../core/models/template-summary.model';
 import { DiagramHubService } from '../../../core/services/diagram-hub.service';
 import { DocumentsService } from '../../../core/services/documents.service';
 import { EditorLayoutPreferencesService } from '../../../core/services/editor-layout-preferences.service';
@@ -42,6 +43,7 @@ describe('EditorPageComponent', () => {
     rename: jest.Mock;
   };
   let locationMock: { go: jest.Mock };
+  let templatesServiceMock: { list: jest.Mock; getById: jest.Mock };
   let foldersServiceMock: { list: jest.Mock; create: jest.Mock; rename: jest.Mock; delete: jest.Mock };
   let hubServiceMock: {
     connectionState: ReturnType<typeof signal<'connected' | 'disconnected' | 'reconnecting'>>;
@@ -97,7 +99,7 @@ describe('EditorPageComponent', () => {
       { provide: DiagramHubService, useValue: hubServiceMock },
       { provide: EditorLayoutPreferencesService, useValue: layoutPreferencesMock },
       { provide: FileSystemAccessService, useValue: fileSystemAccessServiceMock },
-      { provide: TemplatesService, useValue: { list: jest.fn().mockReturnValue(of([])) } },
+      { provide: TemplatesService, useValue: templatesServiceMock },
       { provide: MonacoLoaderService, useValue: { load: jest.fn().mockResolvedValue(fakeMonaco) } },
     ];
   }
@@ -114,6 +116,7 @@ describe('EditorPageComponent', () => {
       rename: jest.fn(),
     };
     locationMock = { go: jest.fn() };
+    templatesServiceMock = { list: jest.fn().mockReturnValue(of([])), getById: jest.fn() };
     foldersServiceMock = {
       list: jest.fn().mockReturnValue(of([])),
       create: jest.fn(),
@@ -445,27 +448,61 @@ describe('EditorPageComponent', () => {
     });
   });
 
-  it('guards template selection behind a confirm dialog when there are unsaved changes', () => {
+
+  function templateSummary(overrides: Partial<TemplateSummary> = {}): TemplateSummary {
+    return { id: 'tpl-1', name: 'C4', kind: 'plantuml', updatedAt: '2026-07-03T00:00:00Z', ...overrides };
+  }
+
+  function fullTemplate(overrides: Partial<Template> = {}): Template {
+    return {
+      id: 'tpl-1',
+      name: 'C4',
+      content: 'template content',
+      kind: 'plantuml',
+      createdAt: '2026-07-03T00:00:00Z',
+      updatedAt: null,
+      ...overrides,
+    };
+  }
+
+  it('guards template application behind a confirm dialog when there are unsaved changes, before any fetch', () => {
     fixture.detectChanges();
     component.sourceCode.set('unsaved content');
 
     const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(false);
-    const template: Template = { key: 'c4-context', name: 'C4', category: 'C4', content: 'template content' };
-    component.onTemplateSelected(template);
+    component.onTemplateApplied(templateSummary());
 
     expect(confirmSpy).toHaveBeenCalled();
+    expect(templatesServiceMock.getById).not.toHaveBeenCalled();
     expect(component.sourceCode()).toBe('unsaved content');
 
     confirmSpy.mockRestore();
   });
 
-  it('applies the template content directly when there are no unsaved changes', () => {
+  it('fetches and applies the template content when there are no unsaved changes', () => {
     fixture.detectChanges();
+    templatesServiceMock.getById.mockReturnValue(of(fullTemplate()));
 
-    const template: Template = { key: 'c4-context', name: 'C4', category: 'C4', content: 'template content' };
-    component.onTemplateSelected(template);
+    component.onTemplateApplied(templateSummary());
 
+    expect(templatesServiceMock.getById).toHaveBeenCalledWith('tpl-1');
     expect(component.sourceCode()).toBe('template content');
+  });
+
+  it('adopts a markdown template kind and surfaces a fetch failure as a toast', () => {
+    fixture.detectChanges();
+    templatesServiceMock.getById.mockReturnValue(of(fullTemplate({ kind: 'markdown', content: '# md tpl' })));
+
+    component.onTemplateApplied(templateSummary({ kind: 'markdown' }));
+    expect(component.documentKind()).toBe('markdown');
+    expect(component.sourceCode()).toBe('# md tpl');
+
+    // The first apply left unsaved content behind; accept the discard
+    // confirm so the failing fetch path is actually reached.
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
+    templatesServiceMock.getById.mockReturnValue(throwError(() => new Error('boom')));
+    component.onTemplateApplied(templateSummary({ name: 'Broken' }));
+    expect(component.saveError()).toBe('Could not apply "Broken".');
   });
 
   it('toggles the documents panel open state via the shared activeSidePanel signal', () => {
@@ -635,8 +672,8 @@ describe('EditorPageComponent', () => {
       expect(component.documentKind()).toBe('markdown');
       expect(hubServiceMock.render).toHaveBeenCalledWith('# Hello', 'markdown');
 
-      const template: Template = { key: 'sequence', name: 'Sequence', category: 'General', content: '@startuml\n@enduml' };
-      component.onTemplateSelected(template);
+      templatesServiceMock.getById.mockReturnValue(of(fullTemplate({ kind: 'plantuml' })));
+      component.onTemplateApplied(templateSummary());
 
       expect(component.documentKind()).toBe('plantuml');
     });
@@ -910,8 +947,8 @@ describe('EditorPageComponent', () => {
       component.onDiskFileOpened(diskFile());
       expect(component.openFileHandle()).not.toBeNull();
 
-      const template: Template = { key: 'c4-context', name: 'C4', category: 'C4', content: 'template content' };
-      component.onTemplateSelected(template);
+      templatesServiceMock.getById.mockReturnValue(of(fullTemplate()));
+      component.onTemplateApplied(templateSummary());
 
       expect(component.openFileHandle()).toBeNull();
     });
@@ -1049,6 +1086,47 @@ describe('EditorPageComponent', () => {
       reseeded.componentInstance.onTitleBarSidebarToggle();
 
       expect(reseeded.componentInstance.activeSidePanel()).toBe('documents');
+    });
+  });
+
+  describe('templates side panel (third exclusive panel)', () => {
+    it('toggles open/closed and participates in exclusivity', () => {
+      fixture.detectChanges();
+
+      component.toggleSidePanel('templates');
+      expect(component.activeSidePanel()).toBe('templates');
+      expect(layoutPreferencesMock.setActiveSidePanel).toHaveBeenCalledWith('templates');
+
+      component.toggleSidePanel('documents');
+      expect(component.activeSidePanel()).toBe('documents');
+
+      component.toggleSidePanel('documents');
+      expect(component.activeSidePanel()).toBeNull();
+    });
+
+    it('seeds from a persisted templates choice', async () => {
+      layoutPreferencesMock.getActiveSidePanel.mockReturnValue('templates');
+
+      await TestBed.resetTestingModule()
+        .configureTestingModule({
+          imports: [EditorPageComponent],
+          providers: providers(),
+        })
+        .compileComponents();
+      const reseeded = TestBed.createComponent(EditorPageComponent);
+
+      expect(reseeded.componentInstance.activeSidePanel()).toBe('templates');
+    });
+
+    it('is reopened by the title-bar toggle as the last-used panel', () => {
+      fixture.detectChanges();
+
+      component.toggleSidePanel('templates');
+      component.onTitleBarSidebarToggle();
+      expect(component.activeSidePanel()).toBeNull();
+
+      component.onTitleBarSidebarToggle();
+      expect(component.activeSidePanel()).toBe('templates');
     });
   });
 

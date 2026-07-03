@@ -3,7 +3,7 @@ import { BasePage } from '../base.page';
 import { MonacoEditorComponent } from '../components/monaco-editor.component';
 import { PreviewPaneComponent } from '../components/preview-pane.component';
 import { EditorToolbarComponent } from '../components/editor-toolbar.component';
-import { TemplatePickerComponent } from '../components/template-picker.component';
+import { TemplatesPanelComponent } from '../components/templates-panel.component';
 import { SaveDocumentDialogComponent } from '../components/save-document-dialog.component';
 import { DocumentsPanelComponent } from '../components/documents-panel.component';
 import { DividerComponent } from '../components/divider.component';
@@ -25,7 +25,7 @@ export class EditorPage extends BasePage {
   readonly editor: MonacoEditorComponent;
   readonly preview: PreviewPaneComponent;
   readonly toolbar: EditorToolbarComponent;
-  readonly templatePicker: TemplatePickerComponent;
+  readonly templatesPanel: TemplatesPanelComponent;
   readonly saveDialog: SaveDocumentDialogComponent;
   readonly documentsPanel: DocumentsPanelComponent;
   readonly divider: DividerComponent;
@@ -37,7 +37,7 @@ export class EditorPage extends BasePage {
     this.editor = new MonacoEditorComponent(page);
     this.preview = new PreviewPaneComponent(page);
     this.toolbar = new EditorToolbarComponent(page);
-    this.templatePicker = new TemplatePickerComponent(page);
+    this.templatesPanel = new TemplatesPanelComponent(page);
     this.saveDialog = new SaveDocumentDialogComponent(page);
     this.documentsPanel = new DocumentsPanelComponent(page);
     this.divider = new DividerComponent(page, 'resize-divider');

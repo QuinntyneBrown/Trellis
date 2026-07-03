@@ -115,6 +115,9 @@ describe('EditorLayoutPreferencesService', () => {
       service.setActiveSidePanel('explorer');
       expect(service.getActiveSidePanel()).toBe('explorer');
 
+      service.setActiveSidePanel('templates');
+      expect(service.getActiveSidePanel()).toBe('templates');
+
       service.setActiveSidePanel(null);
       expect(service.getActiveSidePanel()).toBeNull();
       // Stored as an explicit null (not just absent) so "user closed the panel" survives a reload too.

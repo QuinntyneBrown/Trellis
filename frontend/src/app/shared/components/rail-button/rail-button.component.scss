@@ -68,11 +68,8 @@
 // simple to compose and to assert against directly in tests. Revealed via
 // `opacity`/`visibility` (not `display`, which cannot transition) on hover
 // AND focus-visible, so keyboard users get the same affordance as mouse
-// users. z-index is kept modest and, in particular, below
-// template-picker.component.scss's `.template-picker__panel` z-index (10)
-// -- both anchor at this same button's `left: 100%` point, and a
-// keyboard-opened template picker panel must never end up with a stray
-// tooltip rendered on top of it.
+// users. z-index is kept modest so overlay surfaces (dialogs at 100)
+// always render above a lingering tooltip.
 .rail-button__tooltip {
   position: absolute;
   left: calc(100% + 0.5rem);
