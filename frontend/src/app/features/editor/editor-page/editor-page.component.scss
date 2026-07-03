@@ -1,7 +1,9 @@
 .editor-page {
   display: flex;
   flex-direction: row;
-  height: 100vh;
+  // The title bar above takes a fixed 35px off the top; this shell fills
+  // the remainder (was 100vh before the title bar existed).
+  height: calc(100vh - 35px);
 }
 
 .editor-page__body {

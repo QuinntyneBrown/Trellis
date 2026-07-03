@@ -1,3 +1,8 @@
+<app-title-bar
+  [documentName]="documentName()"
+  [sidePanelOpen]="activeSidePanel() !== null"
+  (sidebarToggle)="onTitleBarSidebarToggle()"
+></app-title-bar>
 <div class="editor-page" data-testid="editor-page">
   <app-editor-toolbar
     [connectionState]="hubService.connectionState()"

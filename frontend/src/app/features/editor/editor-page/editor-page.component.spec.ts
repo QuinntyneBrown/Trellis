@@ -875,6 +875,54 @@ describe('EditorPageComponent', () => {
     });
   });
 
+  describe('title bar', () => {
+    it('renders the title bar with the current document name', () => {
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('[data-testid="title-bar"]')).toBeTruthy();
+      expect(fixture.nativeElement.querySelector('[data-testid="title-bar-title"]').textContent).toBe(
+        'Untitled diagram — Trellis',
+      );
+    });
+
+    it('opens the Documents panel from the sidebar toggle when nothing was ever open', () => {
+      fixture.detectChanges();
+
+      component.onTitleBarSidebarToggle();
+
+      expect(component.activeSidePanel()).toBe('documents');
+    });
+
+    it('closes the open panel on toggle, then reopens that same panel on the next toggle', () => {
+      fixture.detectChanges();
+
+      component.toggleSidePanel('explorer');
+      component.onTitleBarSidebarToggle();
+      expect(component.activeSidePanel()).toBeNull();
+
+      component.onTitleBarSidebarToggle();
+      expect(component.activeSidePanel()).toBe('explorer');
+    });
+
+    it('falls back to Documents when the remembered panel is the unsupported Explorer', async () => {
+      layoutPreferencesMock.getActiveSidePanel.mockReturnValue(null);
+      fileSystemAccessServiceMock.isSupported.mockReturnValue(false);
+
+      await TestBed.resetTestingModule()
+        .configureTestingModule({
+          imports: [EditorPageComponent],
+          providers: providers(),
+        })
+        .compileComponents();
+      const reseeded = TestBed.createComponent(EditorPageComponent);
+      reseeded.detectChanges();
+
+      reseeded.componentInstance.onTitleBarSidebarToggle();
+
+      expect(reseeded.componentInstance.activeSidePanel()).toBe('documents');
+    });
+  });
+
   describe('side panel persistence across reloads', () => {
     it('persists every toggle, including an explicit null for a deliberate close', () => {
       fixture.detectChanges();

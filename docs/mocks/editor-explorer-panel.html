@@ -22,7 +22,77 @@
 </head>
 <body>
   <app-root>
+
     <app-editor-page>
+
+      <!-- Real component since D-007 (features/editor/title-bar/): VS Code
+           style top chrome. Only the primary-sidebar layout toggle is
+           functional (its band fills while a side panel is open, and it
+           reopens the last-used panel); the menus, command center,
+           panel/secondary toggles, and window controls are static chrome
+           in this first pass. -->
+      <app-title-bar>
+        <div class="title-bar" data-testid="title-bar" role="banner">
+          <div class="title-bar__left">
+            <svg class="title-bar__logo" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 8h16M4 16h16M8 4v16M16 4v16" />
+            </svg>
+            <nav class="title-bar__menus" aria-label="Application menu">
+              <button type="button" class="title-bar__menu">File</button>
+              <button type="button" class="title-bar__menu">Edit</button>
+              <button type="button" class="title-bar__menu">View</button>
+              <button type="button" class="title-bar__menu">Help</button>
+            </nav>
+          </div>
+
+          <div class="title-bar__center">
+            <button type="button" class="title-bar__command-center" data-testid="title-bar-command-center" aria-label="Search documents">
+              <svg class="title-bar__search-icon" viewBox="0 0 16 16" aria-hidden="true">
+                <circle cx="7" cy="7" r="4.5" />
+                <path d="M10.6 10.6 14 14" />
+              </svg>
+              <span class="title-bar__title" data-testid="title-bar-title">order-flow.puml — Trellis</span>
+            </button>
+          </div>
+
+          <div class="title-bar__right">
+            <div class="title-bar__layout-controls">
+              <button type="button" class="title-bar__layout-toggle title-bar__layout-toggle--active" data-testid="title-bar-sidebar-toggle" title="Toggle Primary Side Bar" aria-label="Toggle Primary Side Bar">
+                <svg viewBox="0 0 16 16" aria-hidden="true">
+                  <rect class="title-bar__pane-fill" x="2" y="3.5" width="4" height="9.5" />
+                  <rect x="2" y="3.5" width="12" height="9.5" rx="1" />
+                  <path d="M6 3.5v9.5" />
+                </svg>
+              </button>
+              <button type="button" class="title-bar__layout-toggle" title="Toggle Panel" aria-label="Toggle Panel">
+                <svg viewBox="0 0 16 16" aria-hidden="true">
+                  <rect class="title-bar__pane-fill" x="2" y="9.5" width="12" height="3.5" />
+                  <rect x="2" y="3.5" width="12" height="9.5" rx="1" />
+                  <path d="M2 9.5h12" />
+                </svg>
+              </button>
+              <button type="button" class="title-bar__layout-toggle" title="Toggle Secondary Side Bar" aria-label="Toggle Secondary Side Bar">
+                <svg viewBox="0 0 16 16" aria-hidden="true">
+                  <rect class="title-bar__pane-fill" x="10" y="3.5" width="4" height="9.5" />
+                  <rect x="2" y="3.5" width="12" height="9.5" rx="1" />
+                  <path d="M10 3.5v9.5" />
+                </svg>
+              </button>
+            </div>
+            <div class="title-bar__window-controls">
+              <button type="button" class="title-bar__window-control" aria-label="Minimize">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5h10" /></svg>
+              </button>
+              <button type="button" class="title-bar__window-control" aria-label="Maximize">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="3.5" width="10" height="9.5" rx="1" /></svg>
+              </button>
+              <button type="button" class="title-bar__window-control title-bar__window-control--close" aria-label="Close">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4.5l8 8M12 4.5l-8 8" /></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </app-title-bar>
       <div class="editor-page" data-testid="editor-page">
 
         <app-editor-toolbar>
@@ -116,8 +186,22 @@
                     <span class="file-tree-node__chevron file-tree-node__chevron--expanded" data-testid="file-tree-node-chevron" aria-hidden="true"></span>
                     <span class="file-tree-node__name">diagrams</span>
                     <div class="file-tree-node__actions">
-                      <button type="button" class="file-tree-node__action" data-testid="file-tree-node-new-file" title="New File">New File</button>
-                      <button type="button" class="file-tree-node__action" data-testid="file-tree-node-new-folder" title="New Folder">New Folder</button>
+                      <app-tree-action-button>
+                        <button type="button" class="tree-action-button" data-testid="file-tree-node-new-file" title="New File" aria-label="New File">
+                          <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M6 2h7l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM13 2v5h5" />
+                            <path d="M12 14v6M9 17h6" />
+                          </svg>
+                        </button>
+                      </app-tree-action-button>
+                      <app-tree-action-button>
+                        <button type="button" class="tree-action-button" data-testid="file-tree-node-new-folder" title="New Folder" aria-label="New Folder">
+                          <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7z" />
+                            <path d="M12 10.5v5M9.5 13h5" />
+                          </svg>
+                        </button>
+                      </app-tree-action-button>
                     </div>
                   </div>
                   <div class="file-tree-node__children">
@@ -127,9 +211,31 @@
                       <span class="file-tree-node__chevron file-tree-node__chevron--expanded" data-testid="file-tree-node-chevron" aria-hidden="true"></span>
                       <span class="file-tree-node__name">c4</span>
                       <div class="file-tree-node__actions">
-                        <button type="button" class="file-tree-node__action" data-testid="file-tree-node-new-file" title="New File">New File</button>
-                        <button type="button" class="file-tree-node__action" data-testid="file-tree-node-new-folder" title="New Folder">New Folder</button>
-                        <button type="button" class="file-tree-node__action file-tree-node__action--danger" data-testid="file-tree-node-delete" title="Delete">Delete</button>
+                        <app-tree-action-button>
+                          <button type="button" class="tree-action-button" data-testid="file-tree-node-new-file" title="New File" aria-label="New File">
+                            <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M6 2h7l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM13 2v5h5" />
+                              <path d="M12 14v6M9 17h6" />
+                            </svg>
+                          </button>
+                        </app-tree-action-button>
+                        <app-tree-action-button>
+                          <button type="button" class="tree-action-button" data-testid="file-tree-node-new-folder" title="New Folder" aria-label="New Folder">
+                            <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7z" />
+                              <path d="M12 10.5v5M9.5 13h5" />
+                            </svg>
+                          </button>
+                        </app-tree-action-button>
+                        <app-tree-action-button>
+                          <button type="button" class="tree-action-button tree-action-button--danger" data-testid="file-tree-node-delete" title="Delete" aria-label="Delete">
+                            <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                              <path d="M10 11v6M14 11v6" />
+                            </svg>
+                          </button>
+                        </app-tree-action-button>
                       </div>
                     </div>
                     <div class="file-tree-node__children">
@@ -139,7 +245,15 @@
                         <span class="file-tree-node__chevron-spacer" aria-hidden="true"></span>
                         <span class="file-tree-node__name">payment-container.puml</span>
                         <div class="file-tree-node__actions">
-                          <button type="button" class="file-tree-node__action file-tree-node__action--danger" data-testid="file-tree-node-delete" title="Delete">Delete</button>
+                          <app-tree-action-button>
+                            <button type="button" class="tree-action-button tree-action-button--danger" data-testid="file-tree-node-delete" title="Delete" aria-label="Delete">
+                              <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                                <path d="M10 11v6M14 11v6" />
+                              </svg>
+                            </button>
+                          </app-tree-action-button>
                         </div>
                       </div>
                     </div>
@@ -150,7 +264,15 @@
                         <span class="file-tree-node__chevron-spacer" aria-hidden="true"></span>
                         <span class="file-tree-node__name">platform-context.puml</span>
                         <div class="file-tree-node__actions">
-                          <button type="button" class="file-tree-node__action file-tree-node__action--danger" data-testid="file-tree-node-delete" title="Delete">Delete</button>
+                          <app-tree-action-button>
+                            <button type="button" class="tree-action-button tree-action-button--danger" data-testid="file-tree-node-delete" title="Delete" aria-label="Delete">
+                              <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                                <path d="M10 11v6M14 11v6" />
+                              </svg>
+                            </button>
+                          </app-tree-action-button>
                         </div>
                       </div>
                     </div>
@@ -164,9 +286,31 @@
                       <span class="file-tree-node__chevron" data-testid="file-tree-node-chevron" aria-hidden="true"></span>
                       <span class="file-tree-node__name">sequences</span>
                       <div class="file-tree-node__actions">
-                        <button type="button" class="file-tree-node__action" data-testid="file-tree-node-new-file" title="New File">New File</button>
-                        <button type="button" class="file-tree-node__action" data-testid="file-tree-node-new-folder" title="New Folder">New Folder</button>
-                        <button type="button" class="file-tree-node__action file-tree-node__action--danger" data-testid="file-tree-node-delete" title="Delete">Delete</button>
+                        <app-tree-action-button>
+                          <button type="button" class="tree-action-button" data-testid="file-tree-node-new-file" title="New File" aria-label="New File">
+                            <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M6 2h7l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM13 2v5h5" />
+                              <path d="M12 14v6M9 17h6" />
+                            </svg>
+                          </button>
+                        </app-tree-action-button>
+                        <app-tree-action-button>
+                          <button type="button" class="tree-action-button" data-testid="file-tree-node-new-folder" title="New Folder" aria-label="New Folder">
+                            <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7z" />
+                              <path d="M12 10.5v5M9.5 13h5" />
+                            </svg>
+                          </button>
+                        </app-tree-action-button>
+                        <app-tree-action-button>
+                          <button type="button" class="tree-action-button tree-action-button--danger" data-testid="file-tree-node-delete" title="Delete" aria-label="Delete">
+                            <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                              <path d="M10 11v6M14 11v6" />
+                            </svg>
+                          </button>
+                        </app-tree-action-button>
                       </div>
                     </div>
                   </div>
@@ -177,7 +321,15 @@
                       <span class="file-tree-node__chevron-spacer" aria-hidden="true"></span>
                       <span class="file-tree-node__name">order-flow.puml</span>
                       <div class="file-tree-node__actions">
-                        <button type="button" class="file-tree-node__action file-tree-node__action--danger" data-testid="file-tree-node-delete" title="Delete">Delete</button>
+                        <app-tree-action-button>
+                          <button type="button" class="tree-action-button tree-action-button--danger" data-testid="file-tree-node-delete" title="Delete" aria-label="Delete">
+                            <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                              <path d="M10 11v6M14 11v6" />
+                            </svg>
+                          </button>
+                        </app-tree-action-button>
                       </div>
                     </div>
                   </div>
@@ -188,7 +340,15 @@
                       <span class="file-tree-node__chevron-spacer" aria-hidden="true"></span>
                       <span class="file-tree-node__name">README.txt</span>
                       <div class="file-tree-node__actions">
-                        <button type="button" class="file-tree-node__action file-tree-node__action--danger" data-testid="file-tree-node-delete" title="Delete">Delete</button>
+                        <app-tree-action-button>
+                          <button type="button" class="tree-action-button tree-action-button--danger" data-testid="file-tree-node-delete" title="Delete" aria-label="Delete">
+                            <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                              <path d="M10 11v6M14 11v6" />
+                            </svg>
+                          </button>
+                        </app-tree-action-button>
                       </div>
                     </div>
                   </div>

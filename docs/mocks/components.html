@@ -163,6 +163,75 @@
       </div>
     </div>
 
+    <h2>Title bar</h2>
+    <p class="guide__source">
+      <code>features/editor/title-bar/</code> (D-007) — VS Code-style top chrome: app menu,
+      command-center pill with the open document's name, layout toggles (the primary-sidebar toggle
+      is functional; its band fills while a side panel is open), and window controls (close hovers
+      <code>#c42b1c</code>, the Windows convention). Menus, command center, panel/secondary toggles,
+      and window controls are static chrome in this first pass.
+    </p>
+    <div class="specimen" style="padding: 0;">
+      <div class="title-bar" role="banner" style="width: 100%;">
+        <div class="title-bar__left">
+          <svg class="title-bar__logo" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 8h16M4 16h16M8 4v16M16 4v16" />
+          </svg>
+          <nav class="title-bar__menus" aria-label="Application menu">
+            <button type="button" class="title-bar__menu">File</button>
+            <button type="button" class="title-bar__menu">Edit</button>
+            <button type="button" class="title-bar__menu">View</button>
+            <button type="button" class="title-bar__menu">Help</button>
+          </nav>
+        </div>
+        <div class="title-bar__center">
+          <button type="button" class="title-bar__command-center" aria-label="Search documents">
+            <svg class="title-bar__search-icon" viewBox="0 0 16 16" aria-hidden="true">
+              <circle cx="7" cy="7" r="4.5" />
+              <path d="M10.6 10.6 14 14" />
+            </svg>
+            <span class="title-bar__title">Untitled diagram — Trellis</span>
+          </button>
+        </div>
+        <div class="title-bar__right">
+          <div class="title-bar__layout-controls">
+            <button type="button" class="title-bar__layout-toggle title-bar__layout-toggle--active" aria-label="Toggle Primary Side Bar">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <rect class="title-bar__pane-fill" x="2" y="3.5" width="4" height="9.5" />
+                <rect x="2" y="3.5" width="12" height="9.5" rx="1" />
+                <path d="M6 3.5v9.5" />
+              </svg>
+            </button>
+            <button type="button" class="title-bar__layout-toggle" aria-label="Toggle Panel">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <rect class="title-bar__pane-fill" x="2" y="9.5" width="12" height="3.5" />
+                <rect x="2" y="3.5" width="12" height="9.5" rx="1" />
+                <path d="M2 9.5h12" />
+              </svg>
+            </button>
+            <button type="button" class="title-bar__layout-toggle" aria-label="Toggle Secondary Side Bar">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <rect class="title-bar__pane-fill" x="10" y="3.5" width="4" height="9.5" />
+                <rect x="2" y="3.5" width="12" height="9.5" rx="1" />
+                <path d="M10 3.5v9.5" />
+              </svg>
+            </button>
+          </div>
+          <div class="title-bar__window-controls">
+            <button type="button" class="title-bar__window-control" aria-label="Minimize">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5h10" /></svg>
+            </button>
+            <button type="button" class="title-bar__window-control" aria-label="Maximize">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="3.5" width="10" height="9.5" rx="1" /></svg>
+            </button>
+            <button type="button" class="title-bar__window-control title-bar__window-control--close" aria-label="Close">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4.5l8 8M12 4.5l-8 8" /></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <h2>Connection status</h2>
     <p class="guide__source">
       <code>shared/components/connection-status/</code> — a 0.65rem dot pinned to the bottom of the rail;
@@ -202,36 +271,119 @@
     </div>
 
     <h2>Buttons</h2>
-    <p class="guide__source">Row actions from <code>document-list-item</code> / <code>file-tree-node</code>, dialog buttons from <code>save-dialog</code>, panel buttons from <code>explorer-panel</code>.</p>
+    <p class="guide__source">Tree row actions from <code>shared/components/tree-action-button/</code> (compact 1.4rem icon buttons; <code>label</code> feeds both the native <code>title</code> tooltip and <code>aria-label</code>), dialog buttons from <code>save-dialog</code> / <code>move-document-dialog</code>, panel buttons from <code>explorer-panel</code>.</p>
     <div class="specimen">
-      <div class="specimen__item"><button type="button" class="document-list-item__action">Open</button><span class="specimen__label">row action</span></div>
-      <div class="specimen__item"><button type="button" class="document-list-item__action document-list-item__action--danger">Delete</button><span class="specimen__label">row action, danger</span></div>
-      <div class="specimen__item"><button type="button" class="file-tree-node__action">New File</button><span class="specimen__label">tree action</span></div>
-      <div class="specimen__item"><button type="button" class="file-tree-node__action file-tree-node__action--danger">Delete</button><span class="specimen__label">tree action, danger</span></div>
+      <div class="specimen__item">
+        <app-tree-action-button>
+          <button type="button" class="tree-action-button" title="Open" aria-label="Open">
+            <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <path d="M15 3h6v6M21 3l-11 11" />
+            </svg>
+          </button>
+        </app-tree-action-button>
+        <span class="specimen__label">tree action (hover fill + title)</span>
+      </div>
+      <div class="specimen__item">
+        <app-tree-action-button>
+          <button type="button" class="tree-action-button tree-action-button--danger" title="Delete" aria-label="Delete">
+            <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+              <path d="M10 11v6M14 11v6" />
+            </svg>
+          </button>
+        </app-tree-action-button>
+        <span class="specimen__label">tree action, danger</span>
+      </div>
       <div class="specimen__item"><button type="button" class="save-dialog__button save-dialog__button--cancel">Cancel</button><span class="specimen__label">dialog secondary</span></div>
       <div class="specimen__item"><button type="button" class="save-dialog__button save-dialog__button--confirm">Save</button><span class="specimen__label">dialog primary</span></div>
       <div class="specimen__item"><button type="button" class="explorer-panel__open-folder" style="margin: 0;">Open Folder</button><span class="specimen__label">explorer panel</span></div>
     </div>
 
-    <h2>Document list item</h2>
+    <h2>Document tree rows</h2>
     <p class="guide__source">
-      <code>features/documents/document-list-item/</code> — shared by the Documents page and the Documents
-      side panel. The timestamp renders the API's raw ISO-8601 string (no date pipe).
+      <code>features/documents/document-tree-node/</code> — shares the Explorer's tree-row style source.
+      Document rows are draggable (drag onto a folder to move; the tree's empty space is the
+      move-to-root zone); the row of the document open in the editor carries the active highlight and
+      <code>aria-current</code>; a folder row lights up as a drop target mid-drag (shown frozen below).
+      The raw ISO-8601 <code>updatedAt</code> lives in each document row's <code>title</code> tooltip.
     </p>
-    <div class="specimen specimen--column">
-      <ul class="documents-list-page__list" style="max-width: 38rem;">
-        <li class="document-list-item" data-testid="document-item">
-          <div class="document-list-item__details">
-            <span class="document-list-item__name">Order fulfillment sequence</span>
-            <span class="document-list-item__updated-at">Updated 2026-06-30T14:41:09.3021147+00:00</span>
+    <div class="specimen specimen--column" style="padding: 0.5rem 0;">
+      <div style="max-width: 38rem; width: 100%;">
+        <div class="document-tree-node__row document-tree-node__row--folder" style="padding-left: 8px;" aria-expanded="true">
+          <span class="document-tree-node__chevron document-tree-node__chevron--expanded" aria-hidden="true"></span>
+          <span class="document-tree-node__name">architecture</span>
+          <div class="document-tree-node__actions">
+            <app-tree-action-button>
+              <button type="button" class="tree-action-button" title="New Folder" aria-label="New Folder">
+                <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7z" />
+                  <path d="M12 10.5v5M9.5 13h5" />
+                </svg>
+              </button>
+            </app-tree-action-button>
+            <app-tree-action-button>
+              <button type="button" class="tree-action-button" title="Rename" aria-label="Rename">
+                <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                </svg>
+              </button>
+            </app-tree-action-button>
+            <app-tree-action-button>
+              <button type="button" class="tree-action-button tree-action-button--danger" title="Delete folder and contents" aria-label="Delete folder and contents">
+                <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                  <path d="M10 11v6M14 11v6" />
+                </svg>
+              </button>
+            </app-tree-action-button>
           </div>
-          <div class="document-list-item__actions">
-            <button type="button" class="document-list-item__action">Open</button>
-            <button type="button" class="document-list-item__action">Rename</button>
-            <button type="button" class="document-list-item__action document-list-item__action--danger">Delete</button>
+        </div>
+        <div class="document-tree-node__row document-tree-node__row--document document-tree-node__row--active" style="padding-left: 24px;" title="Updated 2026-06-30T14:41:09.3021147+00:00" draggable="true" aria-current="true">
+          <span class="document-tree-node__chevron-spacer" aria-hidden="true"></span>
+          <span class="document-tree-node__name">Order fulfillment sequence</span>
+          <div class="document-tree-node__actions">
+            <app-tree-action-button>
+              <button type="button" class="tree-action-button" title="Move to Folder…" aria-label="Move to Folder…">
+                <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7z" />
+                  <path d="M9 13h5.5M12 10.5 14.5 13 12 15.5" />
+                </svg>
+              </button>
+            </app-tree-action-button>
+            <app-tree-action-button>
+              <button type="button" class="tree-action-button" title="Open" aria-label="Open">
+                <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                  <path d="M15 3h6v6M21 3l-11 11" />
+                </svg>
+              </button>
+            </app-tree-action-button>
+            <app-tree-action-button>
+              <button type="button" class="tree-action-button" title="Rename" aria-label="Rename">
+                <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                </svg>
+              </button>
+            </app-tree-action-button>
+            <app-tree-action-button>
+              <button type="button" class="tree-action-button tree-action-button--danger" title="Delete" aria-label="Delete">
+                <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                  <path d="M10 11v6M14 11v6" />
+                </svg>
+              </button>
+            </app-tree-action-button>
           </div>
-        </li>
-      </ul>
+        </div>
+        <div class="document-tree-node__row document-tree-node__row--folder document-tree-node__row--drop-target" style="padding-left: 8px;" aria-expanded="false">
+          <span class="document-tree-node__chevron" aria-hidden="true"></span>
+          <span class="document-tree-node__name">sequences (drop target mid-drag)</span>
+        </div>
+      </div>
     </div>
 
     <h2>File tree rows</h2>
@@ -246,17 +398,53 @@
           <span class="file-tree-node__chevron file-tree-node__chevron--expanded" aria-hidden="true"></span>
           <span class="file-tree-node__name">diagrams</span>
           <div class="file-tree-node__actions">
-            <button type="button" class="file-tree-node__action">New File</button>
-            <button type="button" class="file-tree-node__action">New Folder</button>
+            <app-tree-action-button>
+              <button type="button" class="tree-action-button" title="New File" aria-label="New File">
+                <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6 2h7l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM13 2v5h5" />
+                  <path d="M12 14v6M9 17h6" />
+                </svg>
+              </button>
+            </app-tree-action-button>
+            <app-tree-action-button>
+              <button type="button" class="tree-action-button" title="New Folder" aria-label="New Folder">
+                <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7z" />
+                  <path d="M12 10.5v5M9.5 13h5" />
+                </svg>
+              </button>
+            </app-tree-action-button>
           </div>
         </div>
         <div class="file-tree-node__row file-tree-node__row--directory" style="padding-left: 24px;" aria-expanded="false">
           <span class="file-tree-node__chevron" aria-hidden="true"></span>
           <span class="file-tree-node__name">sequences</span>
           <div class="file-tree-node__actions">
-            <button type="button" class="file-tree-node__action">New File</button>
-            <button type="button" class="file-tree-node__action">New Folder</button>
-            <button type="button" class="file-tree-node__action file-tree-node__action--danger">Delete</button>
+            <app-tree-action-button>
+              <button type="button" class="tree-action-button" title="New File" aria-label="New File">
+                <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6 2h7l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM13 2v5h5" />
+                  <path d="M12 14v6M9 17h6" />
+                </svg>
+              </button>
+            </app-tree-action-button>
+            <app-tree-action-button>
+              <button type="button" class="tree-action-button" title="New Folder" aria-label="New Folder">
+                <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7z" />
+                  <path d="M12 10.5v5M9.5 13h5" />
+                </svg>
+              </button>
+            </app-tree-action-button>
+            <app-tree-action-button>
+              <button type="button" class="tree-action-button tree-action-button--danger" title="Delete" aria-label="Delete">
+                <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                  <path d="M10 11v6M14 11v6" />
+                </svg>
+              </button>
+            </app-tree-action-button>
           </div>
         </div>
         <div class="file-tree-node__row file-tree-node__row--directory" style="padding-left: 24px;" aria-expanded="true">
@@ -264,16 +452,46 @@
           <span class="file-tree-node__name">c4</span>
           <span class="file-tree-node__spinner" aria-hidden="true"></span>
           <div class="file-tree-node__actions">
-            <button type="button" class="file-tree-node__action">New File</button>
-            <button type="button" class="file-tree-node__action">New Folder</button>
-            <button type="button" class="file-tree-node__action file-tree-node__action--danger">Delete</button>
+            <app-tree-action-button>
+              <button type="button" class="tree-action-button" title="New File" aria-label="New File">
+                <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6 2h7l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM13 2v5h5" />
+                  <path d="M12 14v6M9 17h6" />
+                </svg>
+              </button>
+            </app-tree-action-button>
+            <app-tree-action-button>
+              <button type="button" class="tree-action-button" title="New Folder" aria-label="New Folder">
+                <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7z" />
+                  <path d="M12 10.5v5M9.5 13h5" />
+                </svg>
+              </button>
+            </app-tree-action-button>
+            <app-tree-action-button>
+              <button type="button" class="tree-action-button tree-action-button--danger" title="Delete" aria-label="Delete">
+                <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                  <path d="M10 11v6M14 11v6" />
+                </svg>
+              </button>
+            </app-tree-action-button>
           </div>
         </div>
         <div class="file-tree-node__row file-tree-node__row--file" style="padding-left: 40px;">
           <span class="file-tree-node__chevron-spacer" aria-hidden="true"></span>
           <span class="file-tree-node__name">order-flow.puml</span>
           <div class="file-tree-node__actions">
-            <button type="button" class="file-tree-node__action file-tree-node__action--danger">Delete</button>
+            <app-tree-action-button>
+              <button type="button" class="tree-action-button tree-action-button--danger" title="Delete" aria-label="Delete">
+                <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                  <path d="M10 11v6M14 11v6" />
+                </svg>
+              </button>
+            </app-tree-action-button>
           </div>
         </div>
       </div>

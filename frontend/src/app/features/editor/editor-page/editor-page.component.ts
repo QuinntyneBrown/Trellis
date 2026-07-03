@@ -31,6 +31,7 @@ import { MonacoEditorComponent } from '../monaco-editor/monaco-editor.component'
 import { ResizeDividerComponent } from '../resize-divider/resize-divider.component';
 import { clamp } from '../resize-divider/clamp';
 import { SaveDialogComponent } from '../save-dialog/save-dialog.component';
+import { TitleBarComponent } from '../title-bar/title-bar.component';
 import {
   DEFAULT_SIDE_PANEL_WIDTH_PX,
   MAX_SIDE_PANEL_WIDTH_PX,
@@ -55,6 +56,7 @@ export type SidePanel = 'explorer' | 'documents' | null;
   imports: [
     MonacoEditorComponent,
     EditorToolbarComponent,
+    TitleBarComponent,
     DiagramPreviewComponent,
     ResizeDividerComponent,
     SaveDialogComponent,
@@ -400,6 +402,15 @@ export class EditorPageComponent implements OnInit {
   }
 
   /**
+   * The panel the title bar's sidebar toggle reopens after a close --
+   * whichever was open most recently, the way VS Code's own toggle restores
+   * the last-used sidebar view. Falls back to 'documents' when nothing has
+   * been opened yet this session ('explorer' additionally requires the File
+   * System Access API).
+   */
+  private lastOpenSidePanel: 'explorer' | 'documents' | null = this.activeSidePanel();
+
+  /**
    * Sets the shared selection to `panel`, or clears it if `panel` is already
    * active -- see activeSidePanel's own doc comment. The result is persisted
    * (including an explicit null for a deliberate close) so the layout comes
@@ -407,7 +418,26 @@ export class EditorPageComponent implements OnInit {
    */
   toggleSidePanel(panel: 'explorer' | 'documents'): void {
     this.activeSidePanel.update((current) => (current === panel ? null : panel));
-    this.layoutPreferences.setActiveSidePanel(this.activeSidePanel());
+    const active = this.activeSidePanel();
+    if (active) {
+      this.lastOpenSidePanel = active;
+    }
+    this.layoutPreferences.setActiveSidePanel(active);
+  }
+
+  /** The title bar's primary-sidebar toggle: close whatever is open, or reopen the last-used panel. */
+  onTitleBarSidebarToggle(): void {
+    const current = this.activeSidePanel();
+    if (current) {
+      this.toggleSidePanel(current);
+      return;
+    }
+
+    let target = this.lastOpenSidePanel ?? 'documents';
+    if (target === 'explorer' && !this.explorerSupported) {
+      target = 'documents';
+    }
+    this.toggleSidePanel(target);
   }
 
   /** Seeds activeSidePanel from persisted preferences -- see its doc comment. */

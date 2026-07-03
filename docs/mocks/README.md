@@ -44,6 +44,7 @@ Two things are facsimiles, clearly marked with `mock-only` comments:
   PlantUML 1.2026.6 outputs for the `sequence.puml` starter template
   (modern default style: `#E2E2F0` shapes, `#181818` lines).
 
+
 Static mocks can't capture behavior: pane dragging, keyboard shortcuts
 (Ctrl+Enter render, Ctrl+S save), the SignalR connection lifecycle, native
 `window.confirm`/`window.prompt` flows (delete/rename), and the browser's
@@ -59,9 +60,10 @@ directory/file pickers are described in the page header comments instead.
 | [editor-render-error.html](editor-render-error.html) | `/editor` — hub returned `isSuccess: false` | + `diagram-preview` error branch |
 | [editor-template-picker.html](editor-template-picker.html) | `/editor` — Templates panel open | + `template-picker` |
 | [editor-save-dialog.html](editor-save-dialog.html) | `/editor` — modal save prompt | + `save-dialog` |
-| [editor-documents-tree.html](editor-documents-tree.html) | `/editor` — Documents side panel docked (260px): virtual folder tree with expanded/collapsed folders and root documents | + `documents-panel`, `document-tree-node`, `resize-divider` |
+| [editor-documents-tree.html](editor-documents-tree.html) | `/editor` — Documents side panel docked (260px): virtual folder tree with expanded/collapsed folders, root documents, the active (open) document highlighted, draggable document rows | + `documents-panel`, `document-tree-node`, `tree-action-button`, `resize-divider` |
 | [editor-documents-tree-empty.html](editor-documents-tree-empty.html) | `/editor` — Documents panel, no documents or folders yet | + `documents-panel` empty branch |
 | [editor-documents-tree-save-dialog.html](editor-documents-tree-save-dialog.html) | `/editor` — save dialog with the destination-folder select | + `save-dialog` folder branch |
+| [editor-documents-tree-move-dialog.html](editor-documents-tree-move-dialog.html) | `/editor` — "Move to Folder…" dialog over the docked tree (keyboard fallback to drag-and-drop) | + `move-document-dialog` |
 | [editor-explorer-panel.html](editor-explorer-panel.html) | `/editor` — Explorer tree, disk file opened | + `explorer-panel`, `file-tree-node`, `pixel-resize-divider` |
 | [editor-explorer-open-folder.html](editor-explorer-open-folder.html) | `/editor` — Explorer before any folder is connected | + `explorer-panel` open-folder branch |
 | [editor-explorer-reconnect.html](editor-explorer-reconnect.html) | `/editor` — restored handle needs a permission re-grant | + `explorer-panel` reconnect branch |
@@ -94,9 +96,19 @@ page's header comment):
   comments rather than mocked as pages.
 - **Single-line document rows:** the raw ISO-8601 `updatedAt` string lives
   in the row's `title` tooltip rather than a visible second line.
-- A document's folder is chosen at first save only (the save dialog's
-  select); documents cannot be moved, and `PUT /api/documents/{id}`
-  structurally has no folder field.
+- **Icon row actions:** every row action (and the panel header's New
+  Folder) is a compact `tree-action-button` icon button with a native
+  `title` tooltip — one shared component across both trees.
+- **Moving documents:** drag a document row onto a folder row (drop-target
+  highlight; the tree's empty space is the move-to-root zone) or use the
+  row's "Move to Folder…" dialog. The move goes through the dedicated
+  `PUT /api/documents/{id}/folder` endpoint (`folderId: null` = root);
+  `PUT /api/documents/{id}` itself remains structurally folder-free. The
+  destination folder auto-expands after a move.
+- **Active document:** the row of the document currently open in the
+  editor carries `document-tree-node__row--active` + `aria-current="true"`
+  (the VS Code active-file idiom), and the panel stays open when a
+  document is opened.
 
 The previous flat-list Documents panel mock and the `/documents` route's
 page mocks were removed when this shipped: the panel is now always the
@@ -109,15 +121,30 @@ Where each piece of mock markup comes from (paths relative to
 
 - `app.component.*`, `app.routes.ts` — shell and the `/editor` and
   `/editor/:documentId` routes.
-- `features/editor/editor-page/` — overall layout: 48px rail, optional side
-  panel (170–500px, default 260px), editor pane (ratio 0.2–0.8, default
-  0.5), preview pane; owns the save dialog and disk-save error toast.
+- `features/editor/editor-page/` — overall layout: 35px title bar, then 48px
+  rail, optional side panel (170–500px, default 260px), editor pane (ratio
+  0.2–0.8, default 0.5), preview pane; owns the save dialog and disk-save
+  error toast.
+- `features/editor/title-bar/` — VS Code-style top chrome (D-007): app menu,
+  command-center pill with the open document's name ("Untitled diagram —
+  Trellis", or the open disk file's name on the Explorer pages), layout
+  toggles (the primary-sidebar toggle is functional and fills while a side
+  panel is open), Windows-convention window controls (close hovers
+  `#c42b1c`). Menus, command center, panel/secondary toggles, and window
+  controls are static chrome in this first pass.
 - `features/editor/editor-toolbar/` — VS Code-style vertical activity rail:
   Explorer (only in browsers with the File System Access API), New, Save,
   Upload (hidden file input), Templates, Documents; connection dot pinned
   to the bottom.
 - `shared/components/rail-button/` (+ `rail-icons.ts`) — 40×40 icon buttons,
   hand-authored outline icons, hover/focus tooltip, active accent bar.
+- `shared/components/tree-action-button/` (+ `tree-action-icons.ts`) —
+  compact 1.4rem icon-only row actions shared by both trees and the
+  Documents panel header; `label` feeds both the native `title` tooltip and
+  `aria-label`.
+- `features/documents/move-document-dialog/` — "Move to Folder…" modal,
+  visually mirroring the save dialog; destination select reuses the shared
+  `folder-options.ts` flattening.
 - `features/templates/template-picker/` — pop-out catalog panel.
 - `features/editor/monaco-editor/` — Monaco wrapper (facsimile in mocks).
 - `features/editor/diagram-preview/` — placeholder / error / SVG / spinner

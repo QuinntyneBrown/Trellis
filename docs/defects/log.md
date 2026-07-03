@@ -58,3 +58,11 @@ See [README.md](README.md) for entry format and conventions.
 - **Expected:** The preview re-renders the loaded document automatically, same as when opening it from the Documents panel.
 - **Actual:** The preview shows a render error until the user presses Ctrl+Enter.
 - **Notes:** Race on startup: the route-driven document fetch resolves before the SignalR hub connection finishes starting, so the auto-render's `invoke()` rejected ("connection is not in the 'Connected' State") and surfaced as a failed render. Fixed 2026-07-02, test-first: e2e/tests/preview-renders-after-reload.spec.ts written and confirmed failing, then `DiagramHubService.render` gained a `whenConnected()` gate — renders issued before the hub is up park until the start()/reconnect path flips to connected, then invoke. Covered by unit tests; full e2e suite green (42/42).
+
+### D-007 — Adopt the VS Code-style top title bar from the HTML mocks
+- **Type:** Change
+- **Area:** Editor (chrome)
+- **Status:** Fixed
+- **Expected:** The app has the top chrome bar designed in docs/mocks: app menu (File/Edit/View/Help), a centered command-center pill showing the open document's name ("name — Trellis"), layout toggles (primary sidebar toggle functional, reflecting the open panel), and window controls — per the approved mock design.
+- **Actual:** The app has no top chrome; the mock bar is marked "mock-only PROPOSAL".
+- **Notes:** Fixed 2026-07-02. New `features/editor/title-bar/` component mounted above `.editor-page` (now `calc(100vh - 35px)`); command center binds `documentName`; the primary-sidebar toggle mirrors `activeSidePanel`, closes the open panel, and reopens the last-used one (falling back to Documents when Explorer is unsupported). Menus, command center, panel/secondary toggles, and window controls are static chrome in this first pass (matching the mock's note). Mocks re-synced: `mock-title-bar` proposal markers replaced with the real `title-bar` classes/`<app-title-bar>` host across all 14 pages, mock.css, components.html, and README. Unit (348/348) + e2e (43/43) green.

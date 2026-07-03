@@ -1,67 +1,27 @@
 <!doctype html>
 <!--
-  Trellis mock — Documents side panel as a virtual folder tree
+  Trellis mock — "Move to Folder…" dialog over the Documents folder tree
   (route: /editor).
 
-  The Documents panel shows database-persisted documents organized into
-  VIRTUAL folders (rows in the database, not directories on disk). The
-  recursive rows come from DocumentTreeNodeComponent, whose visuals share
-  one style source with the Explorer's FileTreeNodeComponent
-  (frontend/src/app/shared/styles/_tree-row.scss).
+  Companion to editor-documents-tree.html; see its header comment for the
+  data model, API, and CRUD flows.
 
-  State shown: the Documents rail icon is active and the panel is docked at
-  its default 260px width. "architecture" and its "c4" subfolder are
-  expanded, "sequences" is collapsed, and two documents live at the root --
-  "Order fulfillment sequence" is the document currently open in the editor,
-  so its row carries the active highlight (aria-current="true"), and the
-  panel stays open after opening (the VS Code explorer idiom). Sorting
-  matches the Explorer convention: folders first, then documents,
-  case-insensitive. Document rows are single-line; the raw ISO-8601
-  updatedAt string lives in the row's title attribute (hover tooltip). Row
-  actions are compact icon buttons (shared/components/tree-action-button/),
-  always visible, with native title tooltips.
-
-  Data model:
-    Folder            { id: Guid, name: string, parentFolderId: Guid|null }
-    PlantUmlDocument  + folderId: Guid|null      (null = root)
-  API (tree assembled client-side from two flat lists):
-    GET    /api/folders            -> [{ id, name, parentFolderId }]
-    POST   /api/folders            { name, parentFolderId }
-    PUT    /api/folders/{id}       { name }                (rename)
-    DELETE /api/folders/{id}       cascades to contained folders/documents
-    GET    /api/documents          list items carry folderId
-    POST   /api/documents          request carries folderId
-    PUT    /api/documents/{id}/folder  { folderId|null }   (move; null = root)
-
-  CRUD flows (all through the app's native-dialog convention, so they have
-  no mock page of their own):
-    - Create folder:   "New Folder" (panel header = root, or a folder row's
-                       action = subfolder) -> window.prompt for the name.
-    - Create document: save from the editor; the save dialog has a
-                       destination-folder select (see
-                       editor-documents-tree-save-dialog.html).
-    - Read:            expand/collapse folders via the row/chevron; "Open"
-                       on a document row loads it into the editor.
-    - Update:          "Rename" on a document or folder row ->
-                       window.prompt seeded with the current name.
-    - Move:            drag a document row onto a folder (the folder row
-                       highlights as a drop target; the tree's empty space
-                       is the move-to-root zone), or the row's
-                       "Move to Folder…" action -> a small dialog with a
-                       destination select (see
-                       editor-documents-tree-move-dialog.html). The
-                       destination folder auto-expands after the move.
-    - Delete:          "Delete" -> window.confirm; deleting a folder warns
-                       that the folder AND everything inside it will be
-                       deleted (the backend cascades).
-
-  Reverse-engineered from the Angular components under frontend/src/app/
-  (see docs/mocks/README.md for the full mock-to-component mapping).
+  State shown: same tree state as editor-documents-tree.html ("Order
+  fulfillment sequence" open and active), after clicking that row's
+  "Move to Folder…" action. The modal move dialog (MoveDocumentDialogComponent,
+  mirroring the save dialog visually) titles itself with the document name
+  and has exactly one control: a "Folder" select listing the virtual folder
+  tree as nbsp-indented options, preselecting the document's CURRENT folder
+  ("(No folder)" here -- the document sits at the root). Confirm PUTs
+  { folderId|null } to /api/documents/{id}/folder; the destination folder
+  auto-expands after the move so the moved document stays visible. The
+  dialog is the keyboard-accessible fallback to dragging the row onto a
+  folder (drag-over states are described in editor-documents-tree.html).
 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Trellis mock — Documents folder tree</title>
+  <title>Trellis mock — Move to Folder dialog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="assets/mock.css">
 </head>
@@ -715,6 +675,31 @@ Web --&gt; Customer : Order confirmation
         </div>
 
         <app-save-dialog><!-- hidden: [visible]=false renders nothing --></app-save-dialog>
+        <app-move-document-dialog>
+          <div class="move-document-dialog" data-testid="move-document-dialog">
+            <div class="move-document-dialog__backdrop"></div>
+            <div class="move-document-dialog__panel">
+              <h2 class="move-document-dialog__title">Move "Order fulfillment sequence"</h2>
+
+              <!-- Destination folder. Same flattened, nbsp-indented option
+                   list as the save dialog (shared/folder-options.ts); the
+                   document's current folder is preselected, so confirming
+                   without touching the select is a no-op move. -->
+              <label class="move-document-dialog__label" for="move-document-dialog-folder-select">Folder</label>
+              <select id="move-document-dialog-folder-select" class="move-document-dialog__select" data-testid="move-document-dialog-folder">
+                <option value="" selected>(No folder)</option>
+                <option value="6f1d1a2e-9c1b-4c1e-8f6a-2b7d3e4a5c01">architecture</option>
+                <option value="a3b8c9d0-1e2f-4a5b-8c7d-9e0f1a2b3c02">&nbsp;&nbsp;&nbsp;&nbsp;c4</option>
+                <option value="b4c9d0e1-2f3a-4b5c-8d7e-0f1a2b3c4d03">sequences</option>
+              </select>
+
+              <div class="move-document-dialog__actions">
+                <button type="button" class="move-document-dialog__button move-document-dialog__button--cancel" data-testid="move-document-dialog-cancel">Cancel</button>
+                <button type="button" class="move-document-dialog__button move-document-dialog__button--confirm" data-testid="move-document-dialog-confirm">Move</button>
+              </div>
+            </div>
+          </div>
+        </app-move-document-dialog>
         <app-error-banner class="editor-page__disk-save-error"><!-- hidden: no disk-save error --></app-error-banner>
 
       </div>
