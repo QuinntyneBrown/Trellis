@@ -25,6 +25,7 @@
       <app-documents-panel
         [style.display]="activeSidePanel() === 'documents' ? '' : 'none'"
         [open]="activeSidePanel() === 'documents'"
+        [activeDocumentId]="documentId()"
         (documentOpened)="onDocumentOpenedFromPanel($event)"
       ></app-documents-panel>
     </div>

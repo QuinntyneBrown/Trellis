@@ -194,6 +194,16 @@ describe('DocumentsPanelComponent', () => {
     expect(documentsServiceMock.delete).toHaveBeenCalledWith('1');
   });
 
+  it('highlights the row matching activeDocumentId as the currently open document', () => {
+    component.activeDocumentId = '1';
+    openPanel();
+
+    const row = byTestId('document-item')!;
+    expect(row.getAttribute('data-document-name')).toBe('Doc One');
+    expect(row.classList).toContain('document-tree-node__row--active');
+    expect(row.getAttribute('aria-current')).toBe('true');
+  });
+
   describe('moving documents', () => {
     it('moves a document into a folder, pre-expands the target, and refreshes', () => {
       openPanel();

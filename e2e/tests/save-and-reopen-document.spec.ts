@@ -52,6 +52,11 @@ test.describe('save and reopen a document', () => {
       .poll(async () => normalizeEol(await editorPage.editor.getValue()))
       .toBe(DIAGRAM);
 
+    // Opening from the panel keeps the panel open and marks the opened row
+    // as the document currently being edited.
+    await expect(editorPage.documentsPanel.root).toBeVisible();
+    await editorPage.documentsPanel.expectDocumentActive(documentName);
+
     // Reopening also re-renders the restored content.
     await expect
       .poll(() => editorPage.preview.getRenderSequence())

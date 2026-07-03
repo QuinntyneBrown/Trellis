@@ -52,6 +52,8 @@
       [style.padding-left.px]="indentPx"
       [title]="'Updated ' + node.document!.updatedAt"
       draggable="true"
+      [class.document-tree-node__row--active]="isActive"
+      [attr.aria-current]="isActive ? 'true' : null"
       (click)="onRowClick()"
       (dragstart)="onDragStart($event)"
     >
@@ -95,6 +97,7 @@
         <app-document-tree-node
           [node]="child"
           [depth]="depth + 1"
+          [activeDocumentId]="activeDocumentId"
           (toggleExpand)="toggleExpand.emit($event)"
           (openDocument)="openDocument.emit($event)"
           (createFolder)="createFolder.emit($event)"

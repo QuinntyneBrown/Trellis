@@ -26,6 +26,7 @@
           <app-document-tree-node
             [node]="node"
             [depth]="0"
+            [activeDocumentId]="activeDocumentId"
             (toggleExpand)="onToggleExpand($event)"
             (openDocument)="onOpenDocument($event)"
             (createFolder)="onCreateFolder($event)"

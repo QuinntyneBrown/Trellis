@@ -59,6 +59,14 @@ export class DocumentsPanelComponent {
   }
 
   /**
+   * Asserts the given document row is marked as the one currently open in
+   * the editor (aria-current, mirrored by the row's active highlight).
+   */
+  async expectDocumentActive(name: string): Promise<void> {
+    await expect(this.item(name)).toHaveAttribute('aria-current', 'true');
+  }
+
+  /**
    * Clicks the "delete" action for the document with the given name and
    * accepts the native `window.confirm` dialog it triggers. See the
    * class-level INTEGRATION NOTE above.

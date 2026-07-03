@@ -70,6 +70,8 @@ export interface MoveDocumentEvent {
 export class DocumentTreeNodeComponent {
   @Input({ required: true }) node!: DocumentTreeNode;
   @Input() depth = 0;
+  /** The id of the document currently open in the editor, or null -- this row highlights itself when it matches. */
+  @Input() activeDocumentId: string | null = null;
 
   /** Fires for this row (folder) or is re-emitted, untouched, from a descendant row. */
   @Output() readonly toggleExpand = new EventEmitter<DocumentTreeNode>();
@@ -97,6 +99,11 @@ export class DocumentTreeNodeComponent {
 
   get indentPx(): number {
     return BASE_PADDING_PX + this.depth * INDENT_STEP_PX;
+  }
+
+  /** True when this document row is the one currently open in the editor. */
+  get isActive(): boolean {
+    return this.node.kind === 'document' && this.activeDocumentId !== null && this.node.id === this.activeDocumentId;
   }
 
   onRowClick(): void {

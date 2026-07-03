@@ -10,6 +10,12 @@ interface StoredEditorLayout {
    * STORAGE_KEY version bump needed for this to stay backward compatible.
    */
   sidePanelWidthPx?: number;
+  /**
+   * Additive field, same story as sidePanelWidthPx. `null` is stored
+   * explicitly (not just absent) when the user closes the panel, so a
+   * deliberately-closed panel also survives a reload as closed.
+   */
+  activeSidePanel?: 'explorer' | 'documents' | null;
 }
 
 /**
@@ -44,6 +50,16 @@ export class EditorLayoutPreferencesService {
 
   setSidePanelWidthPx(px: number): void {
     this.writeStored({ sidePanelWidthPx: px });
+  }
+
+  /** Returns the persisted side-panel choice, or null (panel closed, never stored, or a corrupt value). */
+  getActiveSidePanel(): 'explorer' | 'documents' | null {
+    const stored = this.readStored()?.activeSidePanel;
+    return stored === 'explorer' || stored === 'documents' ? stored : null;
+  }
+
+  setActiveSidePanel(panel: 'explorer' | 'documents' | null): void {
+    this.writeStored({ activeSidePanel: panel });
   }
 
   /** Reads and JSON-parses the shared stored blob, or null on a missing key/read failure/corrupt JSON. */

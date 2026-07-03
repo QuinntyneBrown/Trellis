@@ -54,6 +54,8 @@ describe('EditorPageComponent', () => {
     setEditorPaneRatio: jest.Mock;
     getSidePanelWidthPx: jest.Mock;
     setSidePanelWidthPx: jest.Mock;
+    getActiveSidePanel: jest.Mock;
+    setActiveSidePanel: jest.Mock;
   };
   let fileSystemAccessServiceMock: {
     isSupported: jest.Mock;
@@ -129,6 +131,8 @@ describe('EditorPageComponent', () => {
       setEditorPaneRatio: jest.fn(),
       getSidePanelWidthPx: jest.fn().mockReturnValue(300),
       setSidePanelWidthPx: jest.fn(),
+      getActiveSidePanel: jest.fn().mockReturnValue(null),
+      setActiveSidePanel: jest.fn(),
     };
     fileSystemAccessServiceMock = {
       // ExplorerPanelComponent is always mounted inside EditorPageComponent's
@@ -411,7 +415,7 @@ describe('EditorPageComponent', () => {
   });
 
   describe('documents panel open', () => {
-    it('loads the picked document, closes the panel, and reflects the id in the URL only after it arrives', () => {
+    it('loads the picked document, keeps the panel open, and reflects the id in the URL only after it arrives', () => {
       fixture.detectChanges();
       component.toggleSidePanel('documents');
 
@@ -420,7 +424,9 @@ describe('EditorPageComponent', () => {
 
       component.onDocumentOpenedFromPanel({ id: 'picked', name: 'Picked', updatedAt: '2026-01-01T00:00:00Z', folderId: null });
 
-      expect(component.activeSidePanel()).toBeNull();
+      // The panel stays open (VS Code explorer idiom) so the user keeps
+      // their place in the tree; the now-active row highlights instead.
+      expect(component.activeSidePanel()).toBe('documents');
       expect(component.documentId()).toBe('picked');
       expect(component.sourceCode()).toBe('picked content');
       expect(locationMock.go).toHaveBeenCalledWith('/editor/picked');
@@ -866,6 +872,47 @@ describe('EditorPageComponent', () => {
 
     it('exposes explorerSupported from FileSystemAccessService.isSupported()', () => {
       expect(component.explorerSupported).toBe(true);
+    });
+  });
+
+  describe('side panel persistence across reloads', () => {
+    it('persists every toggle, including an explicit null for a deliberate close', () => {
+      fixture.detectChanges();
+
+      component.toggleSidePanel('documents');
+      expect(layoutPreferencesMock.setActiveSidePanel).toHaveBeenCalledWith('documents');
+
+      component.toggleSidePanel('documents');
+      expect(layoutPreferencesMock.setActiveSidePanel).toHaveBeenCalledWith(null);
+    });
+
+    it('seeds activeSidePanel from the persisted choice', async () => {
+      layoutPreferencesMock.getActiveSidePanel.mockReturnValue('documents');
+
+      await TestBed.resetTestingModule()
+        .configureTestingModule({
+          imports: [EditorPageComponent],
+          providers: providers(),
+        })
+        .compileComponents();
+      const reseeded = TestBed.createComponent(EditorPageComponent);
+
+      expect(reseeded.componentInstance.activeSidePanel()).toBe('documents');
+    });
+
+    it('drops a persisted explorer choice when the File System Access API is unsupported', async () => {
+      layoutPreferencesMock.getActiveSidePanel.mockReturnValue('explorer');
+      fileSystemAccessServiceMock.isSupported.mockReturnValue(false);
+
+      await TestBed.resetTestingModule()
+        .configureTestingModule({
+          imports: [EditorPageComponent],
+          providers: providers(),
+        })
+        .compileComponents();
+      const reseeded = TestBed.createComponent(EditorPageComponent);
+
+      expect(reseeded.componentInstance.activeSidePanel()).toBeNull();
     });
   });
 

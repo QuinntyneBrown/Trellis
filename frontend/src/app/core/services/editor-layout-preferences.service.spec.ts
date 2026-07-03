@@ -106,6 +106,34 @@ describe('EditorLayoutPreferencesService', () => {
       expect(service.getSidePanelWidthPx()).toBeNull();
     });
 
+    it('round-trips the active side panel, including an explicit null for a deliberately closed panel', () => {
+      expect(service.getActiveSidePanel()).toBeNull();
+
+      service.setActiveSidePanel('documents');
+      expect(service.getActiveSidePanel()).toBe('documents');
+
+      service.setActiveSidePanel('explorer');
+      expect(service.getActiveSidePanel()).toBe('explorer');
+
+      service.setActiveSidePanel(null);
+      expect(service.getActiveSidePanel()).toBeNull();
+      // Stored as an explicit null (not just absent) so "user closed the panel" survives a reload too.
+      expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toEqual({ activeSidePanel: null });
+    });
+
+    it('returns null for a corrupt persisted side panel value', () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ activeSidePanel: 'kitchen-sink' }));
+      expect(service.getActiveSidePanel()).toBeNull();
+    });
+
+    it('setting the active side panel does not clobber the other persisted layout fields', () => {
+      service.setSidePanelWidthPx(300);
+      service.setActiveSidePanel('documents');
+
+      expect(service.getSidePanelWidthPx()).toBe(300);
+      expect(service.getActiveSidePanel()).toBe('documents');
+    });
+
     it('setting the editor pane ratio does not clobber a previously persisted side panel width, and vice versa', () => {
       service.setSidePanelWidthPx(300);
       service.setEditorPaneRatio(0.35);

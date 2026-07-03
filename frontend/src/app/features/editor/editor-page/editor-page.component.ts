@@ -103,17 +103,22 @@ export class EditorPageComponent implements OnInit {
    */
   readonly saveDialogFolders = signal<Folder[]>([]);
 
+  /** Computed once -- the browser either has the File System Access API or it doesn't, for the whole session. */
+  readonly explorerSupported = this.fileSystemAccessService.isSupported();
+
   /**
    * The single shared selection behind both the Explorer and Documents rail
    * icons: setting one value always replaces whatever was there (giving
    * exclusivity for free -- opening one panel always closes the other), and
    * toggleSidePanel's use of .update() gives the VS-Code-real
    * click-the-active-icon-to-collapse behavior for free too.
+   *
+   * Seeded from persisted preferences like the pane sizes, so the open
+   * panel survives a browser refresh (D-005). A stored 'explorer' choice is
+   * dropped when the browser lacks the File System Access API -- the icon
+   * wouldn't even render, so restoring that panel would strand the user.
    */
-  readonly activeSidePanel = signal<SidePanel>(null);
-
-  /** Computed once -- the browser either has the File System Access API or it doesn't, for the whole session. */
-  readonly explorerSupported = this.fileSystemAccessService.isSupported();
+  readonly activeSidePanel = signal<SidePanel>(this.restoreSidePanel());
 
   /** Set when the currently-open document/content came from a local disk file rather than the SQLite backend. */
   readonly openFileHandle = signal<FileSystemFileHandle | null>(null);
@@ -394,13 +399,32 @@ export class EditorPageComponent implements OnInit {
     this.sourceCode.set(template.content);
   }
 
-  /** Sets the shared selection to `panel`, or clears it if `panel` is already active -- see activeSidePanel's own doc comment. */
+  /**
+   * Sets the shared selection to `panel`, or clears it if `panel` is already
+   * active -- see activeSidePanel's own doc comment. The result is persisted
+   * (including an explicit null for a deliberate close) so the layout comes
+   * back identically after a refresh.
+   */
   toggleSidePanel(panel: 'explorer' | 'documents'): void {
     this.activeSidePanel.update((current) => (current === panel ? null : panel));
+    this.layoutPreferences.setActiveSidePanel(this.activeSidePanel());
   }
 
+  /** Seeds activeSidePanel from persisted preferences -- see its doc comment. */
+  private restoreSidePanel(): SidePanel {
+    const stored = this.layoutPreferences.getActiveSidePanel();
+    if (stored === 'explorer' && !this.explorerSupported) {
+      return null;
+    }
+    return stored;
+  }
+
+  /**
+   * The panel deliberately stays open on open (VS Code explorer idiom): the
+   * editor sits beside it, and the panel highlights the now-active row via
+   * the activeDocumentId binding, so the user keeps their place in the tree.
+   */
   onDocumentOpenedFromPanel(document: DocumentSummary): void {
-    this.activeSidePanel.set(null);
     this.saveError.set(null);
 
     // Always fetches directly (rather than routing through the Router,

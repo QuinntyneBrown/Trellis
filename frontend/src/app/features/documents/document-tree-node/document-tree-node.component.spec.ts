@@ -270,6 +270,40 @@ describe('DocumentTreeNodeComponent', () => {
     });
   });
 
+  describe('active document highlight', () => {
+    it('marks the row active (class + aria-current) only when its id matches activeDocumentId', () => {
+      component.node = documentNode({ id: 'doc-1' });
+      component.activeDocumentId = 'doc-1';
+      fixture.detectChanges();
+
+      const row = byTestId('document-item')!;
+      expect(row.classList).toContain('document-tree-node__row--active');
+      expect(row.getAttribute('aria-current')).toBe('true');
+    });
+
+    it('does not mark a non-matching document row or any folder row active', () => {
+      component.node = documentNode({ id: 'doc-1' });
+      component.activeDocumentId = 'other-doc';
+      fixture.detectChanges();
+      expect(byTestId('document-item')!.classList).not.toContain('document-tree-node__row--active');
+      expect(byTestId('document-item')!.getAttribute('aria-current')).toBeNull();
+
+      // A folder sharing the active id must never highlight -- only documents can be open in the editor.
+      component.node = folderNode({ id: 'other-doc' });
+      fixture.detectChanges();
+      expect(byTestId('document-folder')!.classList).not.toContain('document-tree-node__row--active');
+    });
+
+    it('passes activeDocumentId down to nested children', () => {
+      const child = documentNode({ id: 'nested-active', name: 'nested' });
+      component.node = folderNode({ expanded: true, children: [child] });
+      component.activeDocumentId = 'nested-active';
+      fixture.detectChanges();
+
+      expect(byTestId('document-item')!.classList).toContain('document-tree-node__row--active');
+    });
+  });
+
   describe('drag and drop', () => {
     it('marks document rows draggable and folder rows not', () => {
       component.node = documentNode();

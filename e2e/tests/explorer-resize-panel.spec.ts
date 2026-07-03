@@ -34,9 +34,10 @@ test.describe('resizing the Explorer/Documents side panel via the pixel divider'
     await expect(editorPage.byTestId('editor-page')).toBeVisible();
     await editorPage.editor.waitForReady();
 
-    // activeSidePanel itself isn't persisted (only the width is) -- reopen
-    // the panel to observe the restored width.
-    await editorPage.explorerPanel.open();
+    // The open panel choice is itself persisted (D-005), so after the
+    // reload the Explorer panel is already open with its restored width --
+    // no reopen click needed (one would toggle it closed).
+    await expect(editorPage.explorerPanel.root).toBeVisible();
 
     const widthAfterReload = (await editorPage.explorerPanel.root.boundingBox())!.width;
     expect(Math.abs(widthAfterReload - widthAfterDrag)).toBeLessThan(5);

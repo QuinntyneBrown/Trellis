@@ -43,6 +43,8 @@ import { TreeActionButtonComponent } from '../../../shared/components/tree-actio
 })
 export class DocumentsPanelComponent implements OnChanges {
   @Input() open = false;
+  /** The id of the document currently open in the editor, or null -- highlights that row in the tree. */
+  @Input() activeDocumentId: string | null = null;
 
   @Output() readonly documentOpened = new EventEmitter<DocumentSummary>();
 
