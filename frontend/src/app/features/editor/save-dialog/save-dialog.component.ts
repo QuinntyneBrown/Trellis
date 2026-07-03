@@ -26,6 +26,8 @@ export interface SaveDialogResult {
 })
 export class SaveDialogComponent implements OnChanges {
   @Input() visible = false;
+  /** Dialog title -- "Save document" normally, "Save Document As" for the Ctrl+Shift+S flow. */
+  @Input() heading = 'Save document';
   @Input() initialName = '';
   @Input() folders: Folder[] = [];
   /**

@@ -624,6 +624,86 @@ describe('EditorPageComponent', () => {
     });
   });
 
+  describe('Save As via Ctrl+Shift+S', () => {
+    function ctrlShiftSEvent(): KeyboardEvent {
+      const event = new KeyboardEvent('keydown', { key: 'S', ctrlKey: true, shiftKey: true, cancelable: true });
+      jest.spyOn(event, 'preventDefault');
+      return event;
+    }
+
+    it('opens the Save As dialog (folder select included) even when a document is open, without saving anything', () => {
+      documentsServiceMock.getById.mockReturnValue(of(sampleDocument()));
+      emitDocumentId('1');
+      fixture.detectChanges();
+
+      const event = ctrlShiftSEvent();
+      component.onKeyDown(event);
+
+      expect(component.isSaveDialogOpen()).toBe(true);
+      expect(component.saveDialogMode()).toBe('saveAs');
+      expect(documentsServiceMock.create).not.toHaveBeenCalled();
+      expect(documentsServiceMock.update).not.toHaveBeenCalled();
+      expect(event.preventDefault).toHaveBeenCalled();
+    });
+
+    it('confirming creates a NEW document with the chosen folder and adopts its id in the URL', () => {
+      documentsServiceMock.getById.mockReturnValue(of(sampleDocument({ id: 'original', content: 'original content' })));
+      emitDocumentId('original');
+      fixture.detectChanges();
+      documentsServiceMock.create.mockReturnValue(
+        of(sampleDocument({ id: 'copy-id', name: 'The Copy', content: 'original content' })),
+      );
+
+      component.onKeyDown(ctrlShiftSEvent());
+      component.performSave('The Copy', 'folder-1');
+
+      expect(documentsServiceMock.update).not.toHaveBeenCalled();
+      expect(documentsServiceMock.create).toHaveBeenCalledWith({
+        name: 'The Copy',
+        content: 'original content',
+        folderId: 'folder-1',
+      });
+      expect(component.documentId()).toBe('copy-id');
+      expect(component.documentName()).toBe('The Copy');
+      expect(locationMock.go).toHaveBeenCalledWith('/editor/copy-id');
+      expect(component.isSaveDialogOpen()).toBe(false);
+    });
+
+    it('from a disk-backed file, opens the dialog instead of writing to disk; confirming imports into the library', () => {
+      fixture.detectChanges();
+      const handle = { name: 'order-flow.puml' } as unknown as FileSystemFileHandle;
+      component.openFileHandle.set(handle);
+      component.sourceCode.set('disk content');
+      documentsServiceMock.create.mockReturnValue(of(sampleDocument({ id: 'imported', name: 'Imported' })));
+
+      component.onKeyDown(ctrlShiftSEvent());
+
+      expect(fileSystemAccessServiceMock.writeTextFile).not.toHaveBeenCalled();
+      expect(component.isSaveDialogOpen()).toBe(true);
+
+      component.performSave('Imported', null);
+
+      expect(documentsServiceMock.create).toHaveBeenCalled();
+      expect(component.openFileHandle()).toBeNull();
+    });
+
+    it('a cancelled Save As never leaks saveAs mode into a later Ctrl+S quick-save', () => {
+      documentsServiceMock.getById.mockReturnValue(of(sampleDocument({ id: '1', name: 'Doc', content: 'v1' })));
+      emitDocumentId('1');
+      fixture.detectChanges();
+      documentsServiceMock.update.mockReturnValue(of(sampleDocument({ id: '1', name: 'Doc', content: 'v2' })));
+
+      component.onKeyDown(ctrlShiftSEvent());
+      component.closeSaveDialog();
+
+      component.sourceCode.set('v2');
+      component.onKeyDown(ctrlSEvent());
+
+      expect(documentsServiceMock.create).not.toHaveBeenCalled();
+      expect(documentsServiceMock.update).toHaveBeenCalledWith('1', { name: 'Doc', content: 'v2' });
+    });
+  });
+
   describe('disk-backed files (Explorer) vs. SQLite documents', () => {
     /**
      * A real FileSystemFileHandle's isSameEntry() compares by underlying

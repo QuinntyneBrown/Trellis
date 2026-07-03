@@ -66,3 +66,14 @@ See [README.md](README.md) for entry format and conventions.
 - **Expected:** The app has the top chrome bar designed in docs/mocks: app menu (File/Edit/View/Help), a centered command-center pill showing the open document's name ("name — Trellis"), layout toggles (primary sidebar toggle functional, reflecting the open panel), and window controls — per the approved mock design.
 - **Actual:** The app has no top chrome; the mock bar is marked "mock-only PROPOSAL".
 - **Notes:** Fixed 2026-07-02. New `features/editor/title-bar/` component mounted above `.editor-page` (now `calc(100vh - 35px)`); command center binds `documentName`; the primary-sidebar toggle mirrors `activeSidePanel`, closes the open panel, and reopens the last-used one (falling back to Documents when Explorer is unsupported). Menus, command center, panel/secondary toggles, and window controls are static chrome in this first pass (matching the mock's note). Mocks re-synced: `mock-title-bar` proposal markers replaced with the real `title-bar` classes/`<app-title-bar>` host across all 14 pages, mock.css, components.html, and README. Unit (348/348) + e2e (43/43) green.
+
+### D-008 — Ctrl+Shift+S silently saves instead of acting as "Save As"
+- **Type:** Defect
+- **Area:** Editor (save flow)
+- **Status:** Fixed
+- **Steps to reproduce:**
+  1. Open (or save) a document, then load a template into the editor.
+  2. Press Ctrl+Shift+S.
+- **Expected:** "Save As": a dialog appears to give the document a name and a destination folder, and confirming creates a NEW document (never overwrites the current one).
+- **Actual:** The Shift modifier is not distinguished from plain Ctrl+S, so with a document id present the content is quick-saved silently over the open document — no dialog, no name, no folder.
+- **Notes:** The keydown handler matched `key.toLowerCase() === 's'` regardless of `shiftKey`. Fixed 2026-07-02, test-first (e2e/tests/save-as-with-ctrl-shift-s.spec.ts written red, then green): Ctrl+Shift+S now opens the save dialog in a dedicated 'saveAs' mode — heading "Save Document As", destination-folder select always shown, confirm always POSTs a new document and adopts its id (from disk-file mode this imports the content into the library and clears the handle). The mode resets on any dialog close so a later Ctrl+S quick-save can never create a duplicate. Also moved the shortcut listener to `document:keydown` — focus lands on `<body>` after picking a template (the click removes its own button), where the host-scoped listener silently missed the shortcut. Unit 353/353, e2e 44/44.

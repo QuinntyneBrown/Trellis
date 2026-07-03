@@ -80,11 +80,12 @@
 
   <app-save-dialog
     [visible]="isSaveDialogOpen()"
+    [heading]="saveDialogMode() === 'saveAs' ? 'Save Document As' : 'Save document'"
     [initialName]="documentName()"
     [folders]="saveDialogFolders()"
-    [folderSelectionEnabled]="!documentId()"
+    [folderSelectionEnabled]="saveDialogMode() === 'saveAs' || !documentId()"
     (confirm)="performSave($event.name, $event.folderId)"
-    (cancel)="isSaveDialogOpen.set(false)"
+    (cancel)="closeSaveDialog()"
   ></app-save-dialog>
 
   <!--

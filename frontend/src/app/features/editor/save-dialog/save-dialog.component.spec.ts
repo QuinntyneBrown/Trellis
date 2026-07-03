@@ -38,6 +38,15 @@ describe('SaveDialogComponent', () => {
     expect(byTestId('save-dialog')).toBeNull();
   });
 
+  it('titles itself "Save document" by default and honors a custom heading (Save As)', () => {
+    show();
+    expect(fixture.nativeElement.querySelector('.save-dialog__title').textContent).toBe('Save document');
+
+    component.heading = 'Save Document As';
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.save-dialog__title').textContent).toBe('Save Document As');
+  });
+
   it('pre-fills the name field with initialName when it becomes visible', async () => {
     component.initialName = 'My Diagram';
     show();

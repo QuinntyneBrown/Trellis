@@ -98,6 +98,13 @@ export class EditorPageComponent implements OnInit {
 
   readonly isSaveDialogOpen = signal(false);
   /**
+   * Which flavor the open save dialog is: 'save' names a first-time save
+   * (updates thereafter), 'saveAs' (Ctrl+Shift+S) ALWAYS creates a new
+   * document -- so its dialog always offers the destination-folder select,
+   * and confirming never overwrites the currently open document.
+   */
+  readonly saveDialogMode = signal<'save' | 'saveAs'>('save');
+  /**
    * The folder list handed to the save dialog's destination select --
    * re-fetched every time the dialog opens so just-created folders always
    * appear. A fetch failure degrades to an empty list (the dialog stays
@@ -245,6 +252,21 @@ export class EditorPageComponent implements OnInit {
       return;
     }
 
+    this.openSaveDialog('save');
+  }
+
+  /**
+   * "Save As" (Ctrl+Shift+S): always the dialog, always a new document.
+   * Deliberately no disk-save shortcut here -- from a disk-backed file this
+   * imports the content into the document library as a fresh document.
+   */
+  onSaveAsClicked(): void {
+    this.openSaveDialog('saveAs');
+  }
+
+  private openSaveDialog(mode: 'save' | 'saveAs'): void {
+    this.saveDialogMode.set(mode);
+
     // Opened immediately (not gated on the folder fetch) so a slow or failing
     // folders request can never delay or block saving. The token guards
     // against a slow earlier open's response arriving after (and clobbering)
@@ -277,14 +299,31 @@ export class EditorPageComponent implements OnInit {
    * Save-Page-As dialog is prevented unconditionally on every matching
    * keypress, even on the no-op paths above, since letting it fire even once
    * would be jarring.
+   *
+   * Listens on document (not the component host): focus routinely lands on
+   * <body> after a click removes its target from the DOM (e.g. picking a
+   * template closes the picker), and the save shortcuts must keep working
+   * from there -- host-scoped keydown would silently miss them.
    */
-  @HostListener('keydown', ['$event'])
+  @HostListener('document:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent): void {
     if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 's') {
       return;
     }
 
     event.preventDefault();
+
+    // Ctrl/Cmd+Shift+S = Save As: always the dialog (name + destination
+    // folder), always a new document -- checked before every quick-save
+    // branch below so it can never silently overwrite the open document
+    // (or write to the open disk file). No unsaved-changes gate either:
+    // Save As of an unmodified document is a deliberate "save a copy".
+    if (event.shiftKey) {
+      if (!this.isSaveDialogOpen()) {
+        this.onSaveAsClicked();
+      }
+      return;
+    }
 
     if (this.openFileHandle()) {
       this.performDiskSave();
@@ -320,7 +359,9 @@ export class EditorPageComponent implements OnInit {
   performSave(name: string, folderId: string | null = null): void {
     this.saveError.set(null);
 
-    const id = this.documentId();
+    // Save As structurally ignores the current id: it always creates,
+    // which is exactly what makes it safe to invoke over an open document.
+    const id = this.saveDialogMode() === 'saveAs' ? null : this.documentId();
 
     const request$ = id
       ? this.documentsService.update(id, { name, content: this.sourceCode() })
@@ -328,11 +369,15 @@ export class EditorPageComponent implements OnInit {
 
     request$.subscribe({
       next: (saved) => {
-        this.isSaveDialogOpen.set(false);
+        this.closeSaveDialog();
         this.documentName.set(saved.name);
         this.savedSourceCode.set(saved.content);
         if (!id) {
           this.documentId.set(saved.id);
+          // A Save As from a disk-backed file imports the content into the
+          // library: the editor now points at the new database document, so
+          // whatever disk handle was open no longer applies.
+          this.openFileHandle.set(null);
           // Reflects the newly created document's id in the URL (for
           // deep-linking/refresh) without routing through the Router - we
           // already have the authoritative saved document in hand, so a
@@ -343,6 +388,16 @@ export class EditorPageComponent implements OnInit {
       },
       error: () => this.saveError.set(`Could not save "${name}".`),
     });
+  }
+
+  /**
+   * Closing always resets the mode to plain 'save': the mode only means
+   * anything while its dialog is open, and a stale 'saveAs' would otherwise
+   * make a later Ctrl+S quick-save create a duplicate instead of updating.
+   */
+  closeSaveDialog(): void {
+    this.isSaveDialogOpen.set(false);
+    this.saveDialogMode.set('save');
   }
 
   /**

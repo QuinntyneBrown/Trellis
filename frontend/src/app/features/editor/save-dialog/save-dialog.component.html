@@ -2,7 +2,7 @@
   <div class="save-dialog" data-testid="save-dialog">
     <div class="save-dialog__backdrop" (click)="onCancelClicked()"></div>
     <div class="save-dialog__panel">
-      <h2 class="save-dialog__title">Save document</h2>
+      <h2 class="save-dialog__title">{{ heading }}</h2>
 
       <label class="save-dialog__label" for="save-dialog-name-input">Name</label>
       <input
