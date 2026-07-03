@@ -14,6 +14,20 @@
         (ngModelChange)="onNameInput($event)"
       />
 
+      @if (kindSelectionEnabled) {
+        <label class="save-dialog__label" for="save-dialog-kind-select">Type</label>
+        <select
+          id="save-dialog-kind-select"
+          class="save-dialog__select"
+          data-testid="save-dialog-kind"
+          [ngModel]="selectedKind()"
+          (ngModelChange)="onKindChange($event)"
+        >
+          <option value="plantuml">PlantUML</option>
+          <option value="markdown">Markdown</option>
+        </select>
+      }
+
       @if (folderSelectionEnabled) {
         <label class="save-dialog__label" for="save-dialog-folder-select">Folder</label>
         <select

@@ -15,8 +15,8 @@ public class FakePlantUmlRenderer : IPlantUmlRenderer
     public const string CannedSvg = "<svg xmlns=\"http://www.w3.org/2000/svg\"><text>fake</text></svg>";
 
     /// <inheritdoc />
-    public Task<PlantUmlRenderResult> RenderAsync(string source, CancellationToken cancellationToken)
+    public Task<RenderResult> RenderAsync(string source, CancellationToken cancellationToken)
     {
-        return Task.FromResult(PlantUmlRenderResult.Success(CannedSvg));
+        return Task.FromResult(RenderResult.Success(CannedSvg));
     }
 }

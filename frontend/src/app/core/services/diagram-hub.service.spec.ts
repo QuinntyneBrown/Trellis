@@ -61,7 +61,7 @@ describe('DiagramHubService', () => {
   });
 
   it('renders successfully, toggling isRendering and updating renderResult', async () => {
-    const result: RenderResult = { isSuccess: true, svg: '<svg></svg>', errorMessage: null };
+    const result: RenderResult = { isSuccess: true, svg: '<svg></svg>', html: null, errorMessage: null };
     fakeConnection.invoke.mockResolvedValue(result);
 
     const renderPromise = service.render('@startuml\n@enduml');
@@ -74,8 +74,26 @@ describe('DiagramHubService', () => {
     expect(service.isRendering()).toBe(false);
   });
 
+  it('dispatches markdown renders to the RenderMarkdown hub method', async () => {
+    const result: RenderResult = { isSuccess: true, svg: null, html: '<h1>hi</h1>', errorMessage: null };
+    fakeConnection.invoke.mockResolvedValue(result);
+
+    await service.render('# hi', 'markdown');
+
+    expect(fakeConnection.invoke).toHaveBeenCalledWith('RenderMarkdown', '# hi');
+    expect(service.renderResult()).toEqual(result);
+  });
+
+  it('defaults to the RenderDiagram hub method when no kind is given', async () => {
+    fakeConnection.invoke.mockResolvedValue({ isSuccess: true, svg: '<svg></svg>', html: null, errorMessage: null });
+
+    await service.render('@startuml\n@enduml');
+
+    expect(fakeConnection.invoke).toHaveBeenCalledWith('RenderDiagram', '@startuml\n@enduml');
+  });
+
   it('surfaces a resolved business-level failure through renderResult', async () => {
-    const result: RenderResult = { isSuccess: false, svg: null, errorMessage: 'Syntax error at line 2' };
+    const result: RenderResult = { isSuccess: false, svg: null, html: null, errorMessage: 'Syntax error at line 2' };
     fakeConnection.invoke.mockResolvedValue(result);
 
     await service.render('bad source');
@@ -91,6 +109,7 @@ describe('DiagramHubService', () => {
     expect(service.renderResult()).toEqual({
       isSuccess: false,
       svg: null,
+      html: null,
       errorMessage: 'connection lost',
     });
     expect(service.isRendering()).toBe(false);
@@ -112,7 +131,7 @@ describe('DiagramHubService', () => {
       let releaseStart!: () => void;
       const pendingConnection: FakeHubConnection = {
         start: jest.fn().mockReturnValue(new Promise<void>((resolve) => (releaseStart = resolve))),
-        invoke: jest.fn().mockResolvedValue({ isSuccess: true, svg: '<svg></svg>', errorMessage: null }),
+        invoke: jest.fn().mockResolvedValue({ isSuccess: true, svg: '<svg></svg>', html: null, errorMessage: null }),
         onreconnecting: jest.fn(),
         onreconnected: jest.fn(),
         onclose: jest.fn(),
@@ -139,7 +158,7 @@ describe('DiagramHubService', () => {
     });
 
     it('renders immediately without waiting when already connected', async () => {
-      const result: RenderResult = { isSuccess: true, svg: '<svg></svg>', errorMessage: null };
+      const result: RenderResult = { isSuccess: true, svg: '<svg></svg>', html: null, errorMessage: null };
       fakeConnection.invoke.mockResolvedValue(result);
 
       await service.render('@startuml\n@enduml');

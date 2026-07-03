@@ -221,6 +221,60 @@ public class DocumentsControllerTests : IClassFixture<CustomWebApplicationFactor
     }
 
     [Fact]
+    public async Task Create_WithMarkdownKind_PersistsAndEchoesIt()
+    {
+        var response = await this.client.PostAsJsonAsync("/api/documents", new { name = "Notes", content = "# hi", kind = "markdown" });
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var created = await response.Content.ReadFromJsonAsync<PlantUmlDocument>();
+        Assert.Equal("markdown", created!.Kind);
+
+        var fetched = await this.client.GetFromJsonAsync<PlantUmlDocument>($"/api/documents/{created.Id}");
+        Assert.Equal("markdown", fetched!.Kind);
+    }
+
+    [Fact]
+    public async Task Create_WithoutKind_DefaultsToPlantUml()
+    {
+        var response = await this.client.PostAsJsonAsync("/api/documents", new { name = "Diagram", content = "@startuml\n@enduml" });
+
+        var created = await response.Content.ReadFromJsonAsync<PlantUmlDocument>();
+        Assert.Equal("plantuml", created!.Kind);
+    }
+
+    [Fact]
+    public async Task Create_ReturnsBadRequest_ForUnknownKind()
+    {
+        var response = await this.client.PostAsJsonAsync("/api/documents", new { name = "X", content = "c", kind = "asciidoc" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Update_PreservesKind()
+    {
+        var createResponse = await this.client.PostAsJsonAsync("/api/documents", new { name = "Notes", content = "# v1", kind = "markdown" });
+        var created = await createResponse.Content.ReadFromJsonAsync<PlantUmlDocument>();
+
+        var updateResponse = await this.client.PutAsJsonAsync($"/api/documents/{created!.Id}", new { name = "Notes", content = "# v2" });
+
+        var updated = await updateResponse.Content.ReadFromJsonAsync<PlantUmlDocument>();
+        Assert.Equal("markdown", updated!.Kind);
+    }
+
+    [Fact]
+    public async Task GetList_CarriesTheKind()
+    {
+        var createResponse = await this.client.PostAsJsonAsync("/api/documents", new { name = "Kind list doc", content = "# md", kind = "markdown" });
+        var created = await createResponse.Content.ReadFromJsonAsync<PlantUmlDocument>();
+
+        var list = await this.client.GetFromJsonAsync<List<DocumentListItemDto>>("/api/documents");
+        var listItem = list!.Single(d => d.Id == created!.Id);
+
+        Assert.Equal("markdown", listItem.Kind);
+    }
+
+    [Fact]
     public async Task Move_ToAnotherFolder_UpdatesFolderId()
     {
         var folderAResponse = await this.client.PostAsJsonAsync("/api/folders", new { name = "Move source" });
@@ -401,6 +455,41 @@ public class DocumentsControllerTests : IClassFixture<CustomWebApplicationFactor
         var response = await this.client.PostAsync("/api/documents/upload", content);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("Only .puml, .txt, .md or .markdown files", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task Upload_MarkdownFile_CreatesMarkdownDocument()
+    {
+        using var content = new MultipartFormDataContent();
+        content.Add(new ByteArrayContent(System.Text.Encoding.UTF8.GetBytes("# Uploaded notes")), "file", "notes.md");
+
+        var response = await this.client.PostAsync("/api/documents/upload", content);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var document = await response.Content.ReadFromJsonAsync<PlantUmlDocument>();
+        Assert.Equal("markdown", document!.Kind);
+        Assert.Equal("notes", document.Name);
+    }
+
+    [Fact]
+    public async Task Upload_ReturnsBadRequest_WhenReplacingWithMismatchedKind()
+    {
+        var createResponse = await this.client.PostAsJsonAsync("/api/documents", new { name = "Diagram", content = "@startuml\n@enduml" });
+        var created = await createResponse.Content.ReadFromJsonAsync<PlantUmlDocument>();
+
+        using var content = new MultipartFormDataContent();
+        content.Add(new ByteArrayContent(System.Text.Encoding.UTF8.GetBytes("# md into a plantuml doc")), "file", "notes.md");
+        content.Add(new StringContent(created!.Id.ToString()), "documentId");
+
+        var response = await this.client.PostAsync("/api/documents/upload", content);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        // The document is untouched by the rejected upload.
+        var fetched = await this.client.GetFromJsonAsync<PlantUmlDocument>($"/api/documents/{created.Id}");
+        Assert.Equal("@startuml\n@enduml", fetched!.Content);
+        Assert.Equal("plantuml", fetched.Kind);
     }
 
     [Fact]

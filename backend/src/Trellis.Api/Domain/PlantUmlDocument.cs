@@ -39,4 +39,11 @@ public class PlantUmlDocument
     /// touches it.
     /// </summary>
     public Guid? FolderId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the document kind - one of <see cref="DocumentKinds"/>.
+    /// Chosen at creation only (explicitly, or inferred from an uploaded
+    /// file's extension); the update endpoint never changes it.
+    /// </summary>
+    public string Kind { get; set; } = DocumentKinds.PlantUml;
 }

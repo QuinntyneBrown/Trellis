@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+import { DocumentKind } from '../../../core/models/document-kind.model';
 import { Folder } from '../../../core/models/folder.model';
 import { FolderOption, flattenFolderOptions } from '../../../shared/folder-options';
 
@@ -9,6 +10,8 @@ export interface SaveDialogResult {
   name: string;
   /** The chosen destination folder's id, or null for the root ("(No folder)"). */
   folderId: string | null;
+  /** The chosen document kind (only choosable while kindSelectionEnabled; otherwise the seeded value). */
+  kind: DocumentKind;
 }
 
 /**
@@ -37,6 +40,13 @@ export class SaveDialogComponent implements OnChanges {
    * there would silently discard the user's choice.
    */
   @Input() folderSelectionEnabled = false;
+  /**
+   * Whether the document Type select is shown -- same create-only rule as
+   * the folder select: the kind is fixed once a document exists.
+   */
+  @Input() kindSelectionEnabled = false;
+  /** Seeds the Type select on open with what the editor is currently holding. */
+  @Input() initialKind: DocumentKind = 'plantuml';
 
   @Output() readonly confirm = new EventEmitter<SaveDialogResult>();
   @Output() readonly cancel = new EventEmitter<void>();
@@ -44,6 +54,8 @@ export class SaveDialogComponent implements OnChanges {
   readonly name = signal('');
   /** null = "(No folder)" = root; reset on every open so a prior choice never leaks into the next save. */
   readonly selectedFolderId = signal<string | null>(null);
+  /** Re-seeded from initialKind on every open, mirroring selectedFolderId's no-leak rule. */
+  readonly selectedKind = signal<DocumentKind>('plantuml');
 
   folderOptions: FolderOption[] = [];
 
@@ -51,6 +63,7 @@ export class SaveDialogComponent implements OnChanges {
     if (changes['visible']?.currentValue === true) {
       this.name.set(this.initialName);
       this.selectedFolderId.set(null);
+      this.selectedKind.set(this.initialKind);
     }
     if (changes['folders']) {
       this.folderOptions = flattenFolderOptions(this.folders);
@@ -66,10 +79,14 @@ export class SaveDialogComponent implements OnChanges {
     this.selectedFolderId.set(value || null);
   }
 
+  onKindChange(value: string): void {
+    this.selectedKind.set(value === 'markdown' ? 'markdown' : 'plantuml');
+  }
+
   onConfirmClicked(): void {
     const trimmed = this.name().trim();
     if (trimmed) {
-      this.confirm.emit({ name: trimmed, folderId: this.selectedFolderId() });
+      this.confirm.emit({ name: trimmed, folderId: this.selectedFolderId(), kind: this.selectedKind() });
     }
   }
 

@@ -2,6 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { HubConnection, HubConnectionBuilder } from '@microsoft/signalr';
 
 import { environment } from '../../../environments/environment';
+import { DocumentKind } from '../models/document-kind.model';
 import { HubConnectionState } from '../models/hub-connection-state.model';
 import { RenderResult } from '../models/render-result.model';
 
@@ -79,23 +80,26 @@ export class DiagramHubService {
   }
 
   /**
-   * Invokes the single RenderDiagram hub method. Per the API contract this
-   * never rejects for ordinary business-level failures (bad syntax, empty
+   * Invokes the hub render method matching the document kind (RenderDiagram
+   * for PlantUML, RenderMarkdown for markdown). Per the API contract these
+   * never reject for ordinary business-level failures (bad syntax, empty
    * input) -- those come back as a resolved RenderResult with isSuccess
    * false. A rejection here therefore means an actual connection-level
    * problem, which is funneled into renderResult as a failed result so the
    * preview pane surfaces it exactly like any other render failure.
    */
-  async render(source: string): Promise<void> {
+  async render(source: string, kind: DocumentKind = 'plantuml'): Promise<void> {
     this.isRendering.set(true);
     try {
       await this.whenConnected();
-      const result = await this.connection.invoke<RenderResult>('RenderDiagram', source);
+      const method = kind === 'markdown' ? 'RenderMarkdown' : 'RenderDiagram';
+      const result = await this.connection.invoke<RenderResult>(method, source);
       this.renderResult.set(result);
     } catch (error) {
       this.renderResult.set({
         isSuccess: false,
         svg: null,
+        html: null,
         errorMessage: error instanceof Error ? error.message : 'Failed to reach the render service.',
       });
     } finally {

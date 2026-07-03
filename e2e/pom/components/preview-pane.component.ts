@@ -38,7 +38,22 @@ export class PreviewPaneComponent {
       return (await img.getAttribute('src')) ?? '';
     }
 
+    const markdown = this.markdownPane();
+    if (await markdown.count()) {
+      return markdown.evaluate((el) => el.innerHTML);
+    }
+
     return '';
+  }
+
+  /** Locator for the rendered-markdown prose container (markdown renders only). */
+  markdownPane(): Locator {
+    return byTestId(this.root.page(), 'preview-markdown');
+  }
+
+  /** Whether the preview currently shows rendered markdown prose. */
+  async isMarkdownRendered(): Promise<boolean> {
+    return this.markdownPane().isVisible();
   }
 
   /** Whether the "no render yet" placeholder is currently visible. */

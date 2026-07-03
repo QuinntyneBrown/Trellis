@@ -7,6 +7,7 @@ import { of } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 
 import { Document } from '../../../core/models/document.model';
+import { DocumentKind, inferDocumentKindFromFileName } from '../../../core/models/document-kind.model';
 import { DocumentSummary } from '../../../core/models/document-summary.model';
 import { OpenedDiskFile } from '../../../core/models/opened-disk-file.model';
 import { Template } from '../../../core/models/template.model';
@@ -92,6 +93,13 @@ export class EditorPageComponent implements OnInit {
 
   readonly documentId = signal<string | null>(null);
   readonly documentName = signal<string>(BLANK_DOCUMENT_NAME);
+  /**
+   * What the editor's content is (PlantUML or markdown) -- drives the render
+   * pipeline, the Monaco language, and the save dialog's Type default.
+   * Adopted from the loaded document / disk file / upload; templates and new
+   * documents reset it to plantuml.
+   */
+  readonly documentKind = signal<DocumentKind>('plantuml');
   readonly sourceCode = signal<string>('');
   /** The last-saved (or last-loaded) content, used to detect unsaved edits. */
   readonly savedSourceCode = signal<string>('');
@@ -208,15 +216,17 @@ export class EditorPageComponent implements OnInit {
     if (document) {
       this.documentId.set(document.id);
       this.documentName.set(document.name);
+      this.documentKind.set(document.kind ?? 'plantuml');
       this.sourceCode.set(document.content);
       this.savedSourceCode.set(document.content);
       // Loading a document's real, saved content is expected to update the
       // preview to match it immediately, rather than leaving the preview
       // showing whatever was rendered previously (or the placeholder).
-      void this.hubService.render(document.content);
+      void this.hubService.render(document.content, this.documentKind());
     } else {
       this.documentId.set(null);
       this.documentName.set(BLANK_DOCUMENT_NAME);
+      this.documentKind.set('plantuml');
       this.sourceCode.set('');
       this.savedSourceCode.set('');
     }
@@ -356,7 +366,7 @@ export class EditorPageComponent implements OnInit {
    * select): updates structurally cannot move a document, so quick-saves of
    * an existing document keep its folder without having to know it.
    */
-  performSave(name: string, folderId: string | null = null): void {
+  performSave(name: string, folderId: string | null = null, kind: DocumentKind | null = null): void {
     this.saveError.set(null);
 
     // Save As structurally ignores the current id: it always creates,
@@ -365,7 +375,7 @@ export class EditorPageComponent implements OnInit {
 
     const request$ = id
       ? this.documentsService.update(id, { name, content: this.sourceCode() })
-      : this.documentsService.create({ name, content: this.sourceCode(), folderId });
+      : this.documentsService.create({ name, content: this.sourceCode(), folderId, kind: kind ?? this.documentKind() });
 
     request$.subscribe({
       next: (saved) => {
@@ -374,6 +384,7 @@ export class EditorPageComponent implements OnInit {
         this.savedSourceCode.set(saved.content);
         if (!id) {
           this.documentId.set(saved.id);
+          this.documentKind.set(saved.kind ?? 'plantuml');
           // A Save As from a disk-backed file imports the content into the
           // library: the editor now points at the new database document, so
           // whatever disk handle was open no longer applies.
@@ -451,8 +462,10 @@ export class EditorPageComponent implements OnInit {
       return;
     }
     // Does not route through applyDocument (only sourceCode is touched
-    // here), so openFileHandle needs its own explicit clear.
+    // here), so openFileHandle and the kind need their own explicit
+    // handling. Every template in the catalog is PlantUML.
     this.openFileHandle.set(null);
+    this.documentKind.set('plantuml');
     this.sourceCode.set(template.content);
   }
 
@@ -541,13 +554,16 @@ export class EditorPageComponent implements OnInit {
       return;
     }
 
+    const kind = inferDocumentKindFromFileName(file.name);
+
     this.documentId.set(null);
     this.documentName.set(file.name);
+    this.documentKind.set(kind);
     this.sourceCode.set(file.content);
     this.savedSourceCode.set(file.content);
     this.openFileHandle.set(file.handle);
     this.location.go('/editor');
-    void this.hubService.render(file.content);
+    void this.hubService.render(file.content, kind);
   }
 
   /**

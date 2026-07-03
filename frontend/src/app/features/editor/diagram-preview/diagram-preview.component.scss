@@ -39,3 +39,136 @@
   top: 0.5rem;
   right: 0.5rem;
 }
+
+// Prose styling for rendered markdown. ::ng-deep is REQUIRED here: the
+// markdown arrives via [innerHTML], so its elements carry no Angular
+// emulated-encapsulation attributes and plain component-scoped selectors
+// (.diagram-preview__markdown h1 { ... }) would never match them.
+:host ::ng-deep .diagram-preview__markdown {
+  width: 100%;
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 1.5rem 2rem;
+  align-self: flex-start;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #111827;
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    margin: 1.25em 0 0.5em;
+    line-height: 1.25;
+    font-weight: 600;
+  }
+
+  h1 {
+    font-size: 1.6rem;
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  h2 {
+    font-size: 1.3rem;
+    padding-bottom: 0.2em;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  h3 {
+    font-size: 1.1rem;
+  }
+
+  h4 {
+    font-size: 1rem;
+  }
+
+  > :first-child {
+    margin-top: 0;
+  }
+
+  p {
+    margin: 0.6em 0;
+  }
+
+  ul,
+  ol {
+    margin: 0.6em 0;
+    padding-left: 1.6em;
+  }
+
+  li + li {
+    margin-top: 0.2em;
+  }
+
+  // Task-list items render their own checkbox; suppress the duplicate bullet.
+  li.task-list-item {
+    list-style: none;
+    margin-left: -1.2em;
+  }
+
+  code {
+    background-color: #f3f4f6;
+    border-radius: 0.25rem;
+    padding: 0.1em 0.35em;
+    font-family: Consolas, 'Courier New', monospace;
+    font-size: 0.85em;
+  }
+
+  pre {
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.35rem;
+    padding: 0.75rem 1rem;
+    overflow-x: auto;
+
+    code {
+      background-color: transparent;
+      padding: 0;
+    }
+  }
+
+  blockquote {
+    margin: 0.75em 0;
+    padding: 0.25em 1em;
+    border-left: 0.25rem solid #d1d5db;
+    color: #6b7280;
+  }
+
+  table {
+    border-collapse: collapse;
+    margin: 0.75em 0;
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  th,
+  td {
+    border: 1px solid #d1d5db;
+    padding: 0.35em 0.75em;
+  }
+
+  th {
+    background-color: #f9fafb;
+    font-weight: 600;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid #e5e7eb;
+    margin: 1.5em 0;
+  }
+
+  a {
+    color: #2563eb;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  img {
+    max-width: 100%;
+  }
+}

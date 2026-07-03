@@ -14,6 +14,6 @@ public interface IPlantUmlRenderer
     /// </summary>
     /// <param name="source">The raw PlantUML source text.</param>
     /// <param name="cancellationToken">A token used to observe cancellation requests.</param>
-    /// <returns>A <see cref="PlantUmlRenderResult"/> describing the outcome.</returns>
-    Task<PlantUmlRenderResult> RenderAsync(string source, CancellationToken cancellationToken);
+    /// <returns>A <see cref="RenderResult"/> describing the outcome.</returns>
+    Task<RenderResult> RenderAsync(string source, CancellationToken cancellationToken);
 }

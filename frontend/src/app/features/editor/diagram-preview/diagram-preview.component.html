@@ -13,6 +13,10 @@
     @if (result?.isSuccess && safeSvg()) {
       <div class="diagram-preview__svg" [innerHTML]="safeSvg()"></div>
     }
+
+    @if (result?.isSuccess && safeMarkdownHtml()) {
+      <div class="diagram-preview__markdown" data-testid="preview-markdown" [innerHTML]="safeMarkdownHtml()"></div>
+    }
   }
 
   @if (isRendering) {

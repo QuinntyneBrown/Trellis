@@ -19,7 +19,9 @@ public class DocumentsController : ControllerBase
     private const long MaxUploadSizeBytes = 1 * 1024 * 1024;
     private const int MaxNameLength = 200;
 
-    private static readonly string[] AllowedUploadExtensions = { ".puml", ".txt" };
+    private static readonly string[] AllowedUploadExtensions = { ".puml", ".txt", ".md", ".markdown" };
+
+    private static readonly string[] MarkdownUploadExtensions = { ".md", ".markdown" };
 
     private readonly ApplicationDbContext context;
 
@@ -51,6 +53,7 @@ public class DocumentsController : ControllerBase
                 Name = d.Name,
                 UpdatedAt = d.UpdatedAt ?? d.CreatedAt,
                 FolderId = d.FolderId,
+                Kind = d.Kind,
             })
             .ToListAsync(cancellationToken);
 
@@ -82,6 +85,11 @@ public class DocumentsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<PlantUmlDocument>> Create(CreateDocumentRequest request, CancellationToken cancellationToken)
     {
+        if (request.Kind is not null && !DocumentKinds.IsValid(request.Kind))
+        {
+            return this.BadRequest("Kind must be either \"plantuml\" or \"markdown\".");
+        }
+
         // Checked explicitly (mirroring Upload's unknown-documentId handling) so a
         // stale folder id yields a 404 rather than a SQLite FK violation -> 500.
         if (request.FolderId.HasValue
@@ -98,6 +106,7 @@ public class DocumentsController : ControllerBase
             CreatedAt = DateTimeOffset.UtcNow,
             UpdatedAt = null,
             FolderId = request.FolderId,
+            Kind = request.Kind ?? DocumentKinds.PlantUml,
         };
 
         this.context.Documents.Add(document);
@@ -219,8 +228,13 @@ public class DocumentsController : ControllerBase
         var extension = Path.GetExtension(file.FileName);
         if (!AllowedUploadExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase))
         {
-            return this.BadRequest("Only .puml or .txt files may be uploaded.");
+            return this.BadRequest("Only .puml, .txt, .md or .markdown files may be uploaded.");
         }
+
+        // The uploaded file's extension decides the document kind.
+        var uploadKind = MarkdownUploadExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase)
+            ? DocumentKinds.Markdown
+            : DocumentKinds.PlantUml;
 
         var name = Path.GetFileNameWithoutExtension(file.FileName);
         if (string.IsNullOrWhiteSpace(name) || name.Length > MaxNameLength)
@@ -246,6 +260,14 @@ public class DocumentsController : ControllerBase
                 return this.NotFound();
             }
 
+            // A replacing upload never converts the document: markdown content
+            // stranded in a plantuml document (or vice versa) would render as
+            // a broken preview, so a kind mismatch is rejected explicitly.
+            if (!string.Equals(existing.Kind, uploadKind, StringComparison.Ordinal))
+            {
+                return this.BadRequest("The uploaded file's type does not match the document's kind.");
+            }
+
             // A replacing upload keeps the document's existing name - only the
             // content (and the touched timestamp) change.
             existing.Content = content;
@@ -261,6 +283,7 @@ public class DocumentsController : ControllerBase
                 Content = content,
                 CreatedAt = DateTimeOffset.UtcNow,
                 UpdatedAt = null,
+                Kind = uploadKind,
             };
 
             this.context.Documents.Add(document);

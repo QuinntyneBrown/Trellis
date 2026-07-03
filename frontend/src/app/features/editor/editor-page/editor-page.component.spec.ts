@@ -172,6 +172,7 @@ describe('EditorPageComponent', () => {
       content: 'old',
       createdAt: '2026-01-01T00:00:00Z',
       updatedAt: null,
+      kind: 'plantuml' as const,
       folderId: null,
       ...overrides,
     };
@@ -212,7 +213,7 @@ describe('EditorPageComponent', () => {
       expect(component.documentId()).toBe('1');
       expect(component.documentName()).toBe('Loaded Doc');
       expect(component.sourceCode()).toBe('@startuml\nfoo\n@enduml');
-      expect(hubServiceMock.render).toHaveBeenCalledWith('@startuml\nfoo\n@enduml');
+      expect(hubServiceMock.render).toHaveBeenCalledWith('@startuml\nfoo\n@enduml', 'plantuml');
     });
 
     it('re-fetches and applies a new document when the URL documentId changes on a live instance', () => {
@@ -261,7 +262,7 @@ describe('EditorPageComponent', () => {
       .componentInstance as MonacoEditorComponent;
     monaco.renderRequested.emit('@startuml\n@enduml');
 
-    expect(hubServiceMock.render).toHaveBeenCalledWith('@startuml\n@enduml');
+    expect(hubServiceMock.render).toHaveBeenCalledWith('@startuml\n@enduml', 'plantuml');
   });
 
   it('creates a new document on save confirm when there is no existing id', () => {
@@ -273,7 +274,7 @@ describe('EditorPageComponent', () => {
     component.sourceCode.set('x');
     component.performSave('New Doc');
 
-    expect(documentsServiceMock.create).toHaveBeenCalledWith({ name: 'New Doc', content: 'x', folderId: null });
+    expect(documentsServiceMock.create).toHaveBeenCalledWith({ name: 'New Doc', content: 'x', folderId: null, kind: 'plantuml' });
     expect(locationMock.go).toHaveBeenCalledWith('/editor/new-id');
     expect(component.documentId()).toBe('new-id');
   });
@@ -287,7 +288,7 @@ describe('EditorPageComponent', () => {
     component.sourceCode.set('x');
     component.performSave('New Doc', 'folder-1');
 
-    expect(documentsServiceMock.create).toHaveBeenCalledWith({ name: 'New Doc', content: 'x', folderId: 'folder-1' });
+    expect(documentsServiceMock.create).toHaveBeenCalledWith({ name: 'New Doc', content: 'x', folderId: 'folder-1', kind: 'plantuml' });
   });
 
   it('fetches the folder list for the save dialog when it opens', () => {
@@ -422,7 +423,7 @@ describe('EditorPageComponent', () => {
       const document = sampleDocument({ id: 'picked', name: 'Picked', content: 'picked content' });
       documentsServiceMock.getById.mockReturnValue(of(document));
 
-      component.onDocumentOpenedFromPanel({ id: 'picked', name: 'Picked', updatedAt: '2026-01-01T00:00:00Z', folderId: null });
+      component.onDocumentOpenedFromPanel({ id: 'picked', name: 'Picked', updatedAt: '2026-01-01T00:00:00Z', folderId: null, kind: 'plantuml' });
 
       // The panel stays open (VS Code explorer idiom) so the user keeps
       // their place in the tree; the now-active row highlights instead.
@@ -437,7 +438,7 @@ describe('EditorPageComponent', () => {
 
       documentsServiceMock.getById.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
 
-      component.onDocumentOpenedFromPanel({ id: 'gone', name: 'Gone Doc', updatedAt: '2026-01-01T00:00:00Z', folderId: null });
+      component.onDocumentOpenedFromPanel({ id: 'gone', name: 'Gone Doc', updatedAt: '2026-01-01T00:00:00Z', folderId: null, kind: 'plantuml' });
 
       expect(locationMock.go).not.toHaveBeenCalled();
       expect(component.saveError()).toBe('Could not open "Gone Doc".');
@@ -624,6 +625,53 @@ describe('EditorPageComponent', () => {
     });
   });
 
+  describe('document kind flows (markdown vs plantuml)', () => {
+    it('infers markdown from a .md disk file, renders with the markdown pipeline, and switches back on template load', () => {
+      fixture.detectChanges();
+      const handle = { name: 'notes.md' } as unknown as FileSystemFileHandle;
+
+      component.onDiskFileOpened({ handle, name: 'notes.md', content: '# Hello' });
+
+      expect(component.documentKind()).toBe('markdown');
+      expect(hubServiceMock.render).toHaveBeenCalledWith('# Hello', 'markdown');
+
+      const template: Template = { key: 'sequence', name: 'Sequence', category: 'General', content: '@startuml\n@enduml' };
+      component.onTemplateSelected(template);
+
+      expect(component.documentKind()).toBe('plantuml');
+    });
+
+    it('adopts the kind of a document loaded from the panel', () => {
+      fixture.detectChanges();
+      documentsServiceMock.getById.mockReturnValue(
+        of(sampleDocument({ id: 'md-1', name: 'Notes', content: '# hi', kind: 'markdown' })),
+      );
+
+      component.onDocumentOpenedFromPanel({ id: 'md-1', name: 'Notes', updatedAt: '2026-01-01T00:00:00Z', folderId: null, kind: 'markdown' });
+
+      expect(component.documentKind()).toBe('markdown');
+      expect(hubServiceMock.render).toHaveBeenCalledWith('# hi', 'markdown');
+    });
+
+    it('passes the dialog-chosen kind to create and adopts the saved kind', () => {
+      fixture.detectChanges();
+      component.sourceCode.set('# fresh markdown');
+      documentsServiceMock.create.mockReturnValue(
+        of(sampleDocument({ id: 'new-md', name: 'Fresh', content: '# fresh markdown', kind: 'markdown' })),
+      );
+
+      component.performSave('Fresh', null, 'markdown');
+
+      expect(documentsServiceMock.create).toHaveBeenCalledWith({
+        name: 'Fresh',
+        content: '# fresh markdown',
+        folderId: null,
+        kind: 'markdown',
+      });
+      expect(component.documentKind()).toBe('markdown');
+    });
+  });
+
   describe('Save As via Ctrl+Shift+S', () => {
     function ctrlShiftSEvent(): KeyboardEvent {
       const event = new KeyboardEvent('keydown', { key: 'S', ctrlKey: true, shiftKey: true, cancelable: true });
@@ -662,6 +710,7 @@ describe('EditorPageComponent', () => {
         name: 'The Copy',
         content: 'original content',
         folderId: 'folder-1',
+        kind: 'plantuml',
       });
       expect(component.documentId()).toBe('copy-id');
       expect(component.documentName()).toBe('The Copy');
@@ -743,7 +792,7 @@ describe('EditorPageComponent', () => {
       expect(component.savedSourceCode()).toBe(file.content);
       expect(component.openFileHandle()).toBe(file.handle);
       expect(locationMock.go).toHaveBeenCalledWith('/editor');
-      expect(hubServiceMock.render).toHaveBeenCalledWith(file.content);
+      expect(hubServiceMock.render).toHaveBeenCalledWith(file.content, 'plantuml');
     });
 
     it('the confirm-guard interrupts opening a disk file when there are unsaved changes and the user declines', () => {

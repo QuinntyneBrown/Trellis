@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Trellis.Api.Hubs;
 using Trellis.Api.IntegrationTests.Fakes;
+using Trellis.Api.Markdown;
 using Trellis.Api.Models;
 using Trellis.Api.PlantUml;
 using Xunit;
@@ -81,13 +82,70 @@ public class PlantUmlHubTests
         Assert.Equal("The render was cancelled.", result.ErrorMessage);
     }
 
-    private static PlantUmlHub CreateHub(IPlantUmlRenderer renderer)
+    [Fact]
+    public async Task RenderMarkdown_ReturnsFailure_WhenSourceIsEmpty()
+    {
+        var hub = CreateHub(new FakePlantUmlRenderer());
+
+        var result = await hub.RenderMarkdown(string.Empty);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Markdown source must not be empty.", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task RenderMarkdown_ReturnsFailure_WhenSourceIsWhitespaceOnly()
+    {
+        var hub = CreateHub(new FakePlantUmlRenderer());
+
+        var result = await hub.RenderMarkdown("   \n\t");
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Markdown source must not be empty.", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task RenderMarkdown_ReturnsFailure_WhenSourceExceedsMaxLength()
+    {
+        var hub = CreateHub(new FakePlantUmlRenderer());
+
+        var result = await hub.RenderMarkdown(new string('a', PlantUmlHub.MaxSourceLength + 1));
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal($"Markdown source must not exceed {PlantUmlHub.MaxSourceLength} characters.", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task RenderMarkdown_ReturnsHtmlWithoutSvg_ForValidSource()
+    {
+        var hub = CreateHub(new FakePlantUmlRenderer());
+
+        var result = await hub.RenderMarkdown("# Heading");
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Html);
+        Assert.Contains("<h1>Heading</h1>", result.Html);
+        Assert.Null(result.Svg);
+    }
+
+    [Fact]
+    public async Task RenderMarkdown_ReturnsGenericFailure_WhenRendererThrows()
+    {
+        var hub = CreateHub(new FakePlantUmlRenderer(), new ThrowingMarkdownRenderer());
+
+        var result = await hub.RenderMarkdown("# Heading");
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("An unexpected error occurred while rendering the document.", result.ErrorMessage);
+    }
+
+    private static PlantUmlHub CreateHub(IPlantUmlRenderer renderer, IMarkdownRenderer? markdownRenderer = null)
     {
         var context = new Mock<HubCallerContext>();
         context.SetupGet(c => c.ConnectionId).Returns("test-connection");
         context.SetupGet(c => c.ConnectionAborted).Returns(CancellationToken.None);
 
-        return new PlantUmlHub(renderer, NullLogger<PlantUmlHub>.Instance)
+        return new PlantUmlHub(renderer, markdownRenderer ?? new MarkdigMarkdownRenderer(), NullLogger<PlantUmlHub>.Instance)
         {
             Context = context.Object,
         };
@@ -102,9 +160,17 @@ public class PlantUmlHubTests
             this.exception = exception;
         }
 
-        public Task<PlantUmlRenderResult> RenderAsync(string source, CancellationToken cancellationToken)
+        public Task<RenderResult> RenderAsync(string source, CancellationToken cancellationToken)
         {
-            return Task.FromException<PlantUmlRenderResult>(this.exception);
+            return Task.FromException<RenderResult>(this.exception);
+        }
+    }
+
+    private sealed class ThrowingMarkdownRenderer : IMarkdownRenderer
+    {
+        public RenderResult Render(string source)
+        {
+            throw new InvalidOperationException("boom");
         }
     }
 }

@@ -10,6 +10,7 @@ interface EditorStub {
   onDidChangeModelContent: jest.Mock;
   addCommand: jest.Mock;
   dispose: jest.Mock;
+  getModel: jest.Mock;
 }
 
 describe('MonacoEditorComponent', () => {
@@ -20,6 +21,9 @@ describe('MonacoEditorComponent', () => {
   let commandCallback: (() => void) | undefined;
   let monacoLoaderStub: { load: jest.Mock };
   let currentValue: string;
+  let createdWithLanguage: string | undefined;
+  let setModelLanguageMock: jest.Mock;
+  const fakeModel = { id: 'fake-model' };
 
   beforeEach(async () => {
     currentValue = '';
@@ -38,19 +42,24 @@ describe('MonacoEditorComponent', () => {
         commandCallback = cb;
       }),
       dispose: jest.fn(),
+      getModel: jest.fn(() => fakeModel),
     };
 
     const fakeMonaco = {
       editor: {
-        create: jest.fn((_el: HTMLElement, options: { value: string }) => {
+        create: jest.fn((_el: HTMLElement, options: { value: string; language: string }) => {
           currentValue = options.value;
+          createdWithLanguage = options.language;
           return editorStub;
         }),
+        setModelLanguage: jest.fn(),
       },
       KeyMod: { CtrlCmd: 2048 },
       KeyCode: { Enter: 3 },
     };
 
+    setModelLanguageMock = fakeMonaco.editor.setModelLanguage;
+    createdWithLanguage = undefined;
     monacoLoaderStub = { load: jest.fn().mockResolvedValue(fakeMonaco) };
 
     await TestBed.configureTestingModule({
@@ -60,6 +69,25 @@ describe('MonacoEditorComponent', () => {
 
     fixture = TestBed.createComponent(MonacoEditorComponent);
     component = fixture.componentInstance;
+  });
+
+  it('creates the editor with the language bound before the async load resolved', async () => {
+    component.language = 'markdown';
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(createdWithLanguage).toBe('markdown');
+  });
+
+  it('switches the model language at runtime via setModelLanguage', async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(createdWithLanguage).toBe('plaintext');
+
+    component.language = 'markdown';
+    component.ngOnChanges({ language: new SimpleChange('plaintext', 'markdown', false) });
+
+    expect(setModelLanguageMock).toHaveBeenCalledWith(fakeModel, 'markdown');
   });
 
   it('renders the editor container carrying the monaco-editor testid', () => {

@@ -10,7 +10,7 @@ namespace Trellis.Api.PlantUml;
 /// Renders PlantUML source to SVG by shelling out to a local JVM running the
 /// vendored plantuml.jar. Bounds concurrency with a semaphore so a burst of render
 /// requests cannot spawn unbounded Java processes. Expected failures come back as
-/// failed <see cref="PlantUmlRenderResult"/>s; unexpected exceptions are allowed to
+/// failed <see cref="RenderResult"/>s; unexpected exceptions are allowed to
 /// propagate to the hub, which owns the single catch-all boundary on the render path.
 /// </summary>
 public class PlantUmlRenderer : IPlantUmlRenderer, IDisposable
@@ -38,7 +38,7 @@ public class PlantUmlRenderer : IPlantUmlRenderer, IDisposable
     }
 
     /// <inheritdoc />
-    public async Task<PlantUmlRenderResult> RenderAsync(string source, CancellationToken cancellationToken)
+    public async Task<RenderResult> RenderAsync(string source, CancellationToken cancellationToken)
     {
         // The wait stays outside the try so Release only ever runs after a
         // successful acquire.
@@ -129,7 +129,7 @@ public class PlantUmlRenderer : IPlantUmlRenderer, IDisposable
         }
     }
 
-    private async Task<PlantUmlRenderResult> RenderCoreAsync(string source, CancellationToken cancellationToken)
+    private async Task<RenderResult> RenderCoreAsync(string source, CancellationToken cancellationToken)
     {
         var startInfo = new ProcessStartInfo
         {
@@ -165,7 +165,7 @@ public class PlantUmlRenderer : IPlantUmlRenderer, IDisposable
         catch (Exception exception)
         {
             this.logger.LogError(exception, "Failed to start the PlantUML rendering process.");
-            return PlantUmlRenderResult.Failure("The diagram renderer is unavailable.");
+            return RenderResult.Failure("The diagram renderer is unavailable.");
         }
 
         // The timeout clock starts as soon as the process exists so the stdin write
@@ -221,7 +221,7 @@ public class PlantUmlRenderer : IPlantUmlRenderer, IDisposable
 
             if (timeoutCts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
             {
-                return PlantUmlRenderResult.Failure("The diagram renderer timed out.");
+                return RenderResult.Failure("The diagram renderer timed out.");
             }
 
             throw;
@@ -242,7 +242,7 @@ public class PlantUmlRenderer : IPlantUmlRenderer, IDisposable
         // as a failure even when an SVG was produced.
         if (svgMatch.Success && exitCode == 0)
         {
-            return PlantUmlRenderResult.Success(svgMatch.Value);
+            return RenderResult.Success(svgMatch.Value);
         }
 
         var friendlyMessage = BuildFriendlyErrorMessage(stderr);
@@ -251,6 +251,6 @@ public class PlantUmlRenderer : IPlantUmlRenderer, IDisposable
             exitCode,
             stderr);
 
-        return PlantUmlRenderResult.Failure(friendlyMessage);
+        return RenderResult.Failure(friendlyMessage);
     }
 }

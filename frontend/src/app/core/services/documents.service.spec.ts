@@ -26,7 +26,7 @@ describe('DocumentsService', () => {
 
   it('lists document summaries', () => {
     const summaries: DocumentSummary[] = [
-      { id: '1', name: 'Doc 1', updatedAt: '2026-01-01T00:00:00Z', folderId: null },
+      { id: '1', name: 'Doc 1', updatedAt: '2026-01-01T00:00:00Z', folderId: null, kind: 'plantuml' },
     ];
 
     service.list().subscribe((result) => {
@@ -46,6 +46,7 @@ describe('DocumentsService', () => {
       createdAt: '2026-01-01T00:00:00Z',
       updatedAt: null,
       folderId: null,
+      kind: 'plantuml',
     };
 
     service.getById('1').subscribe((result) => {

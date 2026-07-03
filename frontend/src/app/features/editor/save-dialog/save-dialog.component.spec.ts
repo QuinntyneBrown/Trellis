@@ -71,7 +71,7 @@ describe('SaveDialogComponent', () => {
 
     (byTestId('save-dialog-confirm') as HTMLButtonElement).click();
 
-    expect(spy).toHaveBeenCalledWith({ name: 'New Name', folderId: null });
+    expect(spy).toHaveBeenCalledWith({ name: 'New Name', folderId: null, kind: 'plantuml' });
   });
 
   it('does not emit confirm for a blank name', () => {
@@ -104,6 +104,53 @@ describe('SaveDialogComponent', () => {
 
     expect(byTestId('save-dialog')).toBeTruthy();
     expect(byTestId('save-dialog-folder')).toBeNull();
+  });
+
+  describe('document Type select', () => {
+    it('is hidden while kind selection is disabled (existing-document saves)', () => {
+      component.kindSelectionEnabled = false;
+      show();
+
+      expect(byTestId('save-dialog-kind')).toBeNull();
+    });
+
+    it('is shown for create/Save As, seeded from initialKind', async () => {
+      component.kindSelectionEnabled = true;
+      component.initialKind = 'markdown';
+      show();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect((byTestId('save-dialog-kind') as HTMLSelectElement).value).toBe('markdown');
+    });
+
+    it('emits the chosen kind on confirm', () => {
+      const spy = jest.fn();
+      component.confirm.subscribe(spy);
+      component.kindSelectionEnabled = true;
+      component.initialName = 'Notes';
+      show();
+
+      const select = byTestId('save-dialog-kind') as HTMLSelectElement;
+      select.value = 'markdown';
+      select.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+
+      (byTestId('save-dialog-confirm') as HTMLButtonElement).click();
+
+      expect(spy).toHaveBeenCalledWith({ name: 'Notes', folderId: null, kind: 'markdown' });
+    });
+
+    it('re-seeds from initialKind on every open, discarding a prior choice', () => {
+      component.kindSelectionEnabled = true;
+      component.initialKind = 'plantuml';
+      show();
+      component.onKindChange('markdown');
+
+      component.ngOnChanges({ visible: { currentValue: true } as never });
+
+      expect(component.selectedKind()).toBe('plantuml');
+    });
   });
 
   describe('destination folder select', () => {
@@ -139,7 +186,7 @@ describe('SaveDialogComponent', () => {
 
       (byTestId('save-dialog-confirm') as HTMLButtonElement).click();
 
-      expect(spy).toHaveBeenCalledWith({ name: 'Doc', folderId: 'a' });
+      expect(spy).toHaveBeenCalledWith({ name: 'Doc', folderId: 'a', kind: 'plantuml' });
     });
 
     it('resets the selection to "(No folder)" every time the dialog reopens', () => {

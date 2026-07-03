@@ -13,6 +13,7 @@ export class SaveDocumentDialogComponent {
   readonly root: Locator;
   readonly nameInput: Locator;
   readonly folderSelect: Locator;
+  readonly kindSelect: Locator;
   readonly confirmButton: Locator;
   readonly cancelButton: Locator;
 
@@ -20,8 +21,14 @@ export class SaveDocumentDialogComponent {
     this.root = byTestId(page, 'save-dialog');
     this.nameInput = byTestId(page, 'save-dialog-name');
     this.folderSelect = byTestId(page, 'save-dialog-folder');
+    this.kindSelect = byTestId(page, 'save-dialog-kind');
     this.confirmButton = byTestId(page, 'save-dialog-confirm');
     this.cancelButton = byTestId(page, 'save-dialog-cancel');
+  }
+
+  /** Picks the document type (kind) by its stored value: 'plantuml' or 'markdown'. */
+  async selectKind(kind: 'plantuml' | 'markdown'): Promise<void> {
+    await this.kindSelect.selectOption(kind);
   }
 
   /** Clears the name field and types the given name. */

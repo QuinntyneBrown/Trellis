@@ -27,4 +27,10 @@ public record CreateDocumentRequest
     /// or null for the root.
     /// </summary>
     public Guid? FolderId { get; init; }
+
+    /// <summary>
+    /// Gets the document kind - "plantuml" or "markdown". Null defaults to
+    /// plantuml. Like the folder, the kind is chosen at creation only.
+    /// </summary>
+    public string? Kind { get; init; }
 }

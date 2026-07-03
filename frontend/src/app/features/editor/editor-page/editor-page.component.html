@@ -52,8 +52,9 @@
     <div class="editor-page__editor-pane" [style.flex-basis.%]="editorPaneRatioPercent()">
       <app-monaco-editor
         [value]="sourceCode()"
+        [language]="documentKind() === 'markdown' ? 'markdown' : 'plaintext'"
         (valueChange)="sourceCode.set($event)"
-        (renderRequested)="hubService.render($event)"
+        (renderRequested)="hubService.render($event, documentKind())"
       ></app-monaco-editor>
     </div>
 
@@ -84,7 +85,9 @@
     [initialName]="documentName()"
     [folders]="saveDialogFolders()"
     [folderSelectionEnabled]="saveDialogMode() === 'saveAs' || !documentId()"
-    (confirm)="performSave($event.name, $event.folderId)"
+    [kindSelectionEnabled]="saveDialogMode() === 'saveAs' || !documentId()"
+    [initialKind]="documentKind()"
+    (confirm)="performSave($event.name, $event.folderId, $event.kind)"
     (cancel)="closeSaveDialog()"
   ></app-save-dialog>
 

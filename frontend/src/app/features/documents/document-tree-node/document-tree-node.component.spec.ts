@@ -40,6 +40,7 @@ function documentNode(overrides: Partial<DocumentTreeNode> = {}): DocumentTreeNo
     name: 'My Diagram',
     updatedAt: '2026-01-01T00:00:00Z',
     folderId: null,
+    kind: 'plantuml',
   };
   return {
     id: summary.id,
@@ -187,6 +188,19 @@ describe('DocumentTreeNodeComponent', () => {
       expect(byTestId('document-item-rename')).toBeTruthy();
       expect(byTestId('document-item-delete')).toBeTruthy();
       expect(byTestId('document-folder')).toBeNull();
+    });
+
+    it('shows the MD badge only for markdown documents', () => {
+      component.node = documentNode();
+      fixture.detectChanges();
+      expect(byTestId('document-kind-badge')).toBeNull();
+
+      const summary = { ...documentNode().document!, kind: 'markdown' as const };
+      component.node = { ...documentNode(), document: summary };
+      fixture.detectChanges();
+
+      expect(byTestId('document-kind-badge')).toBeTruthy();
+      expect(byTestId('document-kind-badge')!.textContent).toBe('MD');
     });
 
     it('emits openDocument with the summary when the row is clicked', () => {

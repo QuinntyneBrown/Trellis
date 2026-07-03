@@ -26,4 +26,9 @@ public record DocumentListItemDto
     /// when it sits at the root.
     /// </summary>
     public required Guid? FolderId { get; init; }
+
+    /// <summary>
+    /// Gets the document kind - "plantuml" or "markdown".
+    /// </summary>
+    public required string Kind { get; init; }
 }

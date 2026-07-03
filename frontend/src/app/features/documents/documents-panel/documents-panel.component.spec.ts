@@ -22,8 +22,8 @@ describe('DocumentsPanelComponent', () => {
 
   const folders: Folder[] = [{ id: 'f1', name: 'Diagrams', parentFolderId: null }];
   const summaries: DocumentSummary[] = [
-    { id: '1', name: 'Doc One', updatedAt: '2026-01-01T00:00:00Z', folderId: null },
-    { id: '2', name: 'Nested Doc', updatedAt: '2026-01-02T00:00:00Z', folderId: 'f1' },
+    { id: '1', name: 'Doc One', updatedAt: '2026-01-01T00:00:00Z', folderId: null, kind: 'plantuml' },
+    { id: '2', name: 'Nested Doc', updatedAt: '2026-01-02T00:00:00Z', folderId: 'f1', kind: 'plantuml' },
   ];
 
   beforeEach(async () => {
@@ -200,7 +200,7 @@ describe('DocumentsPanelComponent', () => {
       { id: 'child', name: 'child', parentFolderId: 'parent' },
     ];
     const nestedSummaries: DocumentSummary[] = [
-      { id: 'deep-doc', name: 'Deep Doc', updatedAt: '2026-01-03T00:00:00Z', folderId: 'child' },
+      { id: 'deep-doc', name: 'Deep Doc', updatedAt: '2026-01-03T00:00:00Z', folderId: 'child', kind: 'plantuml' },
     ];
 
     beforeEach(() => {

@@ -30,6 +30,8 @@ import { MonacoLoaderService } from '../../../core/services/monaco-loader.servic
 })
 export class MonacoEditorComponent implements AfterViewInit, OnChanges, OnDestroy {
   @Input() value = '';
+  /** Monaco language id ('plaintext' for PlantUML source, 'markdown' for markdown documents). */
+  @Input() language = 'plaintext';
   @Output() readonly valueChange = new EventEmitter<string>();
   @Output() readonly renderRequested = new EventEmitter<string>();
 
@@ -37,14 +39,19 @@ export class MonacoEditorComponent implements AfterViewInit, OnChanges, OnDestro
   private readonly editorContainerRef!: ElementRef<HTMLDivElement>;
 
   private editorInstance: Monaco.editor.IStandaloneCodeEditor | null = null;
+  /** Kept for setModelLanguage after language changes; null until load resolves. */
+  private monacoNamespace: typeof Monaco | null = null;
 
   constructor(private readonly monacoLoader: MonacoLoaderService) {}
 
   ngAfterViewInit(): void {
     this.monacoLoader.load().then((monaco) => {
+      this.monacoNamespace = monaco;
       this.editorInstance = monaco.editor.create(this.editorContainerRef.nativeElement, {
         value: this.value,
-        language: 'plaintext',
+        // Reads the input at creation time, so a language set before the
+        // async load resolves is picked up here without a separate call.
+        language: this.language,
         automaticLayout: true,
         minimap: { enabled: false },
         scrollBeyondLastLine: false,
@@ -64,6 +71,14 @@ export class MonacoEditorComponent implements AfterViewInit, OnChanges, OnDestro
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    const languageChange = changes['language'];
+    if (languageChange && !languageChange.firstChange && this.editorInstance && this.monacoNamespace) {
+      const model = this.editorInstance.getModel();
+      if (model) {
+        this.monacoNamespace.editor.setModelLanguage(model, languageChange.currentValue as string);
+      }
+    }
+
     const valueChange = changes['value'];
     if (!valueChange || valueChange.firstChange || !this.editorInstance) {
       return;
