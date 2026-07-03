@@ -57,6 +57,15 @@ export class DocumentsPanelComponent implements OnChanges {
   private readonly expandedFolderIds = new Set<string>();
   /** Monotonically increasing token so a slow earlier refresh can never clobber a newer one's state. */
   private refreshSequence = 0;
+  /**
+   * Set on every closed->open transition (including the persisted-open boot
+   * after a browser refresh): the next refresh expands the active document's
+   * ancestor folder chain so its highlighted row is actually visible -- the
+   * VS Code reveal-active-file idiom. Reveal happens on open ONLY: a folder
+   * the user deliberately collapsed must not be fought on every mutation
+   * refresh while the panel stays open.
+   */
+  private revealActiveOnNextRefresh = false;
 
   readonly tree = signal<DocumentTreeNode[]>([]);
   /** The flat folder list exposed for the move dialog's destination select. */
@@ -71,6 +80,7 @@ export class DocumentsPanelComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['open']?.currentValue === true) {
+      this.revealActiveOnNextRefresh = true;
       this.refresh();
     }
   }
@@ -96,8 +106,40 @@ export class DocumentsPanelComponent implements OnChanges {
         }
       }
 
+      if (this.revealActiveOnNextRefresh) {
+        this.revealActiveOnNextRefresh = false;
+        this.expandActiveDocumentAncestors();
+      }
+
       this.rebuildTree();
     });
+  }
+
+  /**
+   * Expands every ancestor folder of the active document so its row is
+   * visible. Walks the parentFolderId chain from the cached flat lists,
+   * with a visited-set guard so corrupt data (a folder cycle) can't loop
+   * forever. A no-op when nothing is active, the active document is
+   * unknown, or it already sits at the root.
+   */
+  private expandActiveDocumentAncestors(): void {
+    const activeId = this.activeDocumentId;
+    if (!activeId) {
+      return;
+    }
+    const document = this.documents.find((d) => d.id === activeId);
+    if (!document) {
+      return;
+    }
+
+    const foldersById = new Map(this.folders.map((folder) => [folder.id, folder]));
+    const visited = new Set<string>();
+    let folderId: string | null = document.folderId;
+    while (folderId && !visited.has(folderId)) {
+      visited.add(folderId);
+      this.expandedFolderIds.add(folderId);
+      folderId = foldersById.get(folderId)?.parentFolderId ?? null;
+    }
   }
 
   /** Expand/collapse is pure local state -- rebuilt from the cached lists, no HTTP. */

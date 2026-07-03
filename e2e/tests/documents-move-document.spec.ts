@@ -182,8 +182,9 @@ test.describe('moving documents between folders', () => {
       await editorPage.saveDialog.confirmSave();
       await expect(editorPage.saveDialog.root).toBeHidden();
 
+      // The just-saved document is the active one, so opening the panel
+      // auto-reveals it (D-009): its folder is already expanded.
       await editorPage.documentsPanel.open();
-      await editorPage.documentsPanel.toggleFolder(folderName);
       await editorPage.documentsPanel.expectDocumentListed(documentName);
 
       // Dropping onto the folder it already lives in: still listed exactly

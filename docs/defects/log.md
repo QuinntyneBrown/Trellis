@@ -77,3 +77,14 @@ See [README.md](README.md) for entry format and conventions.
 - **Expected:** "Save As": a dialog appears to give the document a name and a destination folder, and confirming creates a NEW document (never overwrites the current one).
 - **Actual:** The Shift modifier is not distinguished from plain Ctrl+S, so with a document id present the content is quick-saved silently over the open document — no dialog, no name, no folder.
 - **Notes:** The keydown handler matched `key.toLowerCase() === 's'` regardless of `shiftKey`. Fixed 2026-07-02, test-first (e2e/tests/save-as-with-ctrl-shift-s.spec.ts written red, then green): Ctrl+Shift+S now opens the save dialog in a dedicated 'saveAs' mode — heading "Save Document As", destination-folder select always shown, confirm always POSTs a new document and adopts its id (from disk-file mode this imports the content into the library and clears the handle). The mode resets on any dialog close so a later Ctrl+S quick-save can never create a duplicate. Also moved the shortcut listener to `document:keydown` — focus lands on `<body>` after picking a template (the click removes its own button), where the host-scoped listener silently missed the shortcut. Unit 353/353, e2e 44/44.
+
+### D-009 — After a refresh, the active document's nested folder stays collapsed
+- **Type:** Defect
+- **Area:** Explorer (Documents)
+- **Status:** Fixed
+- **Steps to reproduce:**
+  1. Save/open a document that lives inside a nested folder (e.g. parent/child).
+  2. Refresh the browser.
+- **Expected:** The Documents panel comes back open (D-005) with the active document's ancestor folders expanded, so the highlighted active row is visible.
+- **Actual:** Folder expansion state starts empty after a refresh, so the active document sits hidden inside collapsed folders — the active highlight (D-004) can't be seen.
+- **Notes:** Fixed 2026-07-02, test-first (e2e/tests/reveal-active-document-after-reload.spec.ts written red, then green). On every closed→open panel transition (including the persisted-open boot after a refresh), the next refresh expands the active document's ancestor folder chain — walked from the cached flat lists with a cycle guard — before rebuilding the tree (the VS Code reveal-active-file idiom). Reveal happens on open ONLY, so a deliberately collapsed folder survives mutation refreshes (unit-tested). Two e2e specs that encoded the pre-reveal collapsed-on-open behavior were updated. Unit 357/357, e2e 45/45.

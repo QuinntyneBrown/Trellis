@@ -54,9 +54,13 @@ test.describe('documents folder tree', () => {
       await editorPage.saveDialog.confirmSave();
       await expect(editorPage.saveDialog.root).toBeHidden();
 
-      // Collapsed folder hides its document; expanding reveals it.
+      // The just-saved document is the active one, so opening the panel
+      // auto-reveals it (D-009): its folder comes back expanded. Collapsing
+      // hides the document; re-expanding reveals it again.
       await editorPage.documentsPanel.open();
       await editorPage.documentsPanel.expectFolderListed(folderName);
+      await editorPage.documentsPanel.expectDocumentListed(documentName);
+      await editorPage.documentsPanel.toggleFolder(folderName);
       await editorPage.documentsPanel.expectDocumentNotListed(documentName);
       await editorPage.documentsPanel.toggleFolder(folderName);
       await editorPage.documentsPanel.expectDocumentListed(documentName);

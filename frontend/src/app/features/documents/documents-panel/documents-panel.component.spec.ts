@@ -194,6 +194,69 @@ describe('DocumentsPanelComponent', () => {
     expect(documentsServiceMock.delete).toHaveBeenCalledWith('1');
   });
 
+  describe('revealing the active document on open (D-009)', () => {
+    const nestedFolders: Folder[] = [
+      { id: 'parent', name: 'parent', parentFolderId: null },
+      { id: 'child', name: 'child', parentFolderId: 'parent' },
+    ];
+    const nestedSummaries: DocumentSummary[] = [
+      { id: 'deep-doc', name: 'Deep Doc', updatedAt: '2026-01-03T00:00:00Z', folderId: 'child' },
+    ];
+
+    beforeEach(() => {
+      foldersServiceMock.list.mockReturnValue(of(nestedFolders));
+      documentsServiceMock.list.mockReturnValue(of(nestedSummaries));
+    });
+
+    it('expands the whole ancestor chain of the active document when the panel opens', () => {
+      component.activeDocumentId = 'deep-doc';
+      openPanel();
+
+      const row = byTestId('document-item')!;
+      expect(row.getAttribute('data-document-name')).toBe('Deep Doc');
+      expect(row.classList).toContain('document-tree-node__row--active');
+      expect(
+        fixture.nativeElement.querySelectorAll('[data-testid="document-folder"][aria-expanded="true"]').length,
+      ).toBe(2);
+    });
+
+    it('leaves everything collapsed when no document is active', () => {
+      component.activeDocumentId = null;
+      openPanel();
+
+      expect(byTestId('document-item')).toBeNull();
+      expect(
+        fixture.nativeElement.querySelectorAll('[data-testid="document-folder"][aria-expanded="true"]').length,
+      ).toBe(0);
+    });
+
+    it('does not fight a deliberate collapse on a plain mutation refresh', () => {
+      component.activeDocumentId = 'deep-doc';
+      openPanel();
+
+      // Collapse the parent folder (the active doc's chain), then refresh
+      // WITHOUT reopening the panel -- the collapse must survive.
+      const parentRow = fixture.nativeElement.querySelector('[data-folder-name="parent"]') as HTMLElement;
+      parentRow.click();
+      fixture.detectChanges();
+      expect(byTestId('document-item')).toBeNull();
+
+      component.refresh();
+      fixture.detectChanges();
+
+      expect(byTestId('document-item')).toBeNull();
+    });
+
+    it('ignores an active id that no longer exists', () => {
+      component.activeDocumentId = 'ghost';
+      openPanel();
+
+      expect(
+        fixture.nativeElement.querySelectorAll('[data-testid="document-folder"][aria-expanded="true"]').length,
+      ).toBe(0);
+    });
+  });
+
   it('highlights the row matching activeDocumentId as the currently open document', () => {
     component.activeDocumentId = '1';
     openPanel();
