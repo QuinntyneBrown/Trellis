@@ -24,11 +24,14 @@ export class DiagramHubService {
   readonly renderResult = signal<RenderResult | null>(null);
   readonly isRendering = signal<boolean>(false);
 
+  /** Resolvers parked by whenConnected() while the hub is not yet connected. */
+  private connectedWaiters: Array<() => void> = [];
+
   constructor() {
     this.connection = this.buildConnection();
 
     this.connection.onreconnecting(() => this.connectionState.set('reconnecting'));
-    this.connection.onreconnected(() => this.connectionState.set('connected'));
+    this.connection.onreconnected(() => this.setConnected());
     this.connection.onclose(() => this.connectionState.set('disconnected'));
 
     this.start();
@@ -42,11 +45,37 @@ export class DiagramHubService {
   start(): void {
     this.connection
       .start()
-      .then(() => this.connectionState.set('connected'))
+      .then(() => this.setConnected())
       .catch(() => {
         this.connectionState.set('disconnected');
         setTimeout(() => this.start(), RECONNECT_DELAY_MS);
       });
+  }
+
+  /** Flips the state to connected and releases every render parked on whenConnected(). */
+  private setConnected(): void {
+    this.connectionState.set('connected');
+    const waiters = this.connectedWaiters;
+    this.connectedWaiters = [];
+    for (const resolve of waiters) {
+      resolve();
+    }
+  }
+
+  /**
+   * Resolves once the hub is connected -- immediately if it already is.
+   * Renders issued during startup (e.g. the automatic render of a document
+   * loaded from the URL on a page refresh, which routinely wins the race
+   * against connection.start()) park here instead of invoking against a
+   * not-yet-connected hub and surfacing a spurious connection error. The
+   * start() retry loop and automatic reconnects both release waiters, so a
+   * parked render fires as soon as the hub actually comes up.
+   */
+  private whenConnected(): Promise<void> {
+    if (this.connectionState() === 'connected') {
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => this.connectedWaiters.push(resolve));
   }
 
   /**
@@ -60,6 +89,7 @@ export class DiagramHubService {
   async render(source: string): Promise<void> {
     this.isRendering.set(true);
     try {
+      await this.whenConnected();
       const result = await this.connection.invoke<RenderResult>('RenderDiagram', source);
       this.renderResult.set(result);
     } catch (error) {

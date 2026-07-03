@@ -103,4 +103,48 @@ describe('DiagramHubService', () => {
 
     expect(service.renderResult()?.errorMessage).toBe('Failed to reach the render service.');
   });
+
+  describe('renders issued before the connection is up (D-006)', () => {
+    it('parks the render until start() completes instead of invoking a not-yet-connected hub', async () => {
+      // A fresh service whose start() is held open, simulating the page-refresh
+      // race where the document loads (and auto-renders) before the hub is up.
+      jest.restoreAllMocks();
+      let releaseStart!: () => void;
+      const pendingConnection: FakeHubConnection = {
+        start: jest.fn().mockReturnValue(new Promise<void>((resolve) => (releaseStart = resolve))),
+        invoke: jest.fn().mockResolvedValue({ isSuccess: true, svg: '<svg></svg>', errorMessage: null }),
+        onreconnecting: jest.fn(),
+        onreconnected: jest.fn(),
+        onclose: jest.fn(),
+      };
+      jest
+        .spyOn(DiagramHubService.prototype as unknown as { buildConnection(): unknown }, 'buildConnection')
+        .mockReturnValue(pendingConnection);
+      const pendingService = new DiagramHubService();
+
+      const renderPromise = pendingService.render('@startuml\n@enduml');
+      await Promise.resolve();
+
+      // Parked: still rendering, hub never invoked, no spurious error surfaced.
+      expect(pendingService.isRendering()).toBe(true);
+      expect(pendingConnection.invoke).not.toHaveBeenCalled();
+      expect(pendingService.renderResult()).toBeNull();
+
+      releaseStart();
+      await renderPromise;
+
+      expect(pendingConnection.invoke).toHaveBeenCalledWith('RenderDiagram', '@startuml\n@enduml');
+      expect(pendingService.renderResult()?.isSuccess).toBe(true);
+      expect(pendingService.isRendering()).toBe(false);
+    });
+
+    it('renders immediately without waiting when already connected', async () => {
+      const result: RenderResult = { isSuccess: true, svg: '<svg></svg>', errorMessage: null };
+      fakeConnection.invoke.mockResolvedValue(result);
+
+      await service.render('@startuml\n@enduml');
+
+      expect(fakeConnection.invoke).toHaveBeenCalledTimes(1);
+    });
+  });
 });
