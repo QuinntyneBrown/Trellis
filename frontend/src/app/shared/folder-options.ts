@@ -1,6 +1,6 @@
-import { Folder } from '../../../core/models/folder.model';
+import { Folder } from '../core/models/folder.model';
 
-/** One entry of the save dialog's destination-folder select. */
+/** One entry of a destination-folder select (save dialog, move dialog). */
 export interface FolderOption {
   id: string;
   /** The folder name, nbsp-indented four spaces per nesting level. */

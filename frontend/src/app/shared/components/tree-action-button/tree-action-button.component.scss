@@ -1,0 +1,51 @@
+// `<app-tree-action-button>` itself must not generate its own box --
+// `.tree-action-button` below (the real native <button>) is the actual flex
+// item inside the tree row's `__actions` group, so it can be gapped/aligned
+// like a plain button without an extra wrapping box in between (the same
+// idiom rail-button uses inside the editor toolbar's groups).
+:host {
+  display: contents;
+}
+
+.tree-action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 1.4rem;
+  height: 1.4rem;
+  padding: 0;
+  border: none;
+  border-radius: 0.25rem;
+  background-color: transparent;
+  color: #4b5563;
+  cursor: pointer;
+
+  &:hover {
+    background-color: rgba(17, 24, 39, 0.08);
+  }
+
+  &:focus-visible {
+    background-color: rgba(17, 24, 39, 0.08);
+    outline: 2px solid #3b82f6;
+    outline-offset: -2px;
+  }
+}
+
+.tree-action-button--danger {
+  color: #b91c1c;
+
+  &:hover {
+    background-color: #fef2f2;
+  }
+}
+
+.tree-action-button__icon {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}

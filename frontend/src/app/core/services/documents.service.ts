@@ -41,6 +41,16 @@ export class DocumentsService {
     return this.getById(id).pipe(switchMap((full) => this.update(id, { name: newName, content: full.content })));
   }
 
+  /**
+   * Moves a document into a folder, or to the root when folderId is null.
+   * A dedicated endpoint (not a folder field on update) so "move to root"
+   * and "leave unchanged" can never be confused -- see the backend's
+   * MoveDocumentRequest.
+   */
+  move(id: string, folderId: string | null): Observable<Document> {
+    return this.http.put<Document>(`${this.baseUrl}/${id}/folder`, { folderId });
+  }
+
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }

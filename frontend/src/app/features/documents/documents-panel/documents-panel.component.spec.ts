@@ -16,6 +16,7 @@ describe('DocumentsPanelComponent', () => {
     rename: jest.Mock;
     getById: jest.Mock;
     update: jest.Mock;
+    move: jest.Mock;
   };
   let foldersServiceMock: { list: jest.Mock; create: jest.Mock; rename: jest.Mock; delete: jest.Mock };
 
@@ -32,6 +33,7 @@ describe('DocumentsPanelComponent', () => {
       rename: jest.fn().mockReturnValue(of({})),
       getById: jest.fn(),
       update: jest.fn(),
+      move: jest.fn().mockReturnValue(of({})),
     };
     foldersServiceMock = {
       list: jest.fn().mockReturnValue(of(folders)),
@@ -190,6 +192,106 @@ describe('DocumentsPanelComponent', () => {
 
     (byTestId('document-item-delete') as HTMLButtonElement).click();
     expect(documentsServiceMock.delete).toHaveBeenCalledWith('1');
+  });
+
+  describe('moving documents', () => {
+    it('moves a document into a folder, pre-expands the target, and refreshes', () => {
+      openPanel();
+
+      component.onMoveDocument('1', 'f1');
+      fixture.detectChanges();
+
+      expect(documentsServiceMock.move).toHaveBeenCalledWith('1', 'f1');
+      expect(documentsServiceMock.list).toHaveBeenCalledTimes(2);
+      // The target folder was pre-expanded, so its nested document is visible
+      // after the refresh without any extra click.
+      expect(fixture.nativeElement.querySelectorAll('[data-testid="document-item"]').length).toBe(2);
+    });
+
+    it('never calls move when the document is already in the target folder', () => {
+      openPanel();
+
+      component.onMoveDocument('2', 'f1'); // doc 2 already lives in f1
+      component.onMoveDocument('1', null); // doc 1 is already at the root
+
+      expect(documentsServiceMock.move).not.toHaveBeenCalled();
+      expect(documentsServiceMock.list).toHaveBeenCalledTimes(1);
+    });
+
+    it('moves a document to the root with a null target', () => {
+      openPanel();
+
+      component.onMoveDocument('2', null);
+
+      expect(documentsServiceMock.move).toHaveBeenCalledWith('2', null);
+    });
+
+    it('ignores moves for unknown document ids', () => {
+      openPanel();
+
+      component.onMoveDocument('missing', 'f1');
+
+      expect(documentsServiceMock.move).not.toHaveBeenCalled();
+    });
+
+    it('opens the move dialog from a row moveRequested event and moves on confirm', () => {
+      openPanel();
+
+      (byTestId('document-item-move') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(byTestId('move-document-dialog')).toBeTruthy();
+      expect(component.movingDocument()!.id).toBe('1');
+
+      component.onMoveDialogConfirm({ folderId: 'f1' });
+      fixture.detectChanges();
+
+      expect(documentsServiceMock.move).toHaveBeenCalledWith('1', 'f1');
+      expect(byTestId('move-document-dialog')).toBeNull();
+    });
+
+    it('closes the move dialog without moving on cancel', () => {
+      openPanel();
+
+      (byTestId('document-item-move') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      component.onMoveDialogCancel();
+      fixture.detectChanges();
+
+      expect(documentsServiceMock.move).not.toHaveBeenCalled();
+      expect(byTestId('move-document-dialog')).toBeNull();
+    });
+
+    it('moves the dragged document to the root when dropped on the tree background', () => {
+      openPanel();
+
+      component.onRootDrop({
+        preventDefault: jest.fn(),
+        dataTransfer: {
+          types: ['application/x-trellis-document-id'],
+          getData: jest.fn().mockReturnValue('2'),
+        },
+      } as unknown as DragEvent);
+
+      expect(documentsServiceMock.move).toHaveBeenCalledWith('2', null);
+      expect(component.isRootDragOver).toBe(false);
+    });
+
+    it('ignores root-zone drags that are not document drags', () => {
+      openPanel();
+      const event = {
+        preventDefault: jest.fn(),
+        dataTransfer: { types: ['Files'], getData: jest.fn() },
+      } as unknown as DragEvent;
+
+      component.onRootDragEnter(event);
+      component.onRootDrop(event);
+
+      expect(event.preventDefault).not.toHaveBeenCalled();
+      expect(component.isRootDragOver).toBe(false);
+      expect(documentsServiceMock.move).not.toHaveBeenCalled();
+    });
   });
 
   it('prunes expanded ids for folders that no longer exist', () => {

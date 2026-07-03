@@ -5,8 +5,9 @@ namespace Trellis.Api.Contracts;
 /// <summary>
 /// The JSON request body for the update-document endpoint. Deliberately omits
 /// an id field (the route id is always authoritative) and a folder field
-/// (documents cannot be moved between folders - the folder is chosen at
-/// creation only, via <see cref="CreateDocumentRequest"/>). Validation is
+/// (the folder is changed only via the dedicated move endpoint's
+/// <see cref="MoveDocumentRequest"/> - a folder field here could not
+/// distinguish "move to root" from "leave unchanged"). Validation is
 /// plain DataAnnotations; [ApiController] turns failures into the standard
 /// 400 ValidationProblemDetails response automatically.
 /// </summary>

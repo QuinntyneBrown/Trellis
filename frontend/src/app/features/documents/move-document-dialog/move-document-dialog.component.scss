@@ -1,0 +1,80 @@
+// Mirrors save-dialog.component.scss so the two modals read identically.
+.move-document-dialog {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.move-document-dialog__backdrop {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.move-document-dialog__panel {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 20rem;
+  padding: 1.25rem;
+  border-radius: 0.5rem;
+  background-color: #ffffff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.move-document-dialog__title {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.move-document-dialog__label {
+  font-size: 0.8rem;
+  color: #374151;
+}
+
+.move-document-dialog__select {
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.25rem;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  font-size: 0.9rem;
+}
+
+.move-document-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.move-document-dialog__button {
+  padding: 0.35rem 0.85rem;
+  border-radius: 0.25rem;
+  border: 1px solid #d1d5db;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.move-document-dialog__button--confirm {
+  background-color: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+
+  &:hover {
+    background-color: #1d4ed8;
+  }
+}
+
+.move-document-dialog__button--cancel {
+  background-color: #ffffff;
+
+  &:hover {
+    background-color: #f3f4f6;
+  }
+}

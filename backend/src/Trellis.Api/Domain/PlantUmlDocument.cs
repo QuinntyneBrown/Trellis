@@ -34,9 +34,9 @@ public class PlantUmlDocument
 
     /// <summary>
     /// Gets or sets the identifier of the virtual <see cref="Folder"/> containing
-    /// this document, or null when it sits at the root. Assigned at creation only -
-    /// the update endpoint never changes it (moving documents is deliberately
-    /// unsupported for now).
+    /// this document, or null when it sits at the root. Assigned at creation and
+    /// changed only by the dedicated move endpoint - the update endpoint never
+    /// touches it.
     /// </summary>
     public Guid? FolderId { get; set; }
 }

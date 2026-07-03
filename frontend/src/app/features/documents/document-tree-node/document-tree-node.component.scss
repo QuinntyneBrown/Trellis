@@ -10,3 +10,11 @@
 // Row/chevron/name/action visuals shared with the Explorer's file-tree-node --
 // one style source for both trees, so the panels read identically.
 @include shared.tree-row(document-tree-node);
+
+// Folder row currently hovered by a document drag. The inset dashed outline
+// (not a border) keeps the row from shifting layout while highlighted.
+.document-tree-node__row--drop-target {
+  background-color: rgba(59, 130, 246, 0.12);
+  outline: 1px dashed #3b82f6;
+  outline-offset: -1px;
+}

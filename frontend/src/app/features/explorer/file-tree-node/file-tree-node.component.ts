@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 import { ExplorerTreeNode } from '../../../core/models/explorer-tree-node.model';
+import { TreeActionButtonComponent } from '../../../shared/components/tree-action-button/tree-action-button.component';
 
 /** Fixed per-level indent, in px, applied via [style.padding-left.px]. */
 const INDENT_STEP_PX = 16;
@@ -41,7 +42,7 @@ export interface DeleteEntryEvent {
 @Component({
   selector: 'app-file-tree-node',
   standalone: true,
-  imports: [FileTreeNodeComponent],
+  imports: [FileTreeNodeComponent, TreeActionButtonComponent],
   templateUrl: './file-tree-node.component.html',
   styleUrl: './file-tree-node.component.scss',
 })

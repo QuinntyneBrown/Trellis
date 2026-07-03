@@ -8,6 +8,10 @@
   overflow-y: auto;
   background-color: #ffffff;
   border-left: 1px solid #e5e7eb;
+  // Column layout so the tree below stretches to fill leftover height,
+  // giving the move-to-root drop zone real estate under the last row.
+  display: flex;
+  flex-direction: column;
 }
 
 .documents-panel__header {
@@ -27,22 +31,6 @@
   color: #6b7280;
 }
 
-// Matches the tree rows' __action buttons (see shared/styles/_tree-row.scss)
-// so the header and row actions read as one family.
-.documents-panel__header-action {
-  padding: 0.1rem 0.4rem;
-  border-radius: 0.25rem;
-  border: 1px solid #d1d5db;
-  background-color: #ffffff;
-  cursor: pointer;
-  font-size: 0.7rem;
-  line-height: 1.3;
-
-  &:hover {
-    background-color: #f3f4f6;
-  }
-}
-
 .documents-panel__empty {
   padding: 1rem;
   color: #6b7280;
@@ -51,4 +39,17 @@
 
 .documents-panel__tree {
   padding: 0.25rem 0;
+  // Guarantees droppable "root" space below the last row -- the tree
+  // container doubles as the move-to-root drop zone.
+  flex: 1;
+  min-height: 4rem;
+}
+
+// Tree container currently hovered by a document drag over non-folder space:
+// dropping here moves the document to the root. Subtler than the folder rows'
+// highlight since it covers a large area.
+.documents-panel__tree--drop-target {
+  background-color: rgba(59, 130, 246, 0.06);
+  outline: 1px dashed #93c5fd;
+  outline-offset: -1px;
 }

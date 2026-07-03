@@ -2,7 +2,26 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DocumentSummary } from '../../../core/models/document-summary.model';
 import { DocumentTreeNode } from '../../../core/models/document-tree-node.model';
-import { DocumentTreeNodeComponent } from './document-tree-node.component';
+import { DOCUMENT_DRAG_TYPE, DocumentTreeNodeComponent } from './document-tree-node.component';
+
+/**
+ * jsdom implements neither DataTransfer nor DragEvent constructors, so drag
+ * handlers are exercised by calling them directly with hand-built stubs
+ * rather than dispatching real events.
+ */
+function dragEventStub(types: string[] = [DOCUMENT_DRAG_TYPE], data: Record<string, string> = {}): DragEvent {
+  return {
+    preventDefault: jest.fn(),
+    stopPropagation: jest.fn(),
+    dataTransfer: {
+      types,
+      setData: jest.fn(),
+      getData: jest.fn((type: string) => data[type] ?? ''),
+      dropEffect: 'none',
+      effectAllowed: 'none',
+    },
+  } as unknown as DragEvent;
+}
 
 function folderNode(overrides: Partial<DocumentTreeNode> = {}): DocumentTreeNode {
   return {
@@ -248,6 +267,122 @@ describe('DocumentTreeNodeComponent', () => {
 
       expect(promptSpy).toHaveBeenCalledWith('Rename folder', 'old folder');
       expect(spy).toHaveBeenCalled();
+    });
+  });
+
+  describe('drag and drop', () => {
+    it('marks document rows draggable and folder rows not', () => {
+      component.node = documentNode();
+      fixture.detectChanges();
+      expect(byTestId('document-item')!.getAttribute('draggable')).toBe('true');
+
+      component.node = folderNode();
+      fixture.detectChanges();
+      expect(byTestId('document-folder')!.getAttribute('draggable')).toBeNull();
+    });
+
+    it('stamps the drag with the custom type carrying the id, plus a text/plain name', () => {
+      component.node = documentNode({ id: 'doc-42', name: 'draggable doc' });
+      fixture.detectChanges();
+      const event = dragEventStub();
+
+      component.onDragStart(event);
+
+      expect(event.dataTransfer!.setData).toHaveBeenCalledWith(DOCUMENT_DRAG_TYPE, 'doc-42');
+      expect(event.dataTransfer!.setData).toHaveBeenCalledWith('text/plain', 'draggable doc');
+      expect(event.dataTransfer!.effectAllowed).toBe('move');
+    });
+
+    it('highlights a folder row on dragenter and clears only after every child element is left', () => {
+      component.node = folderNode();
+      fixture.detectChanges();
+
+      component.onDragEnter(dragEventStub());
+      component.onDragEnter(dragEventStub()); // crossing into a child element
+      fixture.detectChanges();
+      expect(byTestId('document-folder')!.classList).toContain('document-tree-node__row--drop-target');
+
+      component.onDragLeave(dragEventStub()); // leaving the child, still inside the row
+      fixture.detectChanges();
+      expect(byTestId('document-folder')!.classList).toContain('document-tree-node__row--drop-target');
+
+      component.onDragLeave(dragEventStub());
+      fixture.detectChanges();
+      expect(byTestId('document-folder')!.classList).not.toContain('document-tree-node__row--drop-target');
+    });
+
+    it('ignores drags without the custom document type', () => {
+      component.node = folderNode();
+      fixture.detectChanges();
+      const event = dragEventStub(['Files']);
+
+      component.onDragEnter(event);
+      component.onDragOver(event);
+
+      expect(event.preventDefault).not.toHaveBeenCalled();
+      expect(component.isDragOver).toBe(false);
+    });
+
+    it('prevents default and stops propagation on dragover so drop can fire without reaching the root zone', () => {
+      component.node = folderNode();
+      fixture.detectChanges();
+      const event = dragEventStub();
+
+      component.onDragOver(event);
+
+      expect(event.preventDefault).toHaveBeenCalled();
+      expect(event.stopPropagation).toHaveBeenCalled();
+      expect(event.dataTransfer!.dropEffect).toBe('move');
+    });
+
+    it('emits moveDocument with the dragged id and this folder as target on drop', () => {
+      component.node = folderNode({ id: 'target-folder' });
+      fixture.detectChanges();
+      const spy = jest.fn();
+      component.moveDocument.subscribe(spy);
+
+      component.onDrop(dragEventStub([DOCUMENT_DRAG_TYPE], { [DOCUMENT_DRAG_TYPE]: 'doc-7' }));
+
+      expect(spy).toHaveBeenCalledWith({ documentId: 'doc-7', targetFolderId: 'target-folder' });
+      expect(component.isDragOver).toBe(false);
+    });
+
+    it('does not emit moveDocument when the drop carries no document id', () => {
+      component.node = folderNode();
+      fixture.detectChanges();
+      const spy = jest.fn();
+      component.moveDocument.subscribe(spy);
+
+      component.onDrop(dragEventStub([DOCUMENT_DRAG_TYPE], {}));
+
+      expect(spy).not.toHaveBeenCalled();
+    });
+
+    it('emits moveRequested from the Move button without triggering the row click', () => {
+      const node = documentNode();
+      component.node = node;
+      fixture.detectChanges();
+      const moveSpy = jest.fn();
+      component.moveRequested.subscribe(moveSpy);
+      const openSpy = jest.fn();
+      component.openDocument.subscribe(openSpy);
+
+      byTestId('document-item-move')!.click();
+
+      expect(moveSpy).toHaveBeenCalledWith(node);
+      expect(openSpy).not.toHaveBeenCalled();
+    });
+
+    it('re-emits moveDocument and moveRequested from nested children untouched', () => {
+      const childDoc = documentNode({ id: 'nested-doc', name: 'nested' });
+      component.node = folderNode({ id: 'root', expanded: true, children: [childDoc] });
+      fixture.detectChanges();
+      const spy = jest.fn();
+      component.moveRequested.subscribe(spy);
+
+      byTestId('document-item-move')!.click();
+
+      expect(spy).toHaveBeenCalledWith(childDoc);
     });
   });
 });

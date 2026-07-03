@@ -109,7 +109,8 @@ public class DocumentsController : ControllerBase
     /// <summary>
     /// Replaces an existing document's name and content. The route id always wins
     /// over any id that might otherwise appear in the request body. The document's
-    /// folder is never changed here - it is chosen at creation only.
+    /// folder is never changed here - it is moved via the dedicated
+    /// <see cref="Move"/> action instead.
     /// </summary>
     /// <param name="id">The identifier of the document to update.</param>
     /// <param name="request">The new name and content.</param>
@@ -130,6 +131,41 @@ public class DocumentsController : ControllerBase
         document.Content = request.Content;
         document.UpdatedAt = DateTimeOffset.UtcNow;
 
+        await this.context.SaveChangesAsync(cancellationToken);
+
+        return this.Ok(document);
+    }
+
+    /// <summary>
+    /// Moves a document into a folder, or to the root when the request's
+    /// FolderId is null. Deliberately does not touch UpdatedAt: the list view
+    /// is ordered by recency, and re-organizing documents should not reshuffle
+    /// it the way editing content does.
+    /// </summary>
+    /// <param name="id">The identifier of the document to move.</param>
+    /// <param name="request">The destination folder.</param>
+    /// <param name="cancellationToken">A token used to observe cancellation requests.</param>
+    /// <returns>The moved document, or 404 if the document or destination folder does not exist.</returns>
+    [HttpPut("{id:guid}/folder")]
+    public async Task<ActionResult<PlantUmlDocument>> Move(Guid id, MoveDocumentRequest request, CancellationToken cancellationToken)
+    {
+        var document = await this.context.Documents
+            .FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
+
+        if (document is null)
+        {
+            return this.NotFound();
+        }
+
+        // Checked explicitly (mirroring Create's unknown-folder handling) so a
+        // stale folder id yields a 404 rather than a SQLite FK violation -> 500.
+        if (request.FolderId.HasValue
+            && !await this.context.Folders.AnyAsync(f => f.Id == request.FolderId.Value, cancellationToken))
+        {
+            return this.NotFound();
+        }
+
+        document.FolderId = request.FolderId;
         await this.context.SaveChangesAsync(cancellationToken);
 
         return this.Ok(document);

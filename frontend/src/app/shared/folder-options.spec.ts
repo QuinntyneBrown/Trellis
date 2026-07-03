@@ -1,4 +1,4 @@
-import { Folder } from '../../../core/models/folder.model';
+import { Folder } from '../core/models/folder.model';
 import { flattenFolderOptions } from './folder-options';
 
 const NBSP_INDENT = '    ';

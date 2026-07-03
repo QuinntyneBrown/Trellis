@@ -221,6 +221,110 @@ public class DocumentsControllerTests : IClassFixture<CustomWebApplicationFactor
     }
 
     [Fact]
+    public async Task Move_ToAnotherFolder_UpdatesFolderId()
+    {
+        var folderAResponse = await this.client.PostAsJsonAsync("/api/folders", new { name = "Move source" });
+        var folderA = await folderAResponse.Content.ReadFromJsonAsync<Folder>();
+
+        var folderBResponse = await this.client.PostAsJsonAsync("/api/folders", new { name = "Move target" });
+        var folderB = await folderBResponse.Content.ReadFromJsonAsync<Folder>();
+
+        var createResponse = await this.client.PostAsJsonAsync("/api/documents", new { name = "Movable doc", content = "c", folderId = folderA!.Id });
+        var created = await createResponse.Content.ReadFromJsonAsync<PlantUmlDocument>();
+
+        var moveResponse = await this.client.PutAsJsonAsync($"/api/documents/{created!.Id}/folder", new { folderId = folderB!.Id });
+
+        Assert.Equal(HttpStatusCode.OK, moveResponse.StatusCode);
+        var moved = await moveResponse.Content.ReadFromJsonAsync<PlantUmlDocument>();
+        Assert.Equal(folderB.Id, moved!.FolderId);
+
+        // The list projection must reflect the move so the client tree rebuilds correctly.
+        var list = await this.client.GetFromJsonAsync<List<DocumentListItemDto>>("/api/documents");
+        var listItem = list!.Single(d => d.Id == created.Id);
+        Assert.Equal(folderB.Id, listItem.FolderId);
+    }
+
+    [Fact]
+    public async Task Move_ToRoot_WithNullFolderId()
+    {
+        var folderResponse = await this.client.PostAsJsonAsync("/api/folders", new { name = "Departure folder" });
+        var folder = await folderResponse.Content.ReadFromJsonAsync<Folder>();
+
+        var createResponse = await this.client.PostAsJsonAsync("/api/documents", new { name = "Root-bound doc", content = "c", folderId = folder!.Id });
+        var created = await createResponse.Content.ReadFromJsonAsync<PlantUmlDocument>();
+
+        var moveResponse = await this.client.PutAsJsonAsync($"/api/documents/{created!.Id}/folder", new { folderId = (Guid?)null });
+
+        Assert.Equal(HttpStatusCode.OK, moveResponse.StatusCode);
+        var moved = await moveResponse.Content.ReadFromJsonAsync<PlantUmlDocument>();
+        Assert.Null(moved!.FolderId);
+    }
+
+    [Fact]
+    public async Task Move_ToRoot_WithAbsentFolderId()
+    {
+        var folderResponse = await this.client.PostAsJsonAsync("/api/folders", new { name = "Departure folder 2" });
+        var folder = await folderResponse.Content.ReadFromJsonAsync<Folder>();
+
+        var createResponse = await this.client.PostAsJsonAsync("/api/documents", new { name = "Root-bound doc 2", content = "c", folderId = folder!.Id });
+        var created = await createResponse.Content.ReadFromJsonAsync<PlantUmlDocument>();
+
+        // Unlike the update endpoint, absent and null deliberately mean the same
+        // thing here (root) - the move body has no "leave unchanged" case.
+        var moveResponse = await this.client.PutAsJsonAsync($"/api/documents/{created!.Id}/folder", new { });
+
+        Assert.Equal(HttpStatusCode.OK, moveResponse.StatusCode);
+        var moved = await moveResponse.Content.ReadFromJsonAsync<PlantUmlDocument>();
+        Assert.Null(moved!.FolderId);
+    }
+
+    [Fact]
+    public async Task Move_ReturnsNotFound_ForUnknownFolder_AndLeavesDocumentUnmoved()
+    {
+        var folderResponse = await this.client.PostAsJsonAsync("/api/folders", new { name = "Home folder" });
+        var folder = await folderResponse.Content.ReadFromJsonAsync<Folder>();
+
+        var createResponse = await this.client.PostAsJsonAsync("/api/documents", new { name = "Homebody doc", content = "c", folderId = folder!.Id });
+        var created = await createResponse.Content.ReadFromJsonAsync<PlantUmlDocument>();
+
+        var moveResponse = await this.client.PutAsJsonAsync($"/api/documents/{created!.Id}/folder", new { folderId = Guid.NewGuid() });
+
+        Assert.Equal(HttpStatusCode.NotFound, moveResponse.StatusCode);
+
+        var fetched = await this.client.GetFromJsonAsync<PlantUmlDocument>($"/api/documents/{created.Id}");
+        Assert.Equal(folder.Id, fetched!.FolderId);
+    }
+
+    [Fact]
+    public async Task Move_ReturnsNotFound_ForUnknownDocument()
+    {
+        var response = await this.client.PutAsJsonAsync($"/api/documents/{Guid.NewGuid()}/folder", new { folderId = (Guid?)null });
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Move_DoesNotChangeNameContentOrUpdatedAt()
+    {
+        var folderResponse = await this.client.PostAsJsonAsync("/api/folders", new { name = "Timestamp folder" });
+        var folder = await folderResponse.Content.ReadFromJsonAsync<Folder>();
+
+        var createResponse = await this.client.PostAsJsonAsync("/api/documents", new { name = "Untouched doc", content = "original" });
+        var created = await createResponse.Content.ReadFromJsonAsync<PlantUmlDocument>();
+
+        var moveResponse = await this.client.PutAsJsonAsync($"/api/documents/{created!.Id}/folder", new { folderId = folder!.Id });
+
+        Assert.Equal(HttpStatusCode.OK, moveResponse.StatusCode);
+        var moved = await moveResponse.Content.ReadFromJsonAsync<PlantUmlDocument>();
+        Assert.Equal("Untouched doc", moved!.Name);
+        Assert.Equal("original", moved.Content);
+
+        // Moving is re-organization, not editing: it must not reshuffle the
+        // recency-ordered list the way a content update does.
+        Assert.Null(moved.UpdatedAt);
+    }
+
+    [Fact]
     public async Task Upload_CreatesDocumentAtRoot()
     {
         using var content = new MultipartFormDataContent();

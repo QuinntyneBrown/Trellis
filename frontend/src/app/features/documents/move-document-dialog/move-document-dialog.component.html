@@ -1,0 +1,41 @@
+@if (visible) {
+  <div class="move-document-dialog" data-testid="move-document-dialog">
+    <div class="move-document-dialog__backdrop" (click)="onCancelClicked()"></div>
+    <div class="move-document-dialog__panel">
+      <h2 class="move-document-dialog__title">Move "{{ documentName }}"</h2>
+
+      <label class="move-document-dialog__label" for="move-document-dialog-folder-select">Folder</label>
+      <select
+        id="move-document-dialog-folder-select"
+        class="move-document-dialog__select"
+        data-testid="move-document-dialog-folder"
+        [ngModel]="selectedFolderId() ?? ''"
+        (ngModelChange)="onFolderChange($event)"
+      >
+        <option value="">(No folder)</option>
+        @for (option of folderOptions; track option.id) {
+          <option [value]="option.id">{{ option.label }}</option>
+        }
+      </select>
+
+      <div class="move-document-dialog__actions">
+        <button
+          type="button"
+          class="move-document-dialog__button move-document-dialog__button--cancel"
+          data-testid="move-document-dialog-cancel"
+          (click)="onCancelClicked()"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="move-document-dialog__button move-document-dialog__button--confirm"
+          data-testid="move-document-dialog-confirm"
+          (click)="onConfirmClicked()"
+        >
+          Move
+        </button>
+      </div>
+    </div>
+  </div>
+}

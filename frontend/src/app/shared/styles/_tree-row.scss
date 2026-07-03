@@ -62,33 +62,13 @@
     flex: 1 1 auto;
   }
 
-  // Always visible (not hover-revealed) -- just a plain per-button :hover tweak.
+  // Always visible (not hover-revealed). The buttons themselves are
+  // <app-tree-action-button> compact icon buttons, which carry their own
+  // visuals -- this group only lays them out.
   .#{$block}__actions {
     display: flex;
+    align-items: center;
     gap: 0.25rem;
     flex: 0 0 auto;
-  }
-
-  .#{$block}__action {
-    padding: 0.1rem 0.4rem;
-    border-radius: 0.25rem;
-    border: 1px solid #d1d5db;
-    background-color: #ffffff;
-    cursor: pointer;
-    font-size: 0.7rem;
-    line-height: 1.3;
-
-    &:hover {
-      background-color: #f3f4f6;
-    }
-  }
-
-  .#{$block}__action--danger {
-    color: #b91c1c;
-    border-color: #fecaca;
-
-    &:hover {
-      background-color: #fef2f2;
-    }
   }
 }

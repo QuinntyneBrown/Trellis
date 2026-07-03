@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, signa
 import { FormsModule } from '@angular/forms';
 
 import { Folder } from '../../../core/models/folder.model';
-import { FolderOption, flattenFolderOptions } from './folder-options';
+import { FolderOption, flattenFolderOptions } from '../../../shared/folder-options';
 
 /** Emitted by the save dialog's Save button. */
 export interface SaveDialogResult {
@@ -30,9 +30,9 @@ export class SaveDialogComponent implements OnChanges {
   @Input() folders: Folder[] = [];
   /**
    * Whether the destination-folder select is shown. Only true for
-   * first-time saves: an existing document's folder cannot be changed
-   * (moving is unsupported), so offering the select there would silently
-   * discard the user's choice.
+   * first-time saves: an existing document's folder isn't changed on
+   * re-save (moving lives in the Documents panel), so offering the select
+   * there would silently discard the user's choice.
    */
   @Input() folderSelectionEnabled = false;
 

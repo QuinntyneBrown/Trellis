@@ -2,21 +2,26 @@
   <aside class="documents-panel" data-testid="documents-panel">
     <div class="documents-panel__header">
       <span class="documents-panel__header-title">Documents</span>
-      <button
-        type="button"
-        class="documents-panel__header-action"
-        data-testid="documents-new-folder"
-        title="New Folder"
-        (click)="onHeaderNewFolderClicked()"
-      >
-        New Folder
-      </button>
+      <app-tree-action-button
+        icon="new-folder"
+        label="New Folder"
+        testId="documents-new-folder"
+        (clicked)="onHeaderNewFolderClicked()"
+      />
     </div>
 
     @if (tree().length === 0) {
       <p class="documents-panel__empty">No saved documents yet.</p>
     } @else {
-      <div class="documents-panel__tree" data-testid="documents-tree">
+      <div
+        class="documents-panel__tree"
+        data-testid="documents-tree"
+        [class.documents-panel__tree--drop-target]="isRootDragOver"
+        (dragenter)="onRootDragEnter($event)"
+        (dragover)="onRootDragOver($event)"
+        (dragleave)="onRootDragLeave()"
+        (drop)="onRootDrop($event)"
+      >
         @for (node of tree(); track node.id) {
           <app-document-tree-node
             [node]="node"
@@ -26,9 +31,20 @@
             (createFolder)="onCreateFolder($event)"
             (renameNode)="onRenameNode($event)"
             (deleteNode)="onDeleteNode($event)"
+            (moveDocument)="onMoveDocumentDropped($event)"
+            (moveRequested)="onMoveRequested($event)"
           ></app-document-tree-node>
         }
       </div>
     }
+
+    <app-move-document-dialog
+      [visible]="movingDocument() !== null"
+      [documentName]="movingDocument()?.name ?? ''"
+      [folders]="folderList()"
+      [currentFolderId]="movingDocument()?.document?.folderId ?? null"
+      (confirm)="onMoveDialogConfirm($event)"
+      (cancel)="onMoveDialogCancel()"
+    />
   </aside>
 }

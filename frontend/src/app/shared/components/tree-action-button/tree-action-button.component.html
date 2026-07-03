@@ -1,0 +1,15 @@
+<button
+  type="button"
+  class="tree-action-button"
+  [class.tree-action-button--danger]="danger"
+  [attr.data-testid]="testId"
+  [attr.title]="label"
+  [attr.aria-label]="label"
+  (click)="clicked.emit($event)"
+>
+  <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+    @for (path of paths; track path) {
+      <path [attr.d]="path" />
+    }
+  </svg>
+</button>

@@ -83,6 +83,24 @@ describe('DocumentsService', () => {
     req.flush({});
   });
 
+  it('moves a document into a folder via the dedicated folder endpoint', () => {
+    service.move('42', 'folder-1').subscribe();
+
+    const req = httpMock.expectOne(`${baseUrl}/42/folder`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ folderId: 'folder-1' });
+    req.flush({});
+  });
+
+  it('moves a document to the root with an explicit null folderId', () => {
+    service.move('42', null).subscribe();
+
+    const req = httpMock.expectOne(`${baseUrl}/42/folder`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ folderId: null });
+    req.flush({});
+  });
+
   it('deletes a document', () => {
     service.delete('42').subscribe();
 

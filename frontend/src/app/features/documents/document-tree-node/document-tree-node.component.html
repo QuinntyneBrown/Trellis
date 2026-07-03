@@ -6,7 +6,12 @@
       [attr.data-folder-name]="node.name"
       [style.padding-left.px]="indentPx"
       [attr.aria-expanded]="node.expanded"
+      [class.document-tree-node__row--drop-target]="isDragOver"
       (click)="onRowClick()"
+      (dragenter)="onDragEnter($event)"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)"
     >
       <span
         class="document-tree-node__chevron"
@@ -18,33 +23,25 @@
       <span class="document-tree-node__name">{{ node.name }}</span>
 
       <div class="document-tree-node__actions">
-        <button
-          type="button"
-          class="document-tree-node__action"
-          data-testid="document-folder-new-folder"
-          title="New Folder"
-          (click)="onNewFolderClicked($event)"
-        >
-          New Folder
-        </button>
-        <button
-          type="button"
-          class="document-tree-node__action"
-          data-testid="document-folder-rename"
-          title="Rename"
-          (click)="onRenameClicked($event)"
-        >
-          Rename
-        </button>
-        <button
-          type="button"
-          class="document-tree-node__action document-tree-node__action--danger"
-          data-testid="document-folder-delete"
-          title="Delete folder and contents"
-          (click)="onDeleteClicked($event)"
-        >
-          Delete
-        </button>
+        <app-tree-action-button
+          icon="new-folder"
+          label="New Folder"
+          testId="document-folder-new-folder"
+          (clicked)="onNewFolderClicked($event)"
+        />
+        <app-tree-action-button
+          icon="rename"
+          label="Rename"
+          testId="document-folder-rename"
+          (clicked)="onRenameClicked($event)"
+        />
+        <app-tree-action-button
+          icon="delete"
+          label="Delete folder and contents"
+          testId="document-folder-delete"
+          [danger]="true"
+          (clicked)="onDeleteClicked($event)"
+        />
       </div>
     </div>
   } @else {
@@ -54,40 +51,40 @@
       [attr.data-document-name]="node.name"
       [style.padding-left.px]="indentPx"
       [title]="'Updated ' + node.document!.updatedAt"
+      draggable="true"
       (click)="onRowClick()"
+      (dragstart)="onDragStart($event)"
     >
       <span class="document-tree-node__chevron-spacer" aria-hidden="true"></span>
 
       <span class="document-tree-node__name">{{ node.name }}</span>
 
       <div class="document-tree-node__actions">
-        <button
-          type="button"
-          class="document-tree-node__action"
-          data-testid="document-item-open"
-          title="Open"
-          (click)="onOpenClicked($event)"
-        >
-          Open
-        </button>
-        <button
-          type="button"
-          class="document-tree-node__action"
-          data-testid="document-item-rename"
-          title="Rename"
-          (click)="onRenameClicked($event)"
-        >
-          Rename
-        </button>
-        <button
-          type="button"
-          class="document-tree-node__action document-tree-node__action--danger"
-          data-testid="document-item-delete"
-          title="Delete"
-          (click)="onDeleteClicked($event)"
-        >
-          Delete
-        </button>
+        <app-tree-action-button
+          icon="move"
+          label="Move to Folder…"
+          testId="document-item-move"
+          (clicked)="onMoveClicked($event)"
+        />
+        <app-tree-action-button
+          icon="open"
+          label="Open"
+          testId="document-item-open"
+          (clicked)="onOpenClicked($event)"
+        />
+        <app-tree-action-button
+          icon="rename"
+          label="Rename"
+          testId="document-item-rename"
+          (clicked)="onRenameClicked($event)"
+        />
+        <app-tree-action-button
+          icon="delete"
+          label="Delete"
+          testId="document-item-delete"
+          [danger]="true"
+          (clicked)="onDeleteClicked($event)"
+        />
       </div>
     </div>
   }
@@ -103,6 +100,8 @@
           (createFolder)="createFolder.emit($event)"
           (renameNode)="renameNode.emit($event)"
           (deleteNode)="deleteNode.emit($event)"
+          (moveDocument)="moveDocument.emit($event)"
+          (moveRequested)="moveRequested.emit($event)"
         ></app-document-tree-node>
       }
     </div>

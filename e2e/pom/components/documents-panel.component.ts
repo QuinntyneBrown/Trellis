@@ -163,4 +163,69 @@ export class DocumentsPanelComponent {
     });
     await byTestId(row, 'document-folder-delete').click();
   }
+
+  // ---- Moving documents ------------------------------------------------------
+  // Document rows are native HTML5 drag sources; folder rows and the tree
+  // container ([data-testid="documents-tree"], whose empty space below the
+  // last row is the move-to-root zone) are drop targets. Playwright's
+  // locator.dragTo drives Chromium's real drag pipeline, which is the only
+  // configured browser project. If dragTo ever proves flaky, the documented
+  // fallback is manual dispatch: create a DataTransfer via
+  // page.evaluateHandle(() => new DataTransfer()) and dispatchEvent
+  // 'dragstart'/'dragover'/'drop' with it.
+
+  /** Drags the document row onto the folder row, moving the document into that folder. */
+  async moveDocumentToFolder(docName: string, folderName: string): Promise<void> {
+    await this.item(docName).dragTo(this.folder(folderName));
+  }
+
+  /**
+   * Drags the document row onto the tree container's empty space below the
+   * rows, moving the document to the root. Folder rows stopPropagation on
+   * their drag events, so only genuinely-empty space reaches the root zone --
+   * hence the explicit targetPosition near the container's bottom edge.
+   */
+  async moveDocumentToRoot(docName: string): Promise<void> {
+    const tree = byTestId(this.root, 'documents-tree');
+    const box = await tree.boundingBox();
+    if (!box) {
+      throw new Error('documents-tree is not visible');
+    }
+    await this.item(docName).dragTo(tree, {
+      targetPosition: { x: Math.min(24, box.width / 2), y: box.height - 8 },
+    });
+  }
+
+  /**
+   * Moves a document via the keyboard-accessible "Move to Folder…" dialog:
+   * opens it from the row's move button, picks the destination by folder
+   * name (option labels are nbsp-indented per nesting level, so matching
+   * strips that indentation), and confirms. Pass null to target the root
+   * ("(No folder)").
+   */
+  async moveDocumentViaDialog(docName: string, folderName: string | null): Promise<void> {
+    const page = this.root.page();
+    await byTestId(this.item(docName), 'document-item-move').click();
+
+    const dialog = byTestId(page, 'move-document-dialog');
+    await expect(dialog).toBeVisible();
+
+    const select = byTestId(dialog, 'move-document-dialog-folder');
+    if (folderName === null) {
+      await select.selectOption({ label: '(No folder)' });
+    } else {
+      const value = await select.evaluate((element, name) => {
+        const options = Array.from((element as HTMLSelectElement).options);
+        const match = options.find((option) => (option.textContent ?? '').replace(/\u00a0/g, '').trim() === name);
+        return match?.value ?? null;
+      }, folderName);
+      if (value === null) {
+        throw new Error(`No folder named "${folderName}" in the move dialog`);
+      }
+      await select.selectOption(value);
+    }
+
+    await byTestId(dialog, 'move-document-dialog-confirm').click();
+    await expect(dialog).toBeHidden();
+  }
 }
