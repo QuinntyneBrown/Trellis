@@ -4,15 +4,18 @@
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4.svg)](backend/global.json)
 [![Angular](https://img.shields.io/badge/Angular-17-DD0031.svg)](frontend/package.json)
 
-Trellis is an open-source workspace for authoring, rendering, and managing PlantUML diagrams. It combines a Monaco-powered Angular editor, a real-time ASP.NET Core rendering service, built-in PlantUML and C4 templates, and a local document library for saving and revisiting diagrams.
+Trellis is an open-source workspace for authoring, rendering, and managing PlantUML diagrams. It combines a Monaco-powered Angular editor in a VS Code-style shell, a real-time ASP.NET Core rendering service, built-in PlantUML and C4 templates, a folder-organized document library, and a local file explorer for editing `.puml` files straight from disk.
 
 The project is intended for teams that prefer diagram-as-code workflows but still need a responsive browser-based editing experience.
 
 ## Features
 
-- Live PlantUML-to-SVG rendering through SignalR.
-- Built-in starter templates for blank, sequence, class, and C4 diagrams.
-- Local document persistence backed by SQLite and Entity Framework Core.
+- Live PlantUML-to-SVG rendering through SignalR — `Ctrl+Enter` to render, and the loaded document re-renders automatically on open and after a browser refresh.
+- VS Code-style workspace chrome: a top title bar whose command center tracks the open document, an activity rail, and resizable editor/preview panes and side panel whose layout (including which panel is open) persists across sessions.
+- Document library backed by SQLite and Entity Framework Core, organized into nested virtual folders: create, rename, and delete folders; move documents by dragging them onto a folder (or to the tree's empty space for the root) or via a "Move to Folder" dialog; the document being edited is highlighted in the tree and its folder chain auto-expands when the panel opens.
+- Local file explorer built on the File System Access API (Chromium-based browsers): browse a folder on disk, create and delete entries, open `.puml` files, and `Ctrl+S` writes straight back to the file.
+- Keyboard save flows: `Ctrl+S` quick-saves, `Ctrl+Shift+S` is Save As — always a name-and-folder dialog, always a new document.
+- Built-in starter templates for blank, sequence, and class diagrams plus the three C4 levels (context, container, component).
 - Upload support for `.puml` and `.txt` diagrams.
 - Syntax failure handling that reports render errors without breaking the editor session.
 - Focused unit, integration, and Playwright end-to-end coverage.
@@ -27,7 +30,7 @@ Trellis is in active development. Public APIs, storage schema, and deployment co
 backend/   ASP.NET Core API, application layer, domain model, infrastructure, tests, and vendored renderer assets.
 frontend/  Angular application, shared UI components, editor experience, and Jest tests.
 e2e/       Playwright test suite that runs the frontend and backend together.
-docs/      Architecture, development, and testing documentation.
+docs/      Architecture, development, and testing guides, plus ADRs, the defect log, and static HTML UI mocks.
 ```
 
 ## Requirements
@@ -164,6 +167,9 @@ Production frontend URLs are configured in [frontend/src/environments/environmen
 - [Architecture](docs/architecture.md)
 - [Development Guide](docs/development.md)
 - [Testing Guide](docs/testing.md)
+- [Architecture Decision Records](docs/adr) — why the move endpoint, native drag-and-drop, and shared UI components are shaped the way they are.
+- [Defect & Change Log](docs/defects/log.md) — issues found while exercising the app, and how each was fixed.
+- [HTML UI Mocks](docs/mocks/README.md) — static, dependency-free mocks of every screen and state, kept in sync with the shipped UI.
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)
 - [Support](SUPPORT.md)
