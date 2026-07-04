@@ -24,6 +24,12 @@
 
       <div class="document-tree-node__actions">
         <app-tree-action-button
+          icon="scope"
+          label="Scope to this folder"
+          testId="document-folder-scope"
+          (clicked)="onScopeClicked($event)"
+        />
+        <app-tree-action-button
           icon="new-folder"
           label="New Folder"
           testId="document-folder-new-folder"
@@ -109,6 +115,7 @@
           (deleteNode)="deleteNode.emit($event)"
           (moveDocument)="moveDocument.emit($event)"
           (moveRequested)="moveRequested.emit($event)"
+          (scopeRequested)="scopeRequested.emit($event)"
         ></app-document-tree-node>
       }
     </div>

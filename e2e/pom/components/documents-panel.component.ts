@@ -172,10 +172,50 @@ export class DocumentsPanelComponent {
     await byTestId(row, 'document-folder-delete').click();
   }
 
+  // ---- Scoping the tree to a folder -------------------------------------------
+  // Any folder row can become the tree's temporary root via its
+  // [data-testid="document-folder-scope"] button. While scoped, a
+  // [data-testid="documents-scope-bar"] renders between the header and the
+  // tree with [data-testid="documents-scope-name"] (carrying data-folder-name),
+  // [data-testid="documents-scope-up"], and [data-testid="documents-scope-clear"].
+
+  /** The scope bar shown only while the tree is scoped to a folder. */
+  get scopeBar(): Locator {
+    return byTestId(this.root, 'documents-scope-bar');
+  }
+
+  /** Scopes the tree to the folder with the given name via its row button. */
+  async scopeToFolder(name: string): Promise<void> {
+    await byTestId(this.folder(name), 'document-folder-scope').click();
+    await expect(this.scopeBar).toBeVisible();
+  }
+
+  /** Asserts the tree is currently scoped to the folder with the given name. */
+  async expectScopedTo(name: string): Promise<void> {
+    await expect(byTestId(this.root, 'documents-scope-name')).toHaveAttribute('data-folder-name', name);
+  }
+
+  /** Asserts no scope is active (the scope bar is absent). */
+  async expectNotScoped(): Promise<void> {
+    await expect(this.scopeBar).toHaveCount(0);
+  }
+
+  /** Scopes up one level via the scope bar (clears the scope when it sits at the root). */
+  async scopeUp(): Promise<void> {
+    await byTestId(this.scopeBar, 'documents-scope-up').click();
+  }
+
+  /** Clears the scope entirely via the scope bar's "Show all documents" button. */
+  async clearScope(): Promise<void> {
+    await byTestId(this.scopeBar, 'documents-scope-clear').click();
+    await expect(this.scopeBar).toHaveCount(0);
+  }
+
   // ---- Moving documents ------------------------------------------------------
   // Document rows are native HTML5 drag sources; folder rows and the tree
   // container ([data-testid="documents-tree"], whose empty space below the
-  // last row is the move-to-root zone) are drop targets. Playwright's
+  // last row is the move-to-root zone -- root of the scope while one is
+  // active) are drop targets. Playwright's
   // locator.dragTo drives Chromium's real drag pipeline, which is the only
   // configured browser project. If dragTo ever proves flaky, the documented
   // fallback is manual dispatch: create a DataTransfer via

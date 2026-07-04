@@ -9,7 +9,17 @@
  * the 40px activity-bar rail button and this dense in-row action button have
  * different size/tooltip mechanics and should not share a growing icon union.
  */
-export type TreeActionIconName = 'open' | 'rename' | 'delete' | 'new-file' | 'new-folder' | 'move' | 'update';
+export type TreeActionIconName =
+  | 'open'
+  | 'rename'
+  | 'delete'
+  | 'new-file'
+  | 'new-folder'
+  | 'move'
+  | 'update'
+  | 'scope'
+  | 'up'
+  | 'clear';
 
 export const TREE_ACTION_ICON_PATHS: Record<TreeActionIconName, string[]> = {
   // Arrow escaping a box, pointing up-right: "open this in the editor".
@@ -43,4 +53,14 @@ export const TREE_ACTION_ICON_PATHS: Record<TreeActionIconName, string[]> = {
     'M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6',
     'M21 3l-8 8M13 5v6h6',
   ],
+  // Crosshair/target: "scope the tree to this folder".
+  scope: [
+    'M12 12m-7 0a7 7 0 1 0 14 0a7 7 0 1 0-14 0',
+    'M12 12m-2.5 0a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0-5 0',
+    'M12 2v3M12 19v3M2 12h3M19 12h3',
+  ],
+  // Arrow pointing up: "scope up one level".
+  up: ['M12 19V5M5 12l7-7 7 7'],
+  // Plain X: "clear the scope / show everything".
+  clear: ['M6 6l12 12M18 6L6 18'],
 };

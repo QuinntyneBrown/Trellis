@@ -87,6 +87,8 @@ export class DocumentTreeNodeComponent {
   @Output() readonly moveDocument = new EventEmitter<MoveDocumentEvent>();
   /** Fires when this document row's "Move to Folder…" button is used (the panel owns the dialog), or is re-emitted from a descendant row. */
   @Output() readonly moveRequested = new EventEmitter<DocumentTreeNode>();
+  /** Fires when this folder row's "Scope to this folder" button is used (the panel owns the scope state), or is re-emitted from a descendant row. */
+  @Output() readonly scopeRequested = new EventEmitter<DocumentTreeNode>();
 
   /** True while a document drag hovers this folder row -- drives the drop-target highlight. */
   isDragOver = false;
@@ -143,6 +145,12 @@ export class DocumentTreeNodeComponent {
   onMoveClicked(event: MouseEvent): void {
     event.stopPropagation();
     this.moveRequested.emit(this.node);
+  }
+
+  /** Asks the panel to make this folder the tree's temporary root. */
+  onScopeClicked(event: MouseEvent): void {
+    event.stopPropagation();
+    this.scopeRequested.emit(this.node);
   }
 
   /** Document rows are drag sources: the custom type carries the id, text/plain carries a human-readable name. */

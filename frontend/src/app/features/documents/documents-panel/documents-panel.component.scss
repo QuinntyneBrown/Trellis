@@ -31,6 +31,30 @@
   color: #6b7280;
 }
 
+// Shown only while the tree is scoped to a folder: up/name/clear. Sits
+// between the header and the tree so the escape hatches stay reachable even
+// when the scoped folder is empty.
+.documents-panel__scope-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+// The panel is ~18rem wide -- long folder names must ellipsize, never push
+// the up/clear buttons out of reach (title attr carries the full name).
+.documents-panel__scope-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
+}
+
 .documents-panel__empty {
   padding: 1rem;
   color: #6b7280;

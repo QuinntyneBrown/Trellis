@@ -16,6 +16,13 @@ interface StoredEditorLayout {
    * deliberately-closed panel also survives a reload as closed.
    */
   activeSidePanel?: 'explorer' | 'documents' | 'templates' | null;
+  /**
+   * Additive field, same story as activeSidePanel: `null` is stored
+   * explicitly when the user clears the Documents panel's folder scope.
+   * Documents-prefixed deliberately -- the disk Explorer may grow its own,
+   * separately persisted scope one day.
+   */
+  documentsScopeFolderId?: string | null;
 }
 
 /**
@@ -60,6 +67,16 @@ export class EditorLayoutPreferencesService {
 
   setActiveSidePanel(panel: 'explorer' | 'documents' | 'templates' | null): void {
     this.writeStored({ activeSidePanel: panel });
+  }
+
+  /** Returns the persisted Documents-panel scope folder id, or null (no scope, never stored, or a corrupt value). */
+  getDocumentsScopeFolderId(): string | null {
+    const stored = this.readStored()?.documentsScopeFolderId;
+    return typeof stored === 'string' ? stored : null;
+  }
+
+  setDocumentsScopeFolderId(folderId: string | null): void {
+    this.writeStored({ documentsScopeFolderId: folderId });
   }
 
   /** Reads and JSON-parses the shared stored blob, or null on a missing key/read failure/corrupt JSON. */

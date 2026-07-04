@@ -137,6 +137,31 @@ describe('EditorLayoutPreferencesService', () => {
       expect(service.getActiveSidePanel()).toBe('documents');
     });
 
+    it('round-trips the Documents scope folder id, including an explicit null for a cleared scope', () => {
+      expect(service.getDocumentsScopeFolderId()).toBeNull();
+
+      service.setDocumentsScopeFolderId('folder-42');
+      expect(service.getDocumentsScopeFolderId()).toBe('folder-42');
+
+      service.setDocumentsScopeFolderId(null);
+      expect(service.getDocumentsScopeFolderId()).toBeNull();
+      // Stored as an explicit null (not just absent) so "user cleared the scope" survives a reload too.
+      expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toEqual({ documentsScopeFolderId: null });
+    });
+
+    it('returns null for a corrupt persisted scope folder id', () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ documentsScopeFolderId: 42 }));
+      expect(service.getDocumentsScopeFolderId()).toBeNull();
+    });
+
+    it('setting the scope folder id does not clobber the other persisted layout fields', () => {
+      service.setSidePanelWidthPx(300);
+      service.setDocumentsScopeFolderId('folder-42');
+
+      expect(service.getSidePanelWidthPx()).toBe(300);
+      expect(service.getDocumentsScopeFolderId()).toBe('folder-42');
+    });
+
     it('setting the editor pane ratio does not clobber a previously persisted side panel width, and vice versa', () => {
       service.setSidePanelWidthPx(300);
       service.setEditorPaneRatio(0.35);

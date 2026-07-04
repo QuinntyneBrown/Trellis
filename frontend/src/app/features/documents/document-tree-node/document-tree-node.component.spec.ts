@@ -120,6 +120,21 @@ describe('DocumentTreeNodeComponent', () => {
       expect(toggleSpy).not.toHaveBeenCalled();
     });
 
+    it('emits scopeRequested with the node from the scope button, without toggling the row', () => {
+      const node = folderNode({ id: 'scope-me' });
+      component.node = node;
+      fixture.detectChanges();
+      const scopeSpy = jest.fn();
+      component.scopeRequested.subscribe(scopeSpy);
+      const toggleSpy = jest.fn();
+      component.toggleExpand.subscribe(toggleSpy);
+
+      byTestId('document-folder-scope')!.click();
+
+      expect(scopeSpy).toHaveBeenCalledWith(node);
+      expect(toggleSpy).not.toHaveBeenCalled();
+    });
+
     it('does not emit createFolder when the prompt is cancelled', () => {
       jest.spyOn(window, 'prompt').mockReturnValue(null);
       component.node = folderNode();

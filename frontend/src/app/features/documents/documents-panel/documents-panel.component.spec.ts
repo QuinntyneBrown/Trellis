@@ -4,6 +4,7 @@ import { of } from 'rxjs';
 import { DocumentSummary } from '../../../core/models/document-summary.model';
 import { Folder } from '../../../core/models/folder.model';
 import { DocumentsService } from '../../../core/services/documents.service';
+import { EditorLayoutPreferencesService } from '../../../core/services/editor-layout-preferences.service';
 import { FoldersService } from '../../../core/services/folders.service';
 import { DocumentsPanelComponent } from './documents-panel.component';
 
@@ -19,6 +20,10 @@ describe('DocumentsPanelComponent', () => {
     move: jest.Mock;
   };
   let foldersServiceMock: { list: jest.Mock; create: jest.Mock; rename: jest.Mock; delete: jest.Mock };
+  // Mocked so the component's persisted-scope seeding never touches the real
+  // (root-provided) service's localStorage -- jsdom storage would silently
+  // leak scope state between tests otherwise.
+  let layoutPreferencesMock: { getDocumentsScopeFolderId: jest.Mock; setDocumentsScopeFolderId: jest.Mock };
 
   const folders: Folder[] = [{ id: 'f1', name: 'Diagrams', parentFolderId: null }];
   const summaries: DocumentSummary[] = [
@@ -41,12 +46,17 @@ describe('DocumentsPanelComponent', () => {
       rename: jest.fn().mockReturnValue(of({})),
       delete: jest.fn().mockReturnValue(of(undefined)),
     };
+    layoutPreferencesMock = {
+      getDocumentsScopeFolderId: jest.fn().mockReturnValue(null),
+      setDocumentsScopeFolderId: jest.fn(),
+    };
 
     await TestBed.configureTestingModule({
       imports: [DocumentsPanelComponent],
       providers: [
         { provide: DocumentsService, useValue: documentsServiceMock },
         { provide: FoldersService, useValue: foldersServiceMock },
+        { provide: EditorLayoutPreferencesService, useValue: layoutPreferencesMock },
       ],
     }).compileComponents();
 
@@ -385,5 +395,189 @@ describe('DocumentsPanelComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelectorAll('[data-testid="document-item"]').length).toBe(1);
+  });
+
+  describe('scoping the tree to a folder', () => {
+    const scopeFolders: Folder[] = [
+      { id: 'work', name: 'Work', parentFolderId: null },
+      { id: 'reports', name: 'Reports', parentFolderId: 'work' },
+      { id: 'personal', name: 'Personal', parentFolderId: null },
+    ];
+    const scopeSummaries: DocumentSummary[] = [
+      { id: 'root-doc', name: 'Root Doc', updatedAt: '2026-01-01T00:00:00Z', folderId: null, kind: 'plantuml' },
+      { id: 'work-doc', name: 'Work Doc', updatedAt: '2026-01-02T00:00:00Z', folderId: 'work', kind: 'plantuml' },
+      { id: 'report-doc', name: 'Report Doc', updatedAt: '2026-01-03T00:00:00Z', folderId: 'reports', kind: 'plantuml' },
+      { id: 'personal-doc', name: 'Personal Doc', updatedAt: '2026-01-04T00:00:00Z', folderId: 'personal', kind: 'plantuml' },
+    ];
+
+    beforeEach(() => {
+      foldersServiceMock.list.mockReturnValue(of(scopeFolders));
+      documentsServiceMock.list.mockReturnValue(of(scopeSummaries));
+    });
+
+    /** For tests whose persisted-scope getter must differ BEFORE construction (the field is seeded in an initializer). */
+    function recreateComponent(): void {
+      fixture = TestBed.createComponent(DocumentsPanelComponent);
+      component = fixture.componentInstance;
+    }
+
+    function scopeTo(folderName: string): void {
+      const button = fixture.nativeElement.querySelector(
+        `[data-folder-name="${folderName}"] [data-testid="document-folder-scope"]`,
+      ) as HTMLButtonElement;
+      button.click();
+      fixture.detectChanges();
+    }
+
+    function visibleFolderNames(): (string | null)[] {
+      return Array.from(
+        fixture.nativeElement.querySelectorAll('[data-testid="document-folder"]') as NodeListOf<HTMLElement>,
+      ).map((row) => row.getAttribute('data-folder-name'));
+    }
+
+    function visibleDocumentNames(): (string | null)[] {
+      return Array.from(
+        fixture.nativeElement.querySelectorAll('[data-testid="document-item"]') as NodeListOf<HTMLElement>,
+      ).map((row) => row.getAttribute('data-document-name'));
+    }
+
+    it('scopes locally (no refetch) via a folder row button, showing only that subtree and the scope bar', () => {
+      openPanel();
+      scopeTo('Work');
+
+      expect(byTestId('documents-scope-bar')).toBeTruthy();
+      expect(byTestId('documents-scope-name')!.getAttribute('data-folder-name')).toBe('Work');
+      // Work's own row is gone; its children are the visible roots.
+      expect(visibleFolderNames()).toEqual(['Reports']);
+      expect(visibleDocumentNames()).toEqual(['Work Doc']);
+      expect(foldersServiceMock.list).toHaveBeenCalledTimes(1);
+      expect(layoutPreferencesMock.setDocumentsScopeFolderId).toHaveBeenCalledWith('work');
+    });
+
+    it('scopes up to the parent, then clears entirely at the root, pre-expanding each just-left folder', () => {
+      openPanel();
+      scopeTo('Work');
+      scopeTo('Reports');
+      expect(visibleDocumentNames()).toEqual(['Report Doc']);
+
+      (byTestId('documents-scope-up') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(byTestId('documents-scope-name')!.getAttribute('data-folder-name')).toBe('Work');
+      // Reports (the scope just left) is pre-expanded, so its doc stays visible.
+      expect(visibleDocumentNames()).toEqual(['Report Doc', 'Work Doc']);
+
+      (byTestId('documents-scope-up') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(byTestId('documents-scope-bar')).toBeNull();
+      expect(visibleFolderNames()).toEqual(['Personal', 'Work', 'Reports']);
+      expect(layoutPreferencesMock.setDocumentsScopeFolderId).toHaveBeenLastCalledWith(null);
+    });
+
+    it('clears the scope from the scope bar button, leaving the just-left folder expanded', () => {
+      openPanel();
+      scopeTo('Work');
+
+      (byTestId('documents-scope-clear') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(byTestId('documents-scope-bar')).toBeNull();
+      expect(
+        fixture.nativeElement.querySelector('[data-folder-name="Work"]')!.getAttribute('aria-expanded'),
+      ).toBe('true');
+      expect(visibleDocumentNames()).not.toContain('Personal Doc');
+      expect(visibleDocumentNames()).toContain('Work Doc');
+      expect(layoutPreferencesMock.setDocumentsScopeFolderId).toHaveBeenLastCalledWith(null);
+    });
+
+    it('creates header New Folder inside the scope while scoped', () => {
+      jest.spyOn(window, 'prompt').mockReturnValue('Inside');
+      openPanel();
+      scopeTo('Work');
+
+      (byTestId('documents-new-folder') as HTMLButtonElement).click();
+
+      expect(foldersServiceMock.create).toHaveBeenCalledWith({ name: 'Inside', parentFolderId: 'work' });
+    });
+
+    it('moves a root-zone drop to the scoped folder, not the true root', () => {
+      openPanel();
+      scopeTo('Work');
+
+      component.onRootDrop({
+        preventDefault: jest.fn(),
+        dataTransfer: {
+          types: ['application/x-trellis-document-id'],
+          getData: jest.fn().mockReturnValue('root-doc'),
+        },
+      } as unknown as DragEvent);
+
+      expect(documentsServiceMock.move).toHaveBeenCalledWith('root-doc', 'work');
+    });
+
+    it('opens already scoped when a scope id was persisted', () => {
+      layoutPreferencesMock.getDocumentsScopeFolderId.mockReturnValue('work');
+      recreateComponent();
+      openPanel();
+
+      expect(byTestId('documents-scope-name')!.getAttribute('data-folder-name')).toBe('Work');
+      expect(visibleFolderNames()).toEqual(['Reports']);
+      expect(visibleDocumentNames()).toEqual(['Work Doc']);
+    });
+
+    it('prunes a persisted scope whose folder no longer exists and falls back to the full tree', () => {
+      layoutPreferencesMock.getDocumentsScopeFolderId.mockReturnValue('ghost');
+      recreateComponent();
+      openPanel();
+
+      expect(byTestId('documents-scope-bar')).toBeNull();
+      expect(visibleFolderNames()).toEqual(['Personal', 'Work']);
+      expect(layoutPreferencesMock.setDocumentsScopeFolderId).toHaveBeenCalledWith(null);
+    });
+
+    it('skips the active-document reveal (without clearing the scope) when the document is outside it', () => {
+      layoutPreferencesMock.getDocumentsScopeFolderId.mockReturnValue('work');
+      recreateComponent();
+      component.activeDocumentId = 'personal-doc';
+      openPanel();
+
+      // Scope survives; the out-of-scope document simply has no row.
+      expect(byTestId('documents-scope-bar')).toBeTruthy();
+      expect(visibleDocumentNames()).not.toContain('Personal Doc');
+      expect(layoutPreferencesMock.setDocumentsScopeFolderId).not.toHaveBeenCalled();
+
+      // And the reveal really was skipped: clearing the scope shows Personal
+      // still collapsed, not silently expanded behind the scenes.
+      component.onScopeClear();
+      fixture.detectChanges();
+      expect(
+        fixture.nativeElement.querySelector('[data-folder-name="Personal"]')!.getAttribute('aria-expanded'),
+      ).toBe('false');
+    });
+
+    it('updates the scope bar label when the scoped folder is renamed', () => {
+      openPanel();
+      scopeTo('Work');
+
+      foldersServiceMock.list.mockReturnValue(
+        of([{ id: 'work', name: 'Work 2026', parentFolderId: null }, ...scopeFolders.slice(1)]),
+      );
+      component.refresh();
+      fixture.detectChanges();
+
+      expect(byTestId('documents-scope-name')!.getAttribute('data-folder-name')).toBe('Work 2026');
+      expect(byTestId('documents-scope-name')!.textContent).toContain('Work 2026');
+    });
+
+    it('shows a scoped empty message when the scoped folder has no contents', () => {
+      foldersServiceMock.list.mockReturnValue(of([{ id: 'empty', name: 'Empty', parentFolderId: null }]));
+      documentsServiceMock.list.mockReturnValue(of([]));
+      openPanel();
+      scopeTo('Empty');
+
+      expect(byTestId('documents-scope-bar')).toBeTruthy();
+      expect(byTestId('documents-panel')!.textContent).toContain('This folder is empty.');
+    });
   });
 });

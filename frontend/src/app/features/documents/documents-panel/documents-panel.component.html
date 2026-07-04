@@ -10,8 +10,32 @@
       />
     </div>
 
+    @if (scopedFolder(); as scoped) {
+      <div class="documents-panel__scope-bar" data-testid="documents-scope-bar">
+        <app-tree-action-button
+          icon="up"
+          label="Up one level"
+          testId="documents-scope-up"
+          (clicked)="onScopeUp()"
+        />
+        <span
+          class="documents-panel__scope-name"
+          data-testid="documents-scope-name"
+          [attr.data-folder-name]="scoped.name"
+          [title]="scoped.name"
+          >{{ scoped.name }}</span
+        >
+        <app-tree-action-button
+          icon="clear"
+          label="Show all documents"
+          testId="documents-scope-clear"
+          (clicked)="onScopeClear()"
+        />
+      </div>
+    }
+
     @if (tree().length === 0) {
-      <p class="documents-panel__empty">No saved documents yet.</p>
+      <p class="documents-panel__empty">{{ scopedFolder() ? 'This folder is empty.' : 'No saved documents yet.' }}</p>
     } @else {
       <div
         class="documents-panel__tree"
@@ -34,6 +58,7 @@
             (deleteNode)="onDeleteNode($event)"
             (moveDocument)="onMoveDocumentDropped($event)"
             (moveRequested)="onMoveRequested($event)"
+            (scopeRequested)="onScopeToFolder($event)"
           ></app-document-tree-node>
         }
       </div>

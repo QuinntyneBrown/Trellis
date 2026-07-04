@@ -58,6 +58,8 @@ describe('EditorPageComponent', () => {
     setSidePanelWidthPx: jest.Mock;
     getActiveSidePanel: jest.Mock;
     setActiveSidePanel: jest.Mock;
+    getDocumentsScopeFolderId: jest.Mock;
+    setDocumentsScopeFolderId: jest.Mock;
   };
   let fileSystemAccessServiceMock: {
     isSupported: jest.Mock;
@@ -136,6 +138,10 @@ describe('EditorPageComponent', () => {
       setSidePanelWidthPx: jest.fn(),
       getActiveSidePanel: jest.fn().mockReturnValue(null),
       setActiveSidePanel: jest.fn(),
+      // DocumentsPanelComponent (always mounted in this template) seeds its
+      // persisted folder scope from this at construction.
+      getDocumentsScopeFolderId: jest.fn().mockReturnValue(null),
+      setDocumentsScopeFolderId: jest.fn(),
     };
     fileSystemAccessServiceMock = {
       // ExplorerPanelComponent is always mounted inside EditorPageComponent's

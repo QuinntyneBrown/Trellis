@@ -5,8 +5,10 @@ import { DocumentSummary } from '../../../core/models/document-summary.model';
 import { DocumentTreeNode } from '../../../core/models/document-tree-node.model';
 import { Folder } from '../../../core/models/folder.model';
 import { DocumentsService } from '../../../core/services/documents.service';
+import { EditorLayoutPreferencesService } from '../../../core/services/editor-layout-preferences.service';
 import { FoldersService } from '../../../core/services/folders.service';
 import { buildDocumentTree } from './build-document-tree';
+import { collectDescendantFolderIds } from './collect-descendant-folder-ids';
 import {
   CreateFolderEvent,
   DOCUMENT_DRAG_TYPE,
@@ -50,6 +52,7 @@ export class DocumentsPanelComponent implements OnChanges {
 
   private readonly documentsService = inject(DocumentsService);
   private readonly foldersService = inject(FoldersService);
+  private readonly layoutPreferences = inject(EditorLayoutPreferencesService);
 
   /** The two flat lists as last fetched -- the single source the tree is rebuilt from. */
   private folders: Folder[] = [];
@@ -66,8 +69,22 @@ export class DocumentsPanelComponent implements OnChanges {
    * refresh while the panel stays open.
    */
   private revealActiveOnNextRefresh = false;
+  /**
+   * The folder currently scoping the tree (only its subtree is shown), or
+   * null for the full tree. Seeded from the persisted preference at
+   * construction so a scope survives reloads like the rest of the panel
+   * state; a stale id (folder since deleted) is pruned on the next refresh.
+   */
+  private scopedFolderId: string | null = this.layoutPreferences.getDocumentsScopeFolderId();
 
   readonly tree = signal<DocumentTreeNode[]>([]);
+  /**
+   * The scoped folder's resolved row, or null when unscoped (or before the
+   * first refresh lands) -- gives the scope bar its label and the up-handler
+   * its parentFolderId. Re-resolved on every rebuild so a rename while
+   * scoped updates the label through the ordinary rename->refresh path.
+   */
+  readonly scopedFolder = signal<Folder | null>(null);
   /** The flat folder list exposed for the move dialog's destination select. */
   readonly folderList = signal<Folder[]>([]);
   /** The document node whose "Move to Folder…" dialog is open, or null when it's closed. */
@@ -106,6 +123,15 @@ export class DocumentsPanelComponent implements OnChanges {
         }
       }
 
+      // The scoped folder can vanish too (deleted, or cascade-deleted with an
+      // ancestor -- possibly from another tab): fall back to the full tree
+      // rather than rendering a dead scope forever. Before the reveal step so
+      // a reveal never runs against a scope that no longer exists.
+      if (this.scopedFolderId !== null && !folderIds.has(this.scopedFolderId)) {
+        this.scopedFolderId = null;
+        this.layoutPreferences.setDocumentsScopeFolderId(null);
+      }
+
       if (this.revealActiveOnNextRefresh) {
         this.revealActiveOnNextRefresh = false;
         this.expandActiveDocumentAncestors();
@@ -120,7 +146,10 @@ export class DocumentsPanelComponent implements OnChanges {
    * visible. Walks the parentFolderId chain from the cached flat lists,
    * with a visited-set guard so corrupt data (a folder cycle) can't loop
    * forever. A no-op when nothing is active, the active document is
-   * unknown, or it already sits at the root.
+   * unknown, it already sits at the root, or a scope is active and the
+   * document lives outside it -- there's no visible row to reveal then, and
+   * the scope (an explicit user choice) must not be auto-cleared by a
+   * reveal that runs on every persisted-open boot.
    */
   private expandActiveDocumentAncestors(): void {
     const activeId = this.activeDocumentId;
@@ -133,12 +162,19 @@ export class DocumentsPanelComponent implements OnChanges {
     }
 
     const foldersById = new Map(this.folders.map((folder) => [folder.id, folder]));
-    const visited = new Set<string>();
+    const chain: string[] = [];
     let folderId: string | null = document.folderId;
-    while (folderId && !visited.has(folderId)) {
-      visited.add(folderId);
-      this.expandedFolderIds.add(folderId);
+    while (folderId && !chain.includes(folderId)) {
+      chain.push(folderId);
       folderId = foldersById.get(folderId)?.parentFolderId ?? null;
+    }
+
+    if (this.scopedFolderId !== null && !chain.includes(this.scopedFolderId)) {
+      return;
+    }
+
+    for (const id of chain) {
+      this.expandedFolderIds.add(id);
     }
   }
 
@@ -156,12 +192,48 @@ export class DocumentsPanelComponent implements OnChanges {
     this.documentOpened.emit(document);
   }
 
-  /** The panel header's New Folder button creates at the root; per-row buttons create subfolders. */
+  /**
+   * The panel header's New Folder button creates at the visible root -- the
+   * true root normally, the scoped folder while a scope is active (creating
+   * at the true root then would make an invisible folder); per-row buttons
+   * create subfolders.
+   */
   onHeaderNewFolderClicked(): void {
     const name = window.prompt('New folder name')?.trim();
     if (name) {
-      this.createFolder(null, name);
+      this.createFolder(this.scopedFolderId, name);
     }
+  }
+
+  /** A folder row's "Scope to this folder" button: that folder becomes the tree's temporary root. */
+  onScopeToFolder(node: DocumentTreeNode): void {
+    this.setScope(node.id);
+  }
+
+  /** The scope bar's Up button: re-scope to the parent, or clear entirely when the scope sits at the root. */
+  onScopeUp(): void {
+    this.setScope(this.scopedFolder()?.parentFolderId ?? null);
+  }
+
+  /** The scope bar's "Show all documents" button. */
+  onScopeClear(): void {
+    this.setScope(null);
+  }
+
+  /**
+   * Scope changes are pure local state over the cached lists -- rebuilt, not
+   * refetched, exactly like expand/collapse. The folder just left behind is
+   * pre-expanded so scoping up/out keeps the subtree you were working in
+   * visible instead of collapsing it back to a closed row.
+   */
+  private setScope(folderId: string | null): void {
+    const previousScopeId = this.scopedFolderId;
+    this.scopedFolderId = folderId;
+    this.layoutPreferences.setDocumentsScopeFolderId(folderId);
+    if (previousScopeId !== null) {
+      this.expandedFolderIds.add(previousScopeId);
+    }
+    this.rebuildTree();
   }
 
   onCreateFolder(event: CreateFolderEvent): void {
@@ -230,9 +302,10 @@ export class DocumentsPanelComponent implements OnChanges {
   }
 
   /**
-   * The tree container doubles as the "move to root" drop zone. Folder rows
-   * stopPropagation on their own drag events, so these handlers only ever see
-   * drags over non-folder space (below the last row, or over document rows).
+   * The tree container doubles as the "move to root" drop zone (root of the
+   * scope while one is active). Folder rows stopPropagation on their own drag
+   * events, so these handlers only ever see drags over non-folder space
+   * (below the last row, or over document rows).
    */
   onRootDragEnter(event: DragEvent): void {
     if (!this.isDocumentDrag(event)) {
@@ -268,7 +341,9 @@ export class DocumentsPanelComponent implements OnChanges {
 
     const documentId = event.dataTransfer!.getData(DOCUMENT_DRAG_TYPE);
     if (documentId) {
-      this.onMoveDocument(documentId, null);
+      // While scoped, "root" means the visible root -- the scoped folder --
+      // so a drop into empty space never makes the document vanish from view.
+      this.onMoveDocument(documentId, this.scopedFolderId);
     }
   }
 
@@ -287,7 +362,31 @@ export class DocumentsPanelComponent implements OnChanges {
     });
   }
 
+  /**
+   * Rebuilds the tree signal from the cached flat lists. While scoped, both
+   * lists are pre-filtered to the scope's subtree with the scoped folder
+   * itself EXCLUDED from the folders list: buildDocumentTree attaches any
+   * node whose parent is missing from that list to the root, so the scope's
+   * direct children are promoted to visible roots for free -- the builder
+   * stays untouched. scopedFolder is re-resolved here, the single choke
+   * point, so refreshes (including renames) and local scope changes all
+   * update the scope bar.
+   */
   private rebuildTree(): void {
-    this.tree.set(buildDocumentTree(this.folders, this.documents, this.expandedFolderIds));
+    const scopeId = this.scopedFolderId;
+    if (scopeId === null) {
+      this.scopedFolder.set(null);
+      this.tree.set(buildDocumentTree(this.folders, this.documents, this.expandedFolderIds));
+      return;
+    }
+
+    const scopedIds = collectDescendantFolderIds(this.folders, scopeId);
+    const folders = this.folders.filter((folder) => scopedIds.has(folder.id) && folder.id !== scopeId);
+    const documents = this.documents.filter(
+      (document) => document.folderId !== null && scopedIds.has(document.folderId),
+    );
+
+    this.scopedFolder.set(this.folders.find((folder) => folder.id === scopeId) ?? null);
+    this.tree.set(buildDocumentTree(folders, documents, this.expandedFolderIds));
   }
 }
