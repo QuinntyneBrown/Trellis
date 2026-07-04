@@ -1,4 +1,4 @@
-import { Locator, Page, expect } from '@playwright/test';
+import { Download, Locator, Page, expect } from '@playwright/test';
 import { byTestId } from '../base.page';
 
 /**
@@ -170,6 +170,20 @@ export class DocumentsPanelComponent {
       void dialog.accept();
     });
     await byTestId(row, 'document-folder-delete').click();
+  }
+
+  /**
+   * Clicks the folder row's "Export folder as Markdown" action and returns
+   * the browser Download it triggers (the suite's first
+   * waitForEvent('download') usage). Callers assert suggestedFilename() and
+   * read the content via download.saveAs into testInfo.outputPath -- never
+   * a real Downloads directory.
+   */
+  async exportFolder(name: string): Promise<Download> {
+    const page = this.root.page();
+    const downloadPromise = page.waitForEvent('download');
+    await byTestId(this.folder(name), 'document-folder-export').click();
+    return downloadPromise;
   }
 
   // ---- Scoping the tree to a folder -------------------------------------------

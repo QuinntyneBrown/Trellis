@@ -6,6 +6,7 @@ import { DocumentTreeNode } from '../../../core/models/document-tree-node.model'
 import { Folder } from '../../../core/models/folder.model';
 import { DocumentsService } from '../../../core/services/documents.service';
 import { EditorLayoutPreferencesService } from '../../../core/services/editor-layout-preferences.service';
+import { FileDownloadService } from '../../../core/services/file-download.service';
 import { FoldersService } from '../../../core/services/folders.service';
 import { buildDocumentTree } from './build-document-tree';
 import { collectDescendantFolderIds } from './collect-descendant-folder-ids';
@@ -53,6 +54,7 @@ export class DocumentsPanelComponent implements OnChanges {
   private readonly documentsService = inject(DocumentsService);
   private readonly foldersService = inject(FoldersService);
   private readonly layoutPreferences = inject(EditorLayoutPreferencesService);
+  private readonly fileDownloadService = inject(FileDownloadService);
 
   /** The two flat lists as last fetched -- the single source the tree is rebuilt from. */
   private folders: Folder[] = [];
@@ -218,6 +220,17 @@ export class DocumentsPanelComponent implements OnChanges {
   /** The scope bar's "Show all documents" button. */
   onScopeClear(): void {
     this.setScope(null);
+  }
+
+  /**
+   * A folder row's "Export folder as Markdown" button: fetches the subtree
+   * aggregated server-side and hands it to the browser as a
+   * "&lt;folder-name&gt;.md" download.
+   */
+  onExportFolder(node: DocumentTreeNode): void {
+    this.foldersService.exportFolder(node.id).subscribe((markdown) => {
+      this.fileDownloadService.downloadTextFile(`${node.name}.md`, markdown);
+    });
   }
 
   /**

@@ -68,4 +68,17 @@ describe('FoldersService', () => {
     expect(req.request.method).toBe('DELETE');
     req.flush(null);
   });
+
+  it('exports a folder as raw markdown text (not JSON)', () => {
+    const markdown = '# Diagrams\n\n_This folder contains no documents._\n';
+
+    service.exportFolder('f1').subscribe((result) => {
+      expect(result).toBe(markdown);
+    });
+
+    const req = httpMock.expectOne(`${baseUrl}/f1/export`);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.responseType).toBe('text');
+    req.flush(markdown);
+  });
 });

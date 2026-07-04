@@ -5,6 +5,7 @@ import { DocumentSummary } from '../../../core/models/document-summary.model';
 import { Folder } from '../../../core/models/folder.model';
 import { DocumentsService } from '../../../core/services/documents.service';
 import { EditorLayoutPreferencesService } from '../../../core/services/editor-layout-preferences.service';
+import { FileDownloadService } from '../../../core/services/file-download.service';
 import { FoldersService } from '../../../core/services/folders.service';
 import { DocumentsPanelComponent } from './documents-panel.component';
 
@@ -19,7 +20,15 @@ describe('DocumentsPanelComponent', () => {
     update: jest.Mock;
     move: jest.Mock;
   };
-  let foldersServiceMock: { list: jest.Mock; create: jest.Mock; rename: jest.Mock; delete: jest.Mock };
+  let foldersServiceMock: {
+    list: jest.Mock;
+    create: jest.Mock;
+    rename: jest.Mock;
+    delete: jest.Mock;
+    exportFolder: jest.Mock;
+  };
+  /** Mocked away entirely -- jsdom has no URL.createObjectURL and must never see a real anchor click. */
+  let fileDownloadServiceMock: { downloadTextFile: jest.Mock };
   // Mocked so the component's persisted-scope seeding never touches the real
   // (root-provided) service's localStorage -- jsdom storage would silently
   // leak scope state between tests otherwise.
@@ -45,6 +54,10 @@ describe('DocumentsPanelComponent', () => {
       create: jest.fn().mockReturnValue(of({ id: 'new', name: 'New', parentFolderId: null })),
       rename: jest.fn().mockReturnValue(of({})),
       delete: jest.fn().mockReturnValue(of(undefined)),
+      exportFolder: jest.fn().mockReturnValue(of('')),
+    };
+    fileDownloadServiceMock = {
+      downloadTextFile: jest.fn(),
     };
     layoutPreferencesMock = {
       getDocumentsScopeFolderId: jest.fn().mockReturnValue(null),
@@ -57,6 +70,7 @@ describe('DocumentsPanelComponent', () => {
         { provide: DocumentsService, useValue: documentsServiceMock },
         { provide: FoldersService, useValue: foldersServiceMock },
         { provide: EditorLayoutPreferencesService, useValue: layoutPreferencesMock },
+        { provide: FileDownloadService, useValue: fileDownloadServiceMock },
       ],
     }).compileComponents();
 
@@ -107,6 +121,17 @@ describe('DocumentsPanelComponent', () => {
 
     expect(byTestId('documents-panel')!.textContent).toContain('No saved documents yet.');
     expect(byTestId('documents-tree')).toBeNull();
+  });
+
+  it('exports a folder: fetches the aggregated markdown and downloads it as <name>.md', () => {
+    const markdown = '# Diagrams\n\n## Nested Doc\n\ncontent\n';
+    foldersServiceMock.exportFolder.mockReturnValue(of(markdown));
+    openPanel();
+
+    (byTestId('document-folder-export') as HTMLButtonElement).click();
+
+    expect(foldersServiceMock.exportFolder).toHaveBeenCalledWith('f1');
+    expect(fileDownloadServiceMock.downloadTextFile).toHaveBeenCalledWith('Diagrams.md', markdown);
   });
 
   it('emits documentOpened when a root document row is opened', () => {

@@ -170,4 +170,123 @@ public class FoldersControllerTests : IClassFixture<CustomWebApplicationFactory>
         var rootDocGet = await this.client.GetAsync($"/api/documents/{rootDoc!.Id}");
         Assert.Equal(HttpStatusCode.OK, rootDocGet.StatusCode);
     }
+
+    [Fact]
+    public async Task Export_AggregatesSubtree_WithHierarchyFencingAndInlineMarkdown()
+    {
+        // outer > Inner; a plantuml doc in outer and a markdown doc in Inner.
+        // Subfolder sections come before the parent's own documents, so the
+        // expected document is: H1 outer, H2 Inner, H3 markdown doc (inline),
+        // then H2 plantuml doc (fenced).
+        var outer = await this.CreateFolderAsync("Export outer");
+        var inner = await this.CreateFolderAsync("Inner", outer.Id);
+
+        await this.CreateDocumentAsync("beta-diagram", "@startuml\nA -> B\n@enduml", outer.Id, "plantuml");
+        await this.CreateDocumentAsync("alpha-notes", "# Title\n\nBody *text*.", inner.Id, "markdown");
+
+        var response = await this.client.GetAsync($"/api/folders/{outer.Id}/export");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var markdown = await response.Content.ReadAsStringAsync();
+        var expected =
+            "# Export outer\n\n" +
+            "## Inner\n\n" +
+            "### alpha-notes\n\n" +
+            "# Title\n\nBody *text*.\n\n" +
+            "## beta-diagram\n\n" +
+            "```plantuml\n@startuml\nA -> B\n@enduml\n```\n";
+        Assert.Equal(expected, markdown);
+    }
+
+    [Fact]
+    public async Task Export_SortsSiblingDocumentsCaseInsensitivelyByName()
+    {
+        var folder = await this.CreateFolderAsync("Export sorting");
+        await this.CreateDocumentAsync("beta", "b", folder.Id, "markdown");
+        await this.CreateDocumentAsync("Alpha", "a", folder.Id, "markdown");
+
+        var markdown = await this.client.GetStringAsync($"/api/folders/{folder.Id}/export");
+
+        var alphaIndex = markdown.IndexOf("## Alpha", StringComparison.Ordinal);
+        var betaIndex = markdown.IndexOf("## beta", StringComparison.Ordinal);
+        Assert.True(alphaIndex >= 0 && betaIndex >= 0 && alphaIndex < betaIndex, markdown);
+    }
+
+    [Fact]
+    public async Task Export_ReturnsTextMarkdownContentType()
+    {
+        var folder = await this.CreateFolderAsync("Export content type");
+
+        var response = await this.client.GetAsync($"/api/folders/{folder.Id}/export");
+
+        Assert.Equal("text/markdown", response.Content.Headers.ContentType?.MediaType);
+        Assert.Equal("utf-8", response.Content.Headers.ContentType?.CharSet);
+    }
+
+    [Fact]
+    public async Task Export_PrunesSubfoldersWithoutDocuments()
+    {
+        var folder = await this.CreateFolderAsync("Export pruning");
+        await this.CreateFolderAsync("Empty branch", folder.Id);
+        await this.CreateDocumentAsync("kept-doc", "content", folder.Id, "markdown");
+
+        var markdown = await this.client.GetStringAsync($"/api/folders/{folder.Id}/export");
+
+        Assert.DoesNotContain("Empty branch", markdown);
+        Assert.Contains("## kept-doc", markdown);
+    }
+
+    [Fact]
+    public async Task Export_ReturnsEmptyNote_WhenSubtreeHasNoDocuments()
+    {
+        var folder = await this.CreateFolderAsync("Export empty");
+        await this.CreateFolderAsync("Also empty", folder.Id);
+
+        var markdown = await this.client.GetStringAsync($"/api/folders/{folder.Id}/export");
+
+        Assert.Equal("# Export empty\n\n_This folder contains no documents._\n", markdown);
+    }
+
+    [Fact]
+    public async Task Export_CapsHeadingDepthAtH6()
+    {
+        // A 7-deep folder chain: the 7th folder and its document would sit at
+        // H7/H8, which markdown does not have - both cap at H6.
+        var current = await this.CreateFolderAsync("Depth 1");
+        var rootId = current.Id;
+        for (var depth = 2; depth <= 7; depth++)
+        {
+            current = await this.CreateFolderAsync($"Depth {depth}", current.Id);
+        }
+
+        await this.CreateDocumentAsync("deep-doc", "deep", current.Id, "markdown");
+
+        var markdown = await this.client.GetStringAsync($"/api/folders/{rootId}/export");
+
+        Assert.Contains("\n###### Depth 7\n", markdown);
+        Assert.Contains("\n###### deep-doc\n", markdown);
+        Assert.DoesNotContain("#######", markdown);
+    }
+
+    [Fact]
+    public async Task Export_ReturnsNotFound_ForUnknownId()
+    {
+        var response = await this.client.GetAsync($"/api/folders/{Guid.NewGuid()}/export");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    private async Task<Folder> CreateFolderAsync(string name, Guid? parentFolderId = null)
+    {
+        var response = await this.client.PostAsJsonAsync("/api/folders", new { name, parentFolderId });
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<Folder>())!;
+    }
+
+    private async Task<PlantUmlDocument> CreateDocumentAsync(string name, string content, Guid folderId, string kind)
+    {
+        var response = await this.client.PostAsJsonAsync("/api/documents", new { name, content, folderId, kind });
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<PlantUmlDocument>())!;
+    }
 }

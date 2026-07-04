@@ -1,3 +1,4 @@
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Trellis.Api.Contracts;
@@ -125,4 +126,164 @@ public class FoldersController : ControllerBase
 
         return this.NoContent();
     }
+
+    /// <summary>
+    /// Exports a folder and all of its descendant folders as one aggregated
+    /// markdown document. The markdown format is the contract:
+    /// the exported folder's name is the H1; each subfolder's heading sits one
+    /// level below its parent's (capped at H6); each document's heading sits
+    /// one level below its containing folder's (same cap). Within a level,
+    /// subfolders come first, then documents, both sorted case-insensitively
+    /// by name (mirroring the documents panel's display order). Markdown
+    /// documents are inlined verbatim under their heading; PlantUML documents
+    /// are wrapped in a ```plantuml fenced code block. Subfolders whose
+    /// subtree contains no documents are pruned entirely; a wholly empty
+    /// export still returns the H1 plus an italic "no documents" note.
+    /// Sections are separated by blank lines and line endings are normalized
+    /// to LF.
+    /// </summary>
+    /// <param name="id">The identifier of the folder to export.</param>
+    /// <param name="cancellationToken">A token used to observe cancellation requests.</param>
+    /// <returns>The aggregated markdown as text/markdown, or 404 if the folder does not exist.</returns>
+    [HttpGet("{id:guid}/export")]
+    public async Task<IActionResult> Export(Guid id, CancellationToken cancellationToken)
+    {
+        var folders = await this.context.Folders
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var root = folders.FirstOrDefault(f => f.Id == id);
+        if (root is null)
+        {
+            return this.NotFound();
+        }
+
+        // In-memory BFS over the flat list (there are no navigation
+        // properties), with a visited set so corrupt parent cycles cannot
+        // hang the walk - the backend twin of the frontend's
+        // collectDescendantFolderIds.
+        var subtreeIds = new HashSet<Guid> { root.Id };
+        var queue = new Queue<Guid>();
+        queue.Enqueue(root.Id);
+        while (queue.Count > 0)
+        {
+            var currentId = queue.Dequeue();
+            foreach (var child in folders.Where(f => f.ParentFolderId == currentId))
+            {
+                if (subtreeIds.Add(child.Id))
+                {
+                    queue.Enqueue(child.Id);
+                }
+            }
+        }
+
+        // Full entities, not the list projection - the export needs Content.
+        var documents = await this.context.Documents
+            .AsNoTracking()
+            .Where(d => d.FolderId.HasValue && subtreeIds.Contains(d.FolderId.Value))
+            .ToListAsync(cancellationToken);
+
+        var markdown = BuildExportMarkdown(root, folders, documents);
+        return this.Content(markdown, "text/markdown; charset=utf-8");
+    }
+
+    /// <summary>
+    /// Builds the aggregated export markdown for a folder subtree per the
+    /// format contract documented on <see cref="Export"/>.
+    /// </summary>
+    /// <param name="root">The folder being exported.</param>
+    /// <param name="allFolders">Every folder (the subtree is re-walked recursively from here).</param>
+    /// <param name="documents">The documents contained in the subtree.</param>
+    /// <returns>The complete markdown text.</returns>
+    private static string BuildExportMarkdown(Folder root, IReadOnlyList<Folder> allFolders, IReadOnlyList<PlantUmlDocument> documents)
+    {
+        var childFolders = allFolders
+            .Where(f => f.ParentFolderId.HasValue)
+            .ToLookup(f => f.ParentFolderId!.Value);
+        var folderDocuments = documents
+            .Where(d => d.FolderId.HasValue)
+            .ToLookup(d => d.FolderId!.Value);
+
+        var sections = new List<string>();
+        var containsAnyDocument = AppendFolderSections(root, 1, new HashSet<Guid>(), childFolders, folderDocuments, sections);
+        if (!containsAnyDocument)
+        {
+            sections.Add("_This folder contains no documents._");
+        }
+
+        var builder = new StringBuilder();
+        builder.AppendJoin("\n\n", sections);
+        builder.Append('\n');
+        return builder.ToString();
+    }
+
+    /// <summary>
+    /// Recursively appends one folder's heading, its (pruned) subfolder
+    /// sections, and its document sections.
+    /// </summary>
+    /// <param name="folder">The folder to append.</param>
+    /// <param name="depth">The heading depth of this folder (1 = H1).</param>
+    /// <param name="visited">Folders already emitted, guarding against parent cycles.</param>
+    /// <param name="childFolders">All folders keyed by parent folder id.</param>
+    /// <param name="folderDocuments">Subtree documents keyed by containing folder id.</param>
+    /// <param name="sections">The output list of markdown sections.</param>
+    /// <returns>Whether this folder's subtree contributed any document.</returns>
+    private static bool AppendFolderSections(
+        Folder folder,
+        int depth,
+        HashSet<Guid> visited,
+        ILookup<Guid, Folder> childFolders,
+        ILookup<Guid, PlantUmlDocument> folderDocuments,
+        List<string> sections)
+    {
+        if (!visited.Add(folder.Id))
+        {
+            return false;
+        }
+
+        sections.Add($"{Heading(depth)} {folder.Name}");
+        var containsAnyDocument = false;
+
+        foreach (var child in childFolders[folder.Id].OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase))
+        {
+            // Build the child's sections off to the side so a document-less
+            // subtree can be pruned without leaving its heading behind.
+            var childSections = new List<string>();
+            if (AppendFolderSections(child, depth + 1, visited, childFolders, folderDocuments, childSections))
+            {
+                sections.AddRange(childSections);
+                containsAnyDocument = true;
+            }
+        }
+
+        foreach (var document in folderDocuments[folder.Id].OrderBy(d => d.Name, StringComparer.OrdinalIgnoreCase))
+        {
+            sections.Add($"{Heading(depth + 1)} {document.Name}");
+            var content = NormalizeContent(document.Content);
+            sections.Add(document.Kind == DocumentKinds.Markdown
+                ? content
+                : $"```plantuml\n{content}\n```");
+            containsAnyDocument = true;
+        }
+
+        return containsAnyDocument;
+    }
+
+    /// <summary>
+    /// Renders a markdown heading marker for the given depth, capped at H6
+    /// (markdown has no deeper heading).
+    /// </summary>
+    /// <param name="depth">The 1-based nesting depth.</param>
+    /// <returns>The heading marker, e.g. "##".</returns>
+    private static string Heading(int depth) => new('#', Math.Min(depth, 6));
+
+    /// <summary>
+    /// Normalizes document content for embedding: CRLF becomes LF and
+    /// trailing newlines are trimmed (each section supplies its own blank-line
+    /// separation).
+    /// </summary>
+    /// <param name="content">The raw stored document content.</param>
+    /// <returns>The normalized content.</returns>
+    private static string NormalizeContent(string content) =>
+        content.Replace("\r\n", "\n").TrimEnd('\n');
 }

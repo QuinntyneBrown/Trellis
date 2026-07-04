@@ -28,4 +28,13 @@ export class FoldersService {
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
+
+  /**
+   * Fetches the folder subtree aggregated as one markdown document.
+   * responseType 'text' is load-bearing: the endpoint returns raw
+   * text/markdown, which the default JSON parser would mangle.
+   */
+  exportFolder(id: string): Observable<string> {
+    return this.http.get(`${this.baseUrl}/${id}/export`, { responseType: 'text' });
+  }
 }

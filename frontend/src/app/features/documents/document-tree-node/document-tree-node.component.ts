@@ -89,6 +89,8 @@ export class DocumentTreeNodeComponent {
   @Output() readonly moveRequested = new EventEmitter<DocumentTreeNode>();
   /** Fires when this folder row's "Scope to this folder" button is used (the panel owns the scope state), or is re-emitted from a descendant row. */
   @Output() readonly scopeRequested = new EventEmitter<DocumentTreeNode>();
+  /** Fires when this folder row's "Export folder as Markdown" button is used (the panel owns the fetch + download), or is re-emitted from a descendant row. */
+  @Output() readonly exportRequested = new EventEmitter<DocumentTreeNode>();
 
   /** True while a document drag hovers this folder row -- drives the drop-target highlight. */
   isDragOver = false;
@@ -151,6 +153,12 @@ export class DocumentTreeNodeComponent {
   onScopeClicked(event: MouseEvent): void {
     event.stopPropagation();
     this.scopeRequested.emit(this.node);
+  }
+
+  /** Asks the panel to export this folder's subtree as one downloaded markdown file. */
+  onExportClicked(event: MouseEvent): void {
+    event.stopPropagation();
+    this.exportRequested.emit(this.node);
   }
 
   /** Document rows are drag sources: the custom type carries the id, text/plain carries a human-readable name. */

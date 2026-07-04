@@ -30,6 +30,12 @@
           (clicked)="onScopeClicked($event)"
         />
         <app-tree-action-button
+          icon="export"
+          label="Export folder as Markdown"
+          testId="document-folder-export"
+          (clicked)="onExportClicked($event)"
+        />
+        <app-tree-action-button
           icon="new-folder"
           label="New Folder"
           testId="document-folder-new-folder"
@@ -116,6 +122,7 @@
           (moveDocument)="moveDocument.emit($event)"
           (moveRequested)="moveRequested.emit($event)"
           (scopeRequested)="scopeRequested.emit($event)"
+          (exportRequested)="exportRequested.emit($event)"
         ></app-document-tree-node>
       }
     </div>

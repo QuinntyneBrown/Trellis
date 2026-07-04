@@ -19,7 +19,8 @@ export type TreeActionIconName =
   | 'update'
   | 'scope'
   | 'up'
-  | 'clear';
+  | 'clear'
+  | 'export';
 
 export const TREE_ACTION_ICON_PATHS: Record<TreeActionIconName, string[]> = {
   // Arrow escaping a box, pointing up-right: "open this in the editor".
@@ -63,4 +64,6 @@ export const TREE_ACTION_ICON_PATHS: Record<TreeActionIconName, string[]> = {
   up: ['M12 19V5M5 12l7-7 7 7'],
   // Plain X: "clear the scope / show everything".
   clear: ['M6 6l12 12M18 6L6 18'],
+  // Arrow into a tray: "download this as a file".
+  export: ['M12 3v12M8 11l4 4 4-4', 'M4 19h16'],
 };

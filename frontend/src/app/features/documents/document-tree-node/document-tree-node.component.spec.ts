@@ -135,6 +135,31 @@ describe('DocumentTreeNodeComponent', () => {
       expect(toggleSpy).not.toHaveBeenCalled();
     });
 
+    it('emits exportRequested with the node from the export button, without toggling the row', () => {
+      const node = folderNode({ id: 'export-me' });
+      component.node = node;
+      fixture.detectChanges();
+      const exportSpy = jest.fn();
+      component.exportRequested.subscribe(exportSpy);
+      const toggleSpy = jest.fn();
+      component.toggleExpand.subscribe(toggleSpy);
+
+      byTestId('document-folder-export')!.click();
+
+      expect(exportSpy).toHaveBeenCalledWith(node);
+      expect(toggleSpy).not.toHaveBeenCalled();
+    });
+
+    it('renders the export button on folder rows only', () => {
+      component.node = folderNode();
+      fixture.detectChanges();
+      expect(byTestId('document-folder-export')).toBeTruthy();
+
+      component.node = documentNode();
+      fixture.detectChanges();
+      expect(byTestId('document-folder-export')).toBeNull();
+    });
+
     it('does not emit createFolder when the prompt is cancelled', () => {
       jest.spyOn(window, 'prompt').mockReturnValue(null);
       component.node = folderNode();
