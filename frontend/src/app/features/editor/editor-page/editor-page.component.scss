@@ -1,9 +1,33 @@
+// App-shell layout: the host is a full-viewport column (title bar on top,
+// editor shell filling the rest) that itself never scrolls -- each section
+// below (explorer/documents/templates panel, Monaco editor, preview) owns
+// its own vertical scrollbar instead of sharing one document scrollbar.
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh; // excludes mobile browser chrome; falls back to 100vh above
+  overflow: hidden;
+}
+
+// Sticky (on top of the host's overflow: hidden) pins the title bar: even if
+// stray overflow ever made this shell scrollable, the bar stays at the top.
+// z-index keeps it above the panes; its own File dropdown (z-index 50) still
+// stacks above it, and the save-error toast (20) stays below it.
+app-title-bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  flex: 0 0 auto;
+}
+
 .editor-page {
   display: flex;
   flex-direction: row;
-  // The title bar above takes a fixed 35px off the top; this shell fills
-  // the remainder (was 100vh before the title bar existed).
-  height: calc(100vh - 35px);
+  // Fills whatever height the title bar leaves over -- previously a
+  // hardcoded calc(100vh - 35px) that had to track the bar's height.
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .editor-page__body {

@@ -2,7 +2,8 @@
 // container) -- this is what pins the rail to the fixed VS Code
 // activity-bar width of 48px. Height is deliberately left unset: as a flex
 // item of a row-direction parent, it stretches to fill the parent's cross
-// axis (100vh) automatically via flex's default `align-items: stretch`.
+// axis (the shell height under the title bar) automatically via flex's
+// default `align-items: stretch`.
 :host {
   display: flex;
   flex: 0 0 48px;
