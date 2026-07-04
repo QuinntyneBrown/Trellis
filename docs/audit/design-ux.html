@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trellis — Frontend Design &amp; UX Audit</title>
+<style>
+  :root {
+    --bg: #ffffff; --bg-soft: #f6f7f9; --bg-card: #ffffff;
+    --ink: #111827; --ink-soft: #4b5563; --ink-faint: #6b7280;
+    --line: #e5e7eb; --accent: #2563eb; --accent-soft: #eff6ff;
+    --high: #b91c1c; --high-bg: #fef2f2; --high-line: #fecaca;
+    --med: #b45309; --med-bg: #fffbeb; --med-line: #fde68a;
+    --low: #1d4ed8; --low-bg: #eff6ff; --low-line: #bfdbfe;
+    --good: #15803d; --good-bg: #f0fdf4; --good-line: #bbf7d0;
+    --mono: Consolas, "Cascadia Code", "Courier New", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1115; --bg-soft: #161a21; --bg-card: #161a21;
+      --ink: #e5e7eb; --ink-soft: #b3bac4; --ink-faint: #8b93a1;
+      --line: #2a3039; --accent: #60a5fa; --accent-soft: #172033;
+      --high: #f87171; --high-bg: #2a1717; --high-line: #7f2a2a;
+      --med: #fbbf24; --med-bg: #2a2211; --med-line: #7c5e15;
+      --low: #93c5fd; --low-bg: #14203a; --low-line: #2c4a7c;
+      --good: #4ade80; --good-bg: #12261a; --good-line: #1f5c35;
+    }
+    img.shot { filter: brightness(0.92); }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  main { max-width: 60rem; margin: 0 auto; padding: 2rem 1.5rem 6rem; }
+  header.doc {
+    border-bottom: 1px solid var(--line); padding-bottom: 1.5rem; margin-bottom: 2rem;
+  }
+  h1 { font-size: 1.9rem; line-height: 1.25; margin: 0 0 0.5rem; letter-spacing: -0.01em; }
+  .meta { color: var(--ink-faint); font-size: 0.9rem; }
+  .meta b { color: var(--ink-soft); font-weight: 600; }
+  h2 {
+    font-size: 1.35rem; margin: 3rem 0 0.75rem; padding-top: 1.5rem;
+    border-top: 1px solid var(--line); letter-spacing: -0.01em;
+  }
+  h2 .no { color: var(--ink-faint); font-weight: 500; margin-right: 0.35rem; }
+  h3 { font-size: 1.05rem; margin: 1.75rem 0 0.5rem; }
+  p, li { color: var(--ink-soft); }
+  p strong, li strong { color: var(--ink); }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code { font-family: var(--mono); font-size: 0.85em; background: var(--bg-soft); border: 1px solid var(--line); border-radius: 4px; padding: 0.05em 0.35em; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.92rem; }
+  th, td { border: 1px solid var(--line); padding: 0.45rem 0.7rem; text-align: left; vertical-align: top; }
+  th { background: var(--bg-soft); font-weight: 600; }
+  td { color: var(--ink-soft); }
+  .tablewrap { overflow-x: auto; }
+  .chip {
+    display: inline-block; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em;
+    padding: 0.1rem 0.5rem; border-radius: 999px; border: 1px solid; vertical-align: 2px;
+  }
+  .chip.high { color: var(--high); background: var(--high-bg); border-color: var(--high-line); }
+  .chip.med  { color: var(--med);  background: var(--med-bg);  border-color: var(--med-line); }
+  .chip.low  { color: var(--low);  background: var(--low-bg);  border-color: var(--low-line); }
+  .chip.good { color: var(--good); background: var(--good-bg); border-color: var(--good-line); }
+  .finding {
+    border: 1px solid var(--line); border-radius: 10px; background: var(--bg-card);
+    padding: 1rem 1.25rem; margin: 1rem 0;
+  }
+  .finding h4 { margin: 0 0 0.4rem; font-size: 1rem; }
+  .finding h4 .fid { color: var(--ink-faint); font-family: var(--mono); font-size: 0.8rem; margin-right: 0.5rem; }
+  .finding p { margin: 0.4rem 0; font-size: 0.95rem; }
+  .finding .rec { border-left: 3px solid var(--accent); padding: 0.15rem 0 0.15rem 0.75rem; margin-top: 0.6rem; }
+  .finding .rec b { color: var(--ink); }
+  .verdict {
+    background: var(--accent-soft); border: 1px solid var(--line); border-radius: 10px;
+    padding: 1.1rem 1.35rem; margin: 1.25rem 0;
+  }
+  .verdict p { margin: 0.4rem 0; }
+  figure { margin: 1.25rem 0; }
+  img.shot {
+    width: 100%; height: auto; display: block;
+    border: 1px solid var(--line); border-radius: 8px;
+  }
+  figcaption { font-size: 0.85rem; color: var(--ink-faint); margin-top: 0.4rem; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 720px) { .cols { grid-template-columns: 1fr; } }
+  .idea { border: 1px solid var(--line); border-radius: 10px; padding: 0.9rem 1.1rem; margin: 0.75rem 0; background: var(--bg-card); }
+  .idea h4 { margin: 0 0 0.35rem; font-size: 0.98rem; }
+  .idea p { margin: 0.25rem 0; font-size: 0.92rem; }
+  .tags { font-size: 0.75rem; color: var(--ink-faint); }
+  nav.toc {
+    background: var(--bg-soft); border: 1px solid var(--line); border-radius: 10px;
+    padding: 1rem 1.25rem; font-size: 0.92rem;
+  }
+  nav.toc ol { margin: 0.25rem 0 0; padding-left: 1.25rem; columns: 2; }
+  @media (max-width: 720px) { nav.toc ol { columns: 1; } }
+  nav.toc li { margin: 0.15rem 0; }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.5rem 0 0; }
+  .kbd { font-family: var(--mono); font-size: 0.8em; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 0.35em; background: var(--bg-soft); }
+</style>
+</head>
+<body>
+<main>
+
+<header class="doc">
+  <h1>Trellis — Frontend Design &amp; UX Audit</h1>
+  <p class="meta">
+    <b>Date:</b> 2026-07-04 &nbsp;·&nbsp;
+    <b>Scope:</b> the shipped Angular frontend (single editor route), evaluated against the product goal of
+    <em>managing and rapidly developing design artifacts (PlantUML / C4 / Markdown) in a software shop</em>. &nbsp;·&nbsp;
+    <b>Method:</b> full UI-surface inventory from source, live heuristic walkthrough of the running app with
+    screenshot evidence (captured via Playwright at 1440×900), and a product-strategy pass. Companion to the
+    <a href="README.md">code complexity audit</a>, which covers implementation quality; this document covers
+    what the user experiences and what the product could become.
+  </p>
+</header>
+
+<nav class="toc">
+  <b>Contents</b>
+  <ol>
+    <li><a href="#verdict">Executive verdict</a></li>
+    <li><a href="#snapshot">Product snapshot &amp; scorecard</a></li>
+    <li><a href="#strengths">What already works well</a></li>
+    <li><a href="#findings-trust">Findings — trust &amp; first impressions</a></li>
+    <li><a href="#findings-loop">Findings — the core loop</a></li>
+    <li><a href="#findings-library">Findings — the library at scale</a></li>
+    <li><a href="#findings-feedback">Findings — feedback, safety, input</a></li>
+    <li><a href="#ideas">Strategic ideas: the design hub for a software shop</a></li>
+    <li><a href="#roadmap">Suggested roadmap</a></li>
+    <li><a href="#appendix">Appendix: evidence index</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ -->
+<h2 id="verdict"><span class="no">1.</span>Executive verdict</h2>
+
+<div class="verdict">
+  <p><strong>Trellis has a strong skeleton and an honest core loop, but it currently behaves like a single-user
+  scratchpad wearing a workspace's clothes.</strong> The VS Code-style shell is clean and familiar, the
+  edit → <span class="kbd">Ctrl+Enter</span> → preview loop is fast and reliable, and the recent additions
+  (folder tree, scope-to-folder, templates, disk explorer) are genuinely useful. The gap is everywhere the
+  shell <em>promises</em> more than the product delivers: five visible controls do nothing, the search pill is
+  decorative, unsaved work can be lost by closing the tab, and a rendered diagram — the entire point of the
+  tool — cannot be exported, copied, or zoomed.</p>
+  <p><strong>The five moves that matter most,</strong> in order of leverage:</p>
+  <p>
+    ① Make every visible control real (or remove it) — trust is the cheapest feature to ship.<br>
+    ② Close the data-loss holes: dirty indicator + <code>beforeunload</code> guard.<br>
+    ③ Give the preview an output path: export SVG/PNG, copy, zoom/fit — table stakes for a diagram tool.<br>
+    ④ Treat PlantUML as a first-class language in Monaco (highlighting, snippets, error mapping) and offer
+    debounced auto-render — this is where "quickly developing designs" is won or lost.<br>
+    ⑤ Turn the fake search pill into a real command palette + library search; it is the single feature that
+    makes a growing library manageable.
+  </p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="snapshot"><span class="no">2.</span>Product snapshot &amp; scorecard</h2>
+
+<p>Everything lives on one route: a 35px title bar (File menu functional; Edit/View/Help decorative), a 48px
+activity rail (Explorer / Templates / Documents toggles + connection dot), one exclusive side panel, a Monaco
+editor (plaintext for PlantUML, markdown mode for Markdown), and a render preview fed by a SignalR hub.
+Persistence: SQLite documents/folders/templates via a small REST API; no auth, no users, no sharing — by
+design, so far.</p>
+
+<figure>
+  <img class="shot" src="design-ux-assets/02-rendered.png" alt="Trellis with a rendered sequence diagram" loading="lazy">
+  <figcaption>The core loop working as intended: source left, rendered SVG right. Note also what is absent —
+  no export/zoom controls on the preview, no syntax coloring in the source, dead window controls top-right.</figcaption>
+</figure>
+
+<div class="tablewrap">
+<table>
+  <tr><th>Area</th><th>Today</th><th>Grade</th><th>Biggest lever</th></tr>
+  <tr><td>Shell &amp; chrome</td><td>Clean VS Code idiom; ~5 dead controls</td><td><span class="chip med">B−</span></td><td>Implement or remove dead chrome</td></tr>
+  <tr><td>Authoring (editor)</td><td>Solid Monaco base; PlantUML is plaintext; no settings</td><td><span class="chip med">C+</span></td><td>PlantUML language support + auto-render</td></tr>
+  <tr><td>Preview</td><td>Fast, reliable; completely inert output</td><td><span class="chip med">C</span></td><td>Export / copy / zoom</td></tr>
+  <tr><td>Library (documents)</td><td>Folder tree, DnD, move dialog, scope-to-folder</td><td><span class="chip low">B</span></td><td>Search, sort, recency; undo/trash</td></tr>
+  <tr><td>Templates</td><td>Full CRUD from editor buffer; flat, no preview</td><td><span class="chip low">B−</span></td><td>Categories, previews, parameters</td></tr>
+  <tr><td>Feedback &amp; safety</td><td>Good error text; silent saves; no dirty marker; no unload guard</td><td><span class="chip high">D</span></td><td>Dirty dot + beforeunload + toasts</td></tr>
+  <tr><td>Keyboard &amp; discoverability</td><td>Good shortcuts exist; several invisible; no palette</td><td><span class="chip med">C+</span></td><td>Command palette; surface Save As</td></tr>
+  <tr><td>Collaboration / shop workflow</td><td>None yet (single-user, local)</td><td><span class="chip med">—</span></td><td>See <a href="#ideas">§8</a></td></tr>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="strengths"><span class="no">3.</span>What already works well</h2>
+
+<ul>
+  <li><strong>The rendering transport is the right architecture for live preview.</strong> Request/response over
+  an already-open SignalR connection renders in well under a second and is precisely the plumbing that
+  debounced auto-render (see <a href="#f6">F6</a>) needs — the hard part is already built.</li>
+  <li><strong>The three-panel library model is coherent.</strong> Explorer (disk), Documents (database),
+  Templates (starters) map cleanly onto how a shop actually works: repo files, shared library, blessed
+  starting points. Scope-to-folder gives the tree a real focus mechanism.</li>
+  <li><strong>Persistence of layout state is thorough</strong> — pane ratio, panel choice, panel width, and
+  folder scope all survive a reload. This discipline should extend to editor preferences when they exist.</li>
+  <li><strong>Error text, where it exists, is humane.</strong> "Could not save 'X'.", reconnect-by-name in the
+  Explorer, cascade warnings on folder delete — concrete, specific, correctly scary.</li>
+  <li><strong>Accessibility groundwork is present</strong>: consistent <code>aria-label</code>s,
+  <code>role="alert"</code>/<code>role="toolbar"</code>, keyboard-resizable dividers, aria-expanded on tree rows.
+  Gaps remain (<a href="#f17">F17</a>), but the floor is far above typical internal tools.</li>
+  <li><strong>Six seeded templates (blank, sequence, class, C4 ×3) as ordinary editable rows</strong> is the
+  right call: governance by convention, not by hard-coding.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="findings-trust"><span class="no">4.</span>Findings — trust &amp; first impressions</h2>
+
+<div class="finding" id="f1">
+  <h4><span class="fid">F1</span><span class="chip high">HIGH</span> Roughly a third of the title bar is dead UI</h4>
+  <p><strong>Evidence:</strong> Edit, View and Help menu buttons have no handlers; the center pill is labelled
+  "Search documents" but does nothing; "Toggle Panel" and "Toggle Secondary Side Bar" toggle panels that do
+  not exist; minimize/maximize/close are cosmetic — the close button even carries the destructive red hover.
+  (<a href="design-ux-assets/01-first-run.png">shot 01</a>, title-bar component.)</p>
+  <p>Every dead control spends user trust: after two clicks that do nothing, users stop exploring — which then
+  suppresses discovery of the features that <em>do</em> exist. The fake close button is the worst offender; a
+  red-hover ✕ in a browser tab invites a click whose "nothing happened" reads as breakage.</p>
+  <p class="rec"><b>Recommend:</b> a one-day sweep — delete the two dead layout toggles and the window
+  controls (or gate them behind a future desktop build), remove Edit/View/Help until each has ≥1 real item,
+  and either wire the search pill to a real palette (<a href="#i-palette">idea P5-1</a>) or remove it until
+  that lands. "Everything visible works" is the cheapest credibility feature the product can ship.</p>
+</div>
+
+<div class="finding" id="f2">
+  <h4><span class="fid">F2</span><span class="chip med">MED</span> The first-run experience is a blank page with one hint</h4>
+  <p><strong>Evidence:</strong> a fresh visit shows an empty editor and "Press Ctrl+Enter in the editor to
+  render your diagram." (<a href="design-ux-assets/01-first-run.png">shot 01</a>). The six templates — the
+  fastest path to a first success — are hidden behind an unlabeled rail icon.</p>
+  <p class="rec"><b>Recommend:</b> make the empty state active: 3–4 template cards ("Sequence", "C4 Context",
+  "Class", "Markdown doc") plus "recent documents" directly in the preview pane's dead space. First render in
+  under ten seconds, zero syntax knowledge required.</p>
+</div>
+
+<div class="finding" id="f3">
+  <h4><span class="fid">F3</span><span class="chip med">MED</span> Real shortcuts are invisible; the Help surface is empty</h4>
+  <p><strong>Evidence:</strong> <span class="kbd">Ctrl+Shift+S</span> (Save As) exists in code but appears in
+  no menu and no label; the File menu lists only New/Save/Upload (<a href="design-ux-assets/03-file-menu.png">shot 03</a>);
+  Help is a dead button; there is no shortcut reference anywhere. Users cannot learn what the product can do
+  from inside the product.</p>
+  <p class="rec"><b>Recommend:</b> add "Save As… <span class="kbd">Ctrl+Shift+S</span>" and
+  "Render <span class="kbd">Ctrl+Enter</span>" to the File menu; give Help two real items (Keyboard shortcuts,
+  PlantUML reference link). This is hours of work and removes the whole finding.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="findings-loop"><span class="no">5.</span>Findings — the core loop (edit → render → save)</h2>
+
+<div class="finding" id="f4">
+  <h4><span class="fid">F4</span><span class="chip high">HIGH</span> Unsaved work can be silently lost</h4>
+  <p><strong>Evidence:</strong> <code>hasUnsavedChanges</code> is tracked internally (it gates New/open/template
+  flows with a confirm), but it is surfaced nowhere — no dot, no asterisk, no title-bar cue — and there is no
+  <code>beforeunload</code> handler in the codebase. Closing the tab, hitting the browser back button, or a
+  crash discards edits with zero warning.</p>
+  <p class="rec"><b>Recommend:</b> (a) show a dirty marker next to the document name in the title pill;
+  (b) register a <code>beforeunload</code> guard while dirty; (c) longer-term, draft autosave to
+  <code>localStorage</code> keyed by document id so even a crash loses nothing. (a)+(b) are an afternoon.</p>
+</div>
+
+<div class="finding" id="f5">
+  <h4><span class="fid">F5</span><span class="chip high">HIGH</span> The rendered diagram is a dead end — no export, copy, zoom, or pan</h4>
+  <p><strong>Evidence:</strong> the preview is a static <code>&lt;div&gt;</code> with scrollbars. There is no way
+  to download the SVG/PNG, copy it to the clipboard, zoom a dense diagram, or fit-to-width
+  (<a href="design-ux-assets/02-rendered.png">shot 02</a>). The only way to get a diagram out of Trellis today
+  is a screenshot — which breaks the "manage designs here" promise the moment output is needed in a slide,
+  PR description, or wiki page.</p>
+  <p class="rec"><b>Recommend:</b> a slim hover toolbar on the preview: Copy SVG · Download SVG · Download PNG ·
+  Zoom −/100%/+ · Fit. SVG download/copy is trivial (the markup is already in hand); PNG is one
+  canvas rasterization away. This single control bar converts Trellis from "viewer" to "producer".</p>
+</div>
+
+<div class="finding" id="f6">
+  <h4><span class="fid">F6</span><span class="chip high">HIGH</span> Rendering is manual-only</h4>
+  <p><strong>Evidence:</strong> the preview updates only on <span class="kbd">Ctrl+Enter</span>. Nothing renders
+  on document open (stale preview vs. fresh source), nothing on save, and there is no live mode — while the
+  SignalR channel and per-request render results were built precisely to support one.</p>
+  <p class="rec"><b>Recommend:</b> a debounced auto-render toggle (500–800ms after typing stops, keyed off the
+  existing hub; keep <span class="kbd">Ctrl+Enter</span> for force-render), plus render-on-open. Markdown
+  docs should simply always live-render — the server round-trip is cheap and side-effect-free. This is the
+  highest-impact "quickly develop designs" feature available.</p>
+</div>
+
+<div class="finding" id="f7">
+  <h4><span class="fid">F7</span><span class="chip high">HIGH</span> PlantUML — the product's core language — is edited as plaintext</h4>
+  <p><strong>Evidence:</strong> Monaco is configured with <code>language: 'plaintext'</code> for PlantUML
+  (<a href="design-ux-assets/02-rendered.png">shot 02</a> — uniform text). No keyword coloring, no
+  autocomplete for participants/arrows/skinparams, no snippets, no bracket awareness. Markdown, the secondary
+  kind, gets full language support; the flagship kind gets none.</p>
+  <p class="rec"><b>Recommend:</b> a Monarch grammar for PlantUML (a well-trodden path — coloring for keywords,
+  arrows, strings, comments, <code>@start/@end</code> pairs) plus completion items for declared participants
+  and common keywords, and 8–10 snippets (participant, alt/else block, note, C4 element). Later: map render
+  errors to line squiggles (<a href="#f8">F8</a>).</p>
+</div>
+
+<div class="finding" id="f8">
+  <h4><span class="fid">F8</span><span class="chip med">MED</span> Render errors never point back at the source</h4>
+  <p><strong>Evidence:</strong> hub-level failures render as a text panel in the preview; many PlantUML syntax
+  mistakes instead come back as PlantUML's own "error picture" or a silently lenient rendering (a malformed
+  arrow line simply drew a wrong diagram during this audit). In no case does the editor show which line is at
+  fault.</p>
+  <p class="rec"><b>Recommend:</b> parse the line number PlantUML reports on failure and surface it as a Monaco
+  marker (red squiggle + gutter icon) with the message; keep the preview panel text as the fallback. Error →
+  <em>place</em> is what makes fixing fast.</p>
+</div>
+
+<div class="finding" id="f9">
+  <h4><span class="fid">F9</span><span class="chip low">LOW</span> No editor preferences at all</h4>
+  <p><strong>Evidence:</strong> word wrap off, light theme only, fixed font size — all hard-coded; no settings
+  surface exists. The stated audience (diagram-as-code developers) lives in dark editors all day.</p>
+  <p class="rec"><b>Recommend:</b> start with exactly three persisted toggles — theme (light/dark/system,
+  applied to shell + Monaco), word wrap, auto-render (from <a href="#f6">F6</a>) — behind a small gear popover.
+  Resist a settings <em>page</em>; there isn't enough to configure yet.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="findings-library"><span class="no">6.</span>Findings — managing the library at scale</h2>
+
+<figure>
+  <img class="shot" src="design-ux-assets/05-documents-panel.png" alt="Documents panel with dozens of similar documents" loading="lazy">
+  <figcaption>The documents panel under realistic load (this is the audit environment's own accumulated data).
+  Dozens of near-identical truncated names, alphabetical order only, no search, no dates, four icons per row.
+  This is what every real team library looks like within a month.</figcaption>
+</figure>
+
+<div class="finding" id="f10">
+  <h4><span class="fid">F10</span><span class="chip high">HIGH</span> The library has no search, no sort, no recency</h4>
+  <p><strong>Evidence:</strong> the panel above. The tree is alphabetical-only; timestamps exist in the data but
+  surface only as a raw ISO string in a native tooltip ("Updated 2026-01-02T00:00:00Z"); there is no filter
+  box, no "recently edited", no way to answer "what was I working on yesterday?".</p>
+  <p class="rec"><b>Recommend:</b> in order of value — ① a filter-as-you-type box at the top of the panel
+  (client-side; both lists are already fully loaded), ② a Recent group (last 5 opened) pinned above the tree,
+  ③ human-relative timestamps ("2d ago") as a right-aligned secondary column, ④ sort toggle (name ⇄ updated).
+  The scope feature just shipped is the complement to this, not a substitute — scope narrows <em>where</em>,
+  search finds <em>what</em>.</p>
+</div>
+
+<div class="finding" id="f11">
+  <h4><span class="fid">F11</span><span class="chip med">MED</span> Destructive actions are irreversible</h4>
+  <p><strong>Evidence:</strong> document delete and cascading folder delete are permanent after a native
+  confirm. No undo, no trash, no archive. One misclick on a folder's ✕ (adjacent to three other always-visible
+  icons — see F12) can erase a subtree of work.</p>
+  <p class="rec"><b>Recommend:</b> soft-delete with a 30-day trash (one <code>deletedAt</code> column and a
+  filter), or minimally an "Undo" toast for 10 seconds after any delete. For a tool that wants to hold a
+  team's design record, recoverability is a prerequisite, not a nicety.</p>
+</div>
+
+<div class="finding" id="f12">
+  <h4><span class="fid">F12</span><span class="chip low">LOW</span> Row action density and native prompts will not scale gracefully</h4>
+  <p><strong>Evidence:</strong> four always-visible icon buttons consume ~35% of every row at the default panel
+  width (shot above); rename/create/delete run through <code>window.prompt/confirm</code> — unstylable,
+  validation-free, and modal to the whole browser. The existing ADR embraces prompts for their radical
+  simplicity, which is fair — but note the ceiling.</p>
+  <p class="rec"><b>Recommend:</b> when the library workflows deepen (multi-select, bulk move, tags), move row
+  actions behind hover-reveal or a single ⋯ overflow menu, and adopt inline rename (edit-in-place) as the
+  first native-prompt replacement. Not urgent; flagging the direction so new features stop adding icons.</p>
+</div>
+
+<div class="finding" id="f13">
+  <h4><span class="fid">F13</span><span class="chip low">LOW</span> Templates are a flat list with no preview or organization</h4>
+  <p><strong>Evidence:</strong> <a href="design-ux-assets/07-templates-panel.png">shot 07</a> — name + MD badge
+  only; no thumbnail/preview, no categories or tags, no description, no parameters. Also visible: the rail
+  tooltip overlaps the first rows (small z-order/placement bug, reproduced on the Explorer too in
+  <a href="design-ux-assets/08-explorer-panel.png">shot 08</a>).</p>
+  <p class="rec"><b>Recommend:</b> templates are the "develop designs quickly" engine — see
+  <a href="#i-templates">idea P1-3</a> for the full vision (categories, rendered thumbnails, placeholder
+  parameters). Near-term: a description field and hover preview of content. Fix the tooltip overlap in
+  passing.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="findings-feedback"><span class="no">7.</span>Findings — feedback, safety, input</h2>
+
+<div class="finding" id="f14">
+  <h4><span class="fid">F14</span><span class="chip med">MED</span> Saves are silent; errors are undismissable</h4>
+  <p><strong>Evidence:</strong> a successful <span class="kbd">Ctrl+S</span> produces no visible feedback
+  whatsoever — combined with F4's missing dirty marker, users cannot tell saved from unsaved. The error toast,
+  when it appears, has no close button and lingers until the next attempt clears it.</p>
+  <p class="rec"><b>Recommend:</b> a 2-second "Saved ✓" toast (or a transient checkmark in the title pill), and
+  a ✕ on the error banner. Tiny changes; large perceived-quality gain.</p>
+</div>
+
+<div class="finding" id="f15">
+  <h4><span class="fid">F15</span><span class="chip low">LOW</span> Connection status is informative but inert</h4>
+  <p><strong>Evidence:</strong> the rail's dot + lowercase "connected / disconnected / reconnecting" text is
+  display-only. When disconnected, renders fail with no call to action; recovery is automatic-only.</p>
+  <p class="rec"><b>Recommend:</b> on <em>disconnected</em>, make the indicator a "Reconnect" button and have
+  the preview error panel say "Render service offline — reconnecting…" so the two surfaces tell one story.</p>
+</div>
+
+<div class="finding" id="f16">
+  <h4><span class="fid">F16</span><span class="chip med">MED</span> Dialogs ignore Escape and lack focus management</h4>
+  <p><strong>Evidence:</strong> reproduced live during this audit — <span class="kbd">Esc</span> does not close
+  the Save dialog (only Cancel/backdrop click); the name field is not autofocused; focus is not trapped, so
+  <span class="kbd">Tab</span> walks out of the modal into the page behind it
+  (<a href="design-ux-assets/04-save-dialog.png">shot 04</a>).</p>
+  <p class="rec"><b>Recommend:</b> the standard modal trio — Escape closes, initial focus on the name input
+  (selected), focus trapped while open. Applies to both the Save and Move dialogs.</p>
+</div>
+
+<div class="finding" id="f17">
+  <h4><span class="fid">F17</span><span class="chip low">LOW</span> Remaining accessibility gaps</h4>
+  <p><strong>Evidence:</strong> tooltips are native <code>title</code> only (no delay control, invisible to
+  touch); render completion/failure is not announced (no <code>aria-live</code> on the preview); the Explorer
+  rail icon silently disappears in non-Chromium browsers rather than explaining why.</p>
+  <p class="rec"><b>Recommend:</b> add <code>aria-live="polite"</code> to the preview status, a lightweight
+  styled tooltip for rail/tree icons (also fixes F13's overlap), and in unsupported browsers show the Explorer
+  icon disabled with "Requires Chrome/Edge (File System Access)".</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="ideas"><span class="no">8.</span>Strategic ideas — Trellis as the design hub for a software shop</h2>
+
+<p>The findings above fix the tool; these ideas grow it into the place a software shop keeps its living design
+record. They are grouped into five pillars, ordered by how directly they serve the stated goal of
+<em>quickly developing designs</em>. Each idea is tagged <b>impact / effort</b>.</p>
+
+<h3>P1 — Author at the speed of thought</h3>
+<div class="idea">
+  <h4>P1-1 · Live auto-render mode <span class="tags">impact ●●● · effort ●○○</span></h4>
+  <p>Debounced render-as-you-type (see F6). The moment the preview keeps itself current, Trellis stops feeling
+  like a compiler and starts feeling like a whiteboard. The SignalR plumbing already exists.</p>
+</div>
+<div class="idea">
+  <h4>P1-2 · PlantUML language service <span class="tags">impact ●●● · effort ●●○</span></h4>
+  <p>Monarch highlighting, participant-aware completion, snippet library, error-line squiggles (F7/F8). This is
+  the difference between "editor that accepts PlantUML" and "PlantUML editor".</p>
+</div>
+<div class="idea" id="i-templates">
+  <h4>P1-3 · Parameterized template gallery <span class="tags">impact ●●● · effort ●●○</span></h4>
+  <p>Categories (Sequence / C4 / Class / Docs / <em>Ours</em>), rendered thumbnails, a description, and
+  <code>{{placeholders}}</code> prompted on apply (system name, actors, team). A new hire picks "Our service
+  integration template", fills three fields, and has an on-convention draft in 30 seconds — template
+  governance <em>is</em> design governance in a shop.</p>
+</div>
+<div class="idea">
+  <h4>P1-4 · Reusable fragments / includes <span class="tags">impact ●●○ · effort ●●○</span></h4>
+  <p>Shop-wide skin/theme block and shared participant definitions injected at render time (server-side
+  <code>!include</code> resolution against library documents). Every diagram gets the house style for free,
+  and a rename of "Payments API" propagates.</p>
+</div>
+<div class="idea">
+  <h4>P1-5 · Split-view Markdown + embedded diagrams <span class="tags">impact ●●○ · effort ●●●</span></h4>
+  <p>Let Markdown documents embed library diagrams by reference (<code>![[doc:id]]</code>) so a design doc and
+  its diagrams live as one reviewable artifact — the "detailed design document" workflow, native.</p>
+</div>
+
+<h3>P2 — A governed design library</h3>
+<div class="idea">
+  <h4>P2-1 · Metadata: tags, owner, status <span class="tags">impact ●●● · effort ●●○</span></h4>
+  <p>Three fields transform the library: free-form tags (<code>payments</code>, <code>c4-container</code>),
+  an owner, and a lifecycle status chip — <em>Draft / In review / Approved / Deprecated</em>. Status is what
+  lets a newcomer trust what they find.</p>
+</div>
+<div class="idea">
+  <h4>P2-2 · C4 model awareness <span class="tags">impact ●●○ · effort ●●●</span></h4>
+  <p>Link diagrams into drill-down chains (Context → Container → Component). The preview makes linked elements
+  clickable; the library shows the hierarchy. Trellis already seeds C4 templates — this makes C4 a navigable
+  model rather than three disconnected files.</p>
+</div>
+<div class="idea">
+  <h4>P2-3 · Staleness signals <span class="tags">impact ●●○ · effort ●○○</span></h4>
+  <p>"Not updated in 6 months" badges and a review-by date. Design rot is invisible today; make it visible where
+  the diagrams live.</p>
+</div>
+
+<h3>P3 — Reviewable like code</h3>
+<div class="idea">
+  <h4>P3-1 · Version history with visual diff <span class="tags">impact ●●● · effort ●●●</span></h4>
+  <p>Snapshot on every save (the documents are tiny text blobs); a history panel; and the killer view — two
+  renders side-by-side with source diff below. "What changed in this design since sprint 12?" becomes a click.
+  This is the single feature that most makes Trellis a system of record.</p>
+</div>
+<div class="idea">
+  <h4>P3-2 · Share links &amp; embeds <span class="tags">impact ●●● · effort ●●○</span></h4>
+  <p>Read-only URL per document (rendered view, no editor) for Slack/PRs, and a stable image endpoint
+  (<code>/render/{docId}.svg</code>) so wikis and READMEs embed the <em>living</em> diagram — screenshots go
+  stale, embeds don't. Requires the first notion of access control, even if it's just "anyone with the link"
+  inside the network.</p>
+</div>
+<div class="idea">
+  <h4>P3-3 · Comments &amp; review requests <span class="tags">impact ●●○ · effort ●●●</span></h4>
+  <p>Anchored comments on a document (per-version), plus a lightweight "request review → approve" flow that
+  drives the P2-1 status field. Design review stops living in screenshot threads.</p>
+</div>
+
+<h3>P4 — Plugged into the dev workflow</h3>
+<div class="idea">
+  <h4>P4-1 · Git round-trip <span class="tags">impact ●●● · effort ●●●</span></h4>
+  <p>Sync a library folder with a repo directory of <code>.puml</code>/<code>.md</code> files (the Explorer
+  already proves the file-level plumbing). Diagrams version with the code they describe; Trellis is the
+  friendly editor and catalog on top. For diagram-as-code teams this is the adoption unlock.</p>
+</div>
+<div class="idea">
+  <h4>P4-2 · CLI / CI validation <span class="tags">impact ●●○ · effort ●●○</span></h4>
+  <p>A tiny CLI that renders every diagram in a repo against the Trellis service and fails the build on syntax
+  errors — plus optional PNG/SVG artifact output. Broken diagrams get caught like broken tests.</p>
+</div>
+<div class="idea">
+  <h4>P4-3 · Import sweep <span class="tags">impact ●●○ · effort ●○○</span></h4>
+  <p>Bulk upload (drop a folder / zip of <code>.puml</code> files preserving structure). Today's single-file
+  Upload makes migrating an existing diagram corpus prohibitively tedious — and every prospective team has one.</p>
+</div>
+
+<h3>P5 — Findable and alive</h3>
+<div class="idea" id="i-palette">
+  <h4>P5-1 · Command palette + global search <span class="tags">impact ●●● · effort ●●○</span></h4>
+  <p>Make the title-bar pill real: <span class="kbd">Ctrl+K</span> opens a palette that searches documents,
+  folders and templates by name (later: full-text across content — it's all in SQLite) and exposes every
+  command (New, Save As, Render, Toggle panel…) with its shortcut. One control solves F1's biggest stub,
+  F3's discoverability, and F10's findability at once.</p>
+</div>
+<div class="idea">
+  <h4>P5-2 · Workspaces / projects <span class="tags">impact ●●○ · effort ●●●</span></h4>
+  <p>When multiple teams share an instance, the root-level folder soup stops scaling. A workspace = a named
+  root (per team or system) with its own templates and defaults; the scope feature is the single-user
+  precursor of exactly this.</p>
+</div>
+<div class="idea">
+  <h4>P5-3 · Activity view <span class="tags">impact ●○○ · effort ●●○</span></h4>
+  <p>"What changed this week" across the library — feeds standups and keeps the design record feeling alive
+  rather than archival.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="roadmap"><span class="no">9.</span>Suggested roadmap</h2>
+
+<div class="tablewrap">
+<table>
+  <tr><th>Horizon</th><th>Theme</th><th>Items (findings / ideas)</th></tr>
+  <tr>
+    <td><b>Now</b><br><span class="tags">days each; no schema changes</span></td>
+    <td>Honesty &amp; safety</td>
+    <td>Dead-chrome sweep (F1) · Save As in menu + Help items (F3) · dirty dot + <code>beforeunload</code> (F4) ·
+        Saved-toast + dismissible errors (F14) · Escape/focus on dialogs (F16) · preview export/copy/zoom bar (F5) ·
+        panel filter box + relative dates (F10-①③) · tooltip overlap fix (F13)</td>
+  </tr>
+  <tr>
+    <td><b>Next</b><br><span class="tags">the "fast authoring" quarter</span></td>
+    <td>Speed &amp; findability</td>
+    <td>Auto-render toggle (F6/P1-1) · PlantUML highlighting + snippets (F7/P1-2) · error-line squiggles (F8) ·
+        command palette on the real search pill (P5-1) · active first-run state (F2) · template categories +
+        previews + parameters (P1-3) · dark mode + wrap toggle (F9) · bulk import (P4-3) · Recent group (F10-②)</td>
+  </tr>
+  <tr>
+    <td><b>Later</b><br><span class="tags">the "system of record" bets</span></td>
+    <td>Team workflows</td>
+    <td>Version history + visual diff (P3-1) · share links + stable embed URLs (P3-2) · soft-delete/trash (F11) ·
+        tags/owner/status (P2-1) · git round-trip (P4-1) · CI validation (P4-2) · comments &amp; review (P3-3) ·
+        C4 drill-down (P2-2) · workspaces (P5-2)</td>
+  </tr>
+</table>
+</div>
+
+<p><strong>Sequencing rationale:</strong> the <em>Now</em> row is pure trust and loss-prevention — it makes the
+existing product feel finished without changing its shape. The <em>Next</em> row is where "quickly developing
+designs" is actually delivered (render speed, language support, templates, search). The <em>Later</em> row is
+what changes Trellis's category: from a good personal editor to the place a team's designs live, get reviewed,
+and stay current. Items in <em>Later</em> deliberately wait for the first multi-user decision (even
+"link-knows-all" sharing), which is the real architectural fork ahead.</p>
+
+<!-- ============================================================ -->
+<h2 id="appendix"><span class="no">10.</span>Appendix — evidence index</h2>
+
+<p>Screenshots captured 2026-07-04 against the live dev build (Chromium 1440×900, Playwright). Stored in
+<code>design-ux-assets/</code>.</p>
+
+<div class="tablewrap">
+<table>
+  <tr><th>File</th><th>State shown</th><th>Cited by</th></tr>
+  <tr><td><a href="design-ux-assets/01-first-run.png">01-first-run</a></td><td>Fresh visit, empty editor + placeholder</td><td>F1, F2</td></tr>
+  <tr><td><a href="design-ux-assets/02-rendered.png">02-rendered</a></td><td>Sequence diagram rendered; plaintext source; inert preview</td><td>F5, F6, F7</td></tr>
+  <tr><td><a href="design-ux-assets/03-file-menu.png">03-file-menu</a></td><td>File menu open (New/Save/Upload only); subtle "Loading…" render indicator</td><td>F3</td></tr>
+  <tr><td><a href="design-ux-assets/04-save-dialog.png">04-save-dialog</a></td><td>Save dialog (name/type/folder); no Escape, no autofocus</td><td>F16</td></tr>
+  <tr><td><a href="design-ux-assets/05-documents-panel.png">05-documents-panel</a></td><td>Library under load: truncation, no search/dates</td><td>F10, F11, F12</td></tr>
+  <tr><td><a href="design-ux-assets/06-documents-scoped.png">06-documents-scoped</a></td><td>Scope-to-folder active (scope bar: up / name / clear)</td><td>§3, F10</td></tr>
+  <tr><td><a href="design-ux-assets/07-templates-panel.png">07-templates-panel</a></td><td>Templates list; rail tooltip overlapping rows</td><td>F13</td></tr>
+  <tr><td><a href="design-ux-assets/08-explorer-panel.png">08-explorer-panel</a></td><td>Explorer empty state (Open Folder); tooltip overlap again</td><td>F17, F13</td></tr>
+</table>
+</div>
+
+<p>Related documents: <a href="README.md">code complexity audit</a> ·
+<code>docs/architecture.md</code> · <code>docs/adr/</code> · <code>docs/mocks/</code> (static UI mocks).
+Verified-in-source claims (dead controls, shortcut map, missing <code>beforeunload</code>, hard-coded Monaco
+options, prompt/confirm conventions) reference the frontend tree at commit <code>7dd16a4</code>.</p>
+
+</main>
+</body>
+</html>

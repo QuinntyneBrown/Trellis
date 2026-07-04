@@ -15,6 +15,7 @@ Seven parallel auditors each read every file in an assigned area (backend archit
 | [backend.md](backend.md) | The Clean Architecture/CQRS ceremony problem, backend dead code, and one real defect in the render pipeline |
 | [frontend.md](frontend.md) | Duplicated components, dead UI surface, silent error handling gaps, and unnecessary abstractions |
 | [tests.md](tests.md) | Duplicated test scaffolding, tests of language semantics, and one flaky-pattern e2e test |
+| [design-ux.html](design-ux.html) | Design & UX audit (2026-07-04, separate effort): heuristic findings with screenshot evidence, plus product ideas and a roadmap for managing designs in a software shop |
 
 ## Headline verdict
 
