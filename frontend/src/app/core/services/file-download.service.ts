@@ -13,7 +13,10 @@ import { Injectable } from '@angular/core';
 })
 export class FileDownloadService {
   downloadTextFile(fileName: string, text: string, mimeType = 'text/markdown'): void {
-    const blob = new Blob([text], { type: mimeType });
+    this.downloadBlob(fileName, new Blob([text], { type: mimeType }));
+  }
+
+  downloadBlob(fileName: string, blob: Blob): void {
     const url = URL.createObjectURL(blob);
 
     const anchor = document.createElement('a');
