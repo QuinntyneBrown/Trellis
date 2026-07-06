@@ -26,6 +26,8 @@ export class TitleBarComponent {
   @Input({ required: true }) documentName = '';
   /** Whether either side panel (Explorer or Documents) is currently open -- drives the sidebar toggle's filled state. */
   @Input() sidePanelOpen = false;
+  /** Parent-owned transient flag: swaps the copy glyph to a checkmark while the "copied!" confirmation is showing. */
+  @Input() copied = false;
 
   /** Fired by the primary-sidebar layout toggle; the parent decides which panel to open/close. */
   @Output() readonly sidebarToggle = new EventEmitter<void>();
@@ -35,6 +37,8 @@ export class TitleBarComponent {
   @Output() readonly save = new EventEmitter<void>();
   /** Fired by File > Upload; the parent owns the hidden file input this opens. */
   @Output() readonly uploadRequested = new EventEmitter<void>();
+  /** Fired by the copy-document-contents button; the parent owns the clipboard write (it holds the source text). */
+  @Output() readonly copyContents = new EventEmitter<void>();
 
   /** Which menu is currently open -- only File is functional today. */
   readonly openMenu = signal<'file' | null>(null);

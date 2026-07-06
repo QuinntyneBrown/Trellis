@@ -40,6 +40,35 @@
   right: 0.5rem;
 }
 
+// Hover-revealed copy/download chip pinned to the same corner as the spinner
+// overlay (never simultaneously visible: the actions hide while isRendering).
+// Revealed via opacity/visibility -- not display, which can't transition --
+// on hover AND :focus-within so keyboard users can reach the buttons.
+.diagram-preview__actions {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 5;
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.35rem;
+  background-color: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.12s ease,
+    visibility 0.12s ease;
+}
+
+.diagram-preview:hover .diagram-preview__actions,
+.diagram-preview__actions:focus-within {
+  opacity: 1;
+  visibility: visible;
+}
+
 // Prose styling for rendered markdown. ::ng-deep is REQUIRED here: the
 // markdown arrives via [innerHTML], so its elements carry no Angular
 // emulated-encapsulation attributes and plain component-scoped selectors

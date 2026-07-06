@@ -12,6 +12,7 @@ import { DocumentSummary } from '../../../core/models/document-summary.model';
 import { OpenedDiskFile } from '../../../core/models/opened-disk-file.model';
 import { TemplateSummary } from '../../../core/models/template-summary.model';
 import { Folder } from '../../../core/models/folder.model';
+import { ClipboardService } from '../../../core/services/clipboard.service';
 import { DiagramHubService } from '../../../core/services/diagram-hub.service';
 import { DocumentsService } from '../../../core/services/documents.service';
 import { EditorLayoutPreferencesService } from '../../../core/services/editor-layout-preferences.service';
@@ -80,6 +81,7 @@ export class EditorPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly layoutPreferences = inject(EditorLayoutPreferencesService);
   private readonly fileSystemAccessService = inject(FileSystemAccessService);
+  private readonly clipboardService = inject(ClipboardService);
   readonly hubService = inject(DiagramHubService);
 
   // Exposed as fields (rather than referenced as free module-level constants)
@@ -148,6 +150,10 @@ export class EditorPageComponent implements OnInit {
   @ViewChild('uploadInput') private readonly uploadInputRef!: ElementRef<HTMLInputElement>;
   /** Surfaced through the app-error-banner toast when a save/upload/open/load request fails. */
   readonly saveError = signal<string | null>(null);
+
+  /** Transient "copied!" confirmation for the title bar's copy-contents button. */
+  readonly documentCopied = signal(false);
+  private documentCopiedResetTimer: number | undefined;
 
   // Seeded from persisted preferences: the preferences service is dumb
   // storage (stored number or null), so the default and the product-level
@@ -279,6 +285,18 @@ export class EditorPageComponent implements OnInit {
    */
   onSaveAsClicked(): void {
     this.openSaveDialog('saveAs');
+  }
+
+  /** Title bar copy button: puts the raw editor source on the clipboard. */
+  onCopyDocumentContents(): void {
+    this.clipboardService
+      .copyText(this.sourceCode())
+      .then(() => {
+        window.clearTimeout(this.documentCopiedResetTimer);
+        this.documentCopied.set(true);
+        this.documentCopiedResetTimer = window.setTimeout(() => this.documentCopied.set(false), 1500);
+      })
+      .catch(() => this.saveError.set('Could not copy the document contents to the clipboard.'));
   }
 
   private openSaveDialog(mode: 'save' | 'saveAs'): void {

@@ -10,6 +10,7 @@ import { Document } from '../../../core/models/document.model';
 import { OpenedDiskFile } from '../../../core/models/opened-disk-file.model';
 import { Template } from '../../../core/models/template.model';
 import { TemplateSummary } from '../../../core/models/template-summary.model';
+import { ClipboardService } from '../../../core/services/clipboard.service';
 import { DiagramHubService } from '../../../core/services/diagram-hub.service';
 import { DocumentsService } from '../../../core/services/documents.service';
 import { EditorLayoutPreferencesService } from '../../../core/services/editor-layout-preferences.service';
@@ -17,6 +18,7 @@ import { FileSystemAccessService } from '../../../core/services/file-system-acce
 import { FoldersService } from '../../../core/services/folders.service';
 import { MonacoLoaderService } from '../../../core/services/monaco-loader.service';
 import { TemplatesService } from '../../../core/services/templates.service';
+import { DiagramPreviewComponent } from '../diagram-preview/diagram-preview.component';
 import { MAX_EDITOR_PANE_RATIO, MIN_EDITOR_PANE_RATIO } from '../editor-pane-ratio.constants';
 import { MonacoEditorComponent } from '../monaco-editor/monaco-editor.component';
 import { ResizeDividerComponent } from '../resize-divider/resize-divider.component';
@@ -72,6 +74,7 @@ describe('EditorPageComponent', () => {
     saveRootHandle: jest.Mock;
     loadRootHandle: jest.Mock;
   };
+  let clipboardServiceMock: { copyText: jest.Mock; copyPng: jest.Mock };
 
   /**
    * The single source of truth for the TestBed provider list -- the
@@ -102,6 +105,7 @@ describe('EditorPageComponent', () => {
       { provide: EditorLayoutPreferencesService, useValue: layoutPreferencesMock },
       { provide: FileSystemAccessService, useValue: fileSystemAccessServiceMock },
       { provide: TemplatesService, useValue: templatesServiceMock },
+      { provide: ClipboardService, useValue: clipboardServiceMock },
       { provide: MonacoLoaderService, useValue: { load: jest.fn().mockResolvedValue(fakeMonaco) } },
     ];
   }
@@ -159,6 +163,10 @@ describe('EditorPageComponent', () => {
       requestPermission: jest.fn(),
       saveRootHandle: jest.fn().mockResolvedValue(undefined),
       loadRootHandle: jest.fn().mockResolvedValue(null),
+    };
+    clipboardServiceMock = {
+      copyText: jest.fn().mockResolvedValue(undefined),
+      copyPng: jest.fn().mockResolvedValue(undefined),
     };
 
     await TestBed.configureTestingModule({
@@ -1301,6 +1309,64 @@ describe('EditorPageComponent', () => {
     it('exposes MIN_SIDE_PANEL_WIDTH_PX/MAX_SIDE_PANEL_WIDTH_PX for the template to bind to the pixel divider', () => {
       expect(component.MIN_SIDE_PANEL_WIDTH_PX).toBe(MIN_SIDE_PANEL_WIDTH_PX);
       expect(component.MAX_SIDE_PANEL_WIDTH_PX).toBe(MAX_SIDE_PANEL_WIDTH_PX);
+    });
+  });
+
+  describe('copy document contents / image export wiring', () => {
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    /** Drains the copyText promise chain -- it resolves in microtasks, never timers. */
+    async function flushMicrotasks(): Promise<void> {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    }
+
+    it('copies the current source to the clipboard and flashes the confirmation for 1.5s', async () => {
+      fixture.detectChanges();
+      component.sourceCode.set('@startuml\nA -> B\n@enduml');
+      jest.useFakeTimers();
+
+      component.onCopyDocumentContents();
+
+      expect(clipboardServiceMock.copyText).toHaveBeenCalledWith('@startuml\nA -> B\n@enduml');
+
+      await flushMicrotasks();
+      expect(component.documentCopied()).toBe(true);
+
+      jest.advanceTimersByTime(1500);
+      expect(component.documentCopied()).toBe(false);
+    });
+
+    it('wires the title bar copyContents output to the clipboard write', () => {
+      fixture.detectChanges();
+
+      (byTestId('title-bar-copy-contents') as HTMLButtonElement).click();
+
+      expect(clipboardServiceMock.copyText).toHaveBeenCalledTimes(1);
+    });
+
+    it('surfaces a clipboard failure through the save-error toast', async () => {
+      clipboardServiceMock.copyText.mockRejectedValue(new Error('denied'));
+      fixture.detectChanges();
+
+      component.onCopyDocumentContents();
+      await flushMicrotasks();
+
+      expect(component.saveError()).toBe('Could not copy the document contents to the clipboard.');
+      expect(component.documentCopied()).toBe(false);
+    });
+
+    it('routes the preview exportError output into the save-error toast', () => {
+      fixture.detectChanges();
+
+      const preview = fixture.debugElement.query(By.directive(DiagramPreviewComponent))
+        .componentInstance as DiagramPreviewComponent;
+      preview.exportError.emit('Could not export the diagram as a PNG.');
+
+      expect(component.saveError()).toBe('Could not export the diagram as a PNG.');
     });
   });
 });

@@ -47,6 +47,23 @@
       </svg>
       <span class="title-bar__title" data-testid="title-bar-title">{{ windowTitle }}</span>
     </button>
+    <button
+      type="button"
+      class="title-bar__copy-button"
+      data-testid="title-bar-copy-contents"
+      title="Copy document contents"
+      aria-label="Copy document contents"
+      (click)="copyContents.emit()"
+    >
+      @if (copied) {
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.5 3.5L13 4.5" /></svg>
+      } @else {
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <rect x="5.5" y="5.5" width="8" height="8" rx="1" />
+          <path d="M10.5 3.5H4A1.5 1.5 0 0 0 2.5 5v6.5" />
+        </svg>
+      }
+    </button>
   </div>
 
   <div class="title-bar__right">

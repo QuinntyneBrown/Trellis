@@ -148,6 +148,37 @@
   white-space: nowrap;
 }
 
+// Sibling of the command-center pill (the pill is itself a <button>, so the
+// copy action cannot nest inside it). Sized/styled like a layout toggle.
+.title-bar__copy-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 26px;
+  height: 24px;
+  margin-left: 4px;
+  border: none;
+  border-radius: 5px;
+  background-color: transparent;
+  color: #4b5563;
+  cursor: pointer;
+
+  &:hover {
+    background-color: rgba(17, 24, 39, 0.08);
+  }
+
+  svg {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
+
 .title-bar__right {
   display: flex;
   align-items: center;

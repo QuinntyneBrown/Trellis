@@ -17,6 +17,25 @@
     @if (result?.isSuccess && safeMarkdownHtml()) {
       <div class="diagram-preview__markdown" data-testid="preview-markdown" [innerHTML]="safeMarkdownHtml()"></div>
     }
+
+    <!-- SVG successes only (never markdown); !isRendering also keeps the
+         corner free for the spinner overlay while a re-render is in flight. -->
+    @if (result?.isSuccess && safeSvg() && !isRendering) {
+      <div class="diagram-preview__actions" data-testid="preview-image-actions">
+        <app-tree-action-button
+          [icon]="imageCopied() ? 'check' : 'copy'"
+          label="Copy image to clipboard"
+          testId="preview-copy-image"
+          (clicked)="onCopyImageClicked()"
+        ></app-tree-action-button>
+        <app-tree-action-button
+          icon="export"
+          label="Download image as PNG"
+          testId="preview-download-image"
+          (clicked)="onDownloadImageClicked()"
+        ></app-tree-action-button>
+      </div>
+    }
   }
 
   @if (isRendering) {

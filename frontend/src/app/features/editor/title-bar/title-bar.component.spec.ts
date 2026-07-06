@@ -109,6 +109,30 @@ describe('TitleBarComponent', () => {
     });
   });
 
+  describe('copy document contents', () => {
+    it('emits copyContents on click', () => {
+      const spy = jest.fn();
+      component.copyContents.subscribe(spy);
+
+      (byTestId('title-bar-copy-contents') as HTMLButtonElement).click();
+
+      expect(spy).toHaveBeenCalledTimes(1);
+    });
+
+    it('swaps the copy glyph for a checkmark while copied is set', () => {
+      const button = byTestId('title-bar-copy-contents');
+      // The copy glyph is the two overlapping rectangles (a <rect> plus a <path>).
+      expect(button.querySelector('rect')).toBeTruthy();
+
+      component.copied = true;
+      fixture.detectChanges();
+
+      // The checkmark is a lone <path> -- no <rect> remains.
+      expect(button.querySelector('rect')).toBeNull();
+      expect(button.querySelector('path')).toBeTruthy();
+    });
+  });
+
   it('emits sidebarToggle from the primary-sidebar layout toggle', () => {
     const spy = jest.fn();
     component.sidebarToggle.subscribe(spy);
@@ -129,7 +153,7 @@ describe('TitleBarComponent', () => {
 
   it('gives every icon-only control an aria-label', () => {
     const iconButtons = fixture.nativeElement.querySelectorAll(
-      '.title-bar__layout-toggle, .title-bar__window-control, .title-bar__command-center',
+      '.title-bar__layout-toggle, .title-bar__window-control, .title-bar__command-center, .title-bar__copy-button',
     );
     for (const button of Array.from(iconButtons)) {
       expect((button as HTMLElement).getAttribute('aria-label')).toBeTruthy();

@@ -61,4 +61,17 @@ describe('FileDownloadService', () => {
     const blob = createObjectURLMock.mock.calls[0][0] as Blob;
     expect(blob.type).toBe('text/plain');
   });
+
+  it('downloads a binary blob as-is under the given file name, then revokes the URL', () => {
+    const blob = new Blob(['fake-png'], { type: 'image/png' });
+
+    service.downloadBlob('diagram.png', blob);
+
+    expect(createObjectURLMock).toHaveBeenCalledTimes(1);
+    expect(createObjectURLMock.mock.calls[0][0]).toBe(blob);
+    expect(clickSpy).toHaveBeenCalledTimes(1);
+    expect(clickedAnchor!.download).toBe('diagram.png');
+    expect(clickedAnchor!.href).toBe('blob:mock-url');
+    expect(revokeObjectURLMock).toHaveBeenCalledWith('blob:mock-url');
+  });
 });
