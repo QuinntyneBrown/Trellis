@@ -32,6 +32,7 @@ import {
 } from '../editor-pane-ratio.constants';
 import { EditorToolbarComponent } from '../editor-toolbar/editor-toolbar.component';
 import { MonacoEditorComponent } from '../monaco-editor/monaco-editor.component';
+import { NewDocumentDialogComponent, NewDocumentDialogResult } from '../new-document-dialog/new-document-dialog.component';
 import { ResizeDividerComponent } from '../resize-divider/resize-divider.component';
 import { clamp } from '../resize-divider/clamp';
 import { SaveDialogComponent } from '../save-dialog/save-dialog.component';
@@ -64,6 +65,7 @@ export type SidePanel = 'explorer' | 'documents' | 'templates' | null;
     DiagramPreviewComponent,
     ResizeDividerComponent,
     SaveDialogComponent,
+    NewDocumentDialogComponent,
     DocumentsPanelComponent,
     ExplorerPanelComponent,
     TemplatesPanelComponent,
@@ -125,6 +127,20 @@ export class EditorPageComponent implements OnInit {
    * usable with "(No folder)") rather than blocking the save.
    */
   readonly saveDialogFolders = signal<Folder[]>([]);
+
+  readonly isNewDocumentDialogOpen = signal(false);
+  /** Folder list for the new-document dialog's destination select -- fetched the same way as saveDialogFolders. */
+  readonly newDocumentFolders = signal<Folder[]>([]);
+  /** Bumped after each successful "create another" -- see NewDocumentDialogComponent's clearNameToken input. */
+  readonly newDocumentClearNameToken = signal(0);
+  /**
+   * The most recently created document during the current new-document
+   * dialog session (reset to null on open). Adopted into the editor once
+   * the dialog closes -- either right after a single create, or after a
+   * "create another" streak ends -- so the editor only ever navigates once
+   * per dialog session rather than on every intermediate create.
+   */
+  private lastCreatedInSession: Document | null = null;
 
   /** Computed once -- the browser either has the File System Access API or it doesn't, for the whole session. */
   readonly explorerSupported = this.fileSystemAccessService.isSupported();
@@ -267,6 +283,56 @@ export class EditorPageComponent implements OnInit {
     }
     this.applyDocument(null);
     this.location.go('/editor');
+    this.openNewDocumentDialog();
+  }
+
+  private openNewDocumentDialog(): void {
+    this.lastCreatedInSession = null;
+    this.saveError.set(null);
+    this.isNewDocumentDialogOpen.set(true);
+    this.loadFolders((folders) => this.newDocumentFolders.set(folders));
+  }
+
+  /**
+   * Persists a blank document. While createAnother is checked, a successful
+   * create just clears the dialog's name field (via newDocumentClearNameToken)
+   * and leaves the editor untouched -- the editor only adopts the newly
+   * created document once the dialog actually closes (see
+   * onCloseNewDocumentDialog), so back-to-back creates never yank focus away
+   * from the dialog.
+   */
+  onCreateNewDocument(result: NewDocumentDialogResult): void {
+    this.saveError.set(null);
+
+    this.documentsService
+      .create({ name: result.name, content: '', folderId: result.folderId, kind: result.kind })
+      .subscribe({
+        next: (saved) => {
+          this.lastCreatedInSession = saved;
+          if (result.createAnother) {
+            this.newDocumentClearNameToken.update((token) => token + 1);
+            return;
+          }
+          this.isNewDocumentDialogOpen.set(false);
+          this.applyDocument(saved);
+          this.location.go(`/editor/${saved.id}`);
+        },
+        error: () => this.saveError.set(`Could not create "${result.name}".`),
+      });
+  }
+
+  /**
+   * Closing (Close button or backdrop click): if at least one document was
+   * created this session, the editor adopts the LAST one made -- otherwise
+   * this is a pure no-op, since the editor is already showing the blank
+   * document onNewDocument put it in before the dialog ever opened.
+   */
+  onCloseNewDocumentDialog(): void {
+    this.isNewDocumentDialogOpen.set(false);
+    if (this.lastCreatedInSession) {
+      this.applyDocument(this.lastCreatedInSession);
+      this.location.go(`/editor/${this.lastCreatedInSession.id}`);
+    }
   }
 
   onSaveClicked(): void {
@@ -303,20 +369,30 @@ export class EditorPageComponent implements OnInit {
     this.saveDialogMode.set(mode);
 
     // Opened immediately (not gated on the folder fetch) so a slow or failing
-    // folders request can never delay or block saving. The token guards
-    // against a slow earlier open's response arriving after (and clobbering)
-    // a more recent one.
+    // folders request can never delay or block saving.
     this.isSaveDialogOpen.set(true);
+    this.loadFolders((folders) => this.saveDialogFolders.set(folders));
+  }
+
+  /**
+   * Shared by both the save dialog and the new-document dialog's destination
+   * select: fetches the folder list, applying it via `apply` only if this is
+   * still the most recent fetch -- the token guards against a slow earlier
+   * open's response arriving after (and clobbering) a more recent one. A
+   * fetch failure degrades to an empty list rather than blocking either
+   * dialog.
+   */
+  private loadFolders(apply: (folders: Folder[]) => void): void {
     const fetchToken = ++this.folderFetchSequence;
     this.foldersService.list().subscribe({
       next: (folders) => {
         if (fetchToken === this.folderFetchSequence) {
-          this.saveDialogFolders.set(folders);
+          apply(folders);
         }
       },
       error: () => {
         if (fetchToken === this.folderFetchSequence) {
-          this.saveDialogFolders.set([]);
+          apply([]);
         }
       },
     });

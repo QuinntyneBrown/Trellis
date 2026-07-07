@@ -115,6 +115,14 @@
     (cancel)="closeSaveDialog()"
   ></app-save-dialog>
 
+  <app-new-document-dialog
+    [visible]="isNewDocumentDialogOpen()"
+    [folders]="newDocumentFolders()"
+    [clearNameToken]="newDocumentClearNameToken()"
+    (create)="onCreateNewDocument($event)"
+    (close)="onCloseNewDocumentDialog()"
+  ></app-new-document-dialog>
+
   <!--
     A fixed-position toast (rather than an in-flow banner squeezed into the
     already-tested editor/preview pane layout) so surfacing a save/upload/

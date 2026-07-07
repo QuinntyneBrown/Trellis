@@ -794,6 +794,80 @@ describe('EditorPageComponent', () => {
     });
   });
 
+  describe('New Document dialog', () => {
+    it('opens the dialog and fetches its folder list when New is invoked', () => {
+      fixture.detectChanges();
+      const folders = [{ id: 'f1', name: 'Diagrams', parentFolderId: null }];
+      foldersServiceMock.list.mockReturnValue(of(folders));
+
+      component.onNewDocument();
+
+      expect(component.isNewDocumentDialogOpen()).toBe(true);
+      expect(component.newDocumentFolders()).toEqual(folders);
+    });
+
+    it('creates a blank document, closes the dialog, and adopts it into the editor when createAnother is false', () => {
+      fixture.detectChanges();
+      component.onNewDocument();
+      documentsServiceMock.create.mockReturnValue(of(sampleDocument({ id: 'new-1', name: 'First', content: '' })));
+
+      component.onCreateNewDocument({ name: 'First', folderId: null, kind: 'plantuml', createAnother: false });
+
+      expect(documentsServiceMock.create).toHaveBeenCalledWith({ name: 'First', content: '', folderId: null, kind: 'plantuml' });
+      expect(component.isNewDocumentDialogOpen()).toBe(false);
+      expect(component.documentId()).toBe('new-1');
+      expect(locationMock.go).toHaveBeenCalledWith('/editor/new-1');
+    });
+
+    it('keeps the dialog open across a "create another" streak without touching the editor, then adopts the LAST one made on close', () => {
+      fixture.detectChanges();
+      component.onNewDocument();
+      documentsServiceMock.create
+        .mockReturnValueOnce(of(sampleDocument({ id: 'a', name: 'A', content: '' })))
+        .mockReturnValueOnce(of(sampleDocument({ id: 'b', name: 'B', content: '' })));
+
+      component.onCreateNewDocument({ name: 'A', folderId: null, kind: 'plantuml', createAnother: true });
+
+      expect(component.isNewDocumentDialogOpen()).toBe(true);
+      expect(component.documentId()).toBeNull();
+      const tokenAfterFirst = component.newDocumentClearNameToken();
+
+      component.onCreateNewDocument({ name: 'B', folderId: null, kind: 'plantuml', createAnother: true });
+
+      expect(component.isNewDocumentDialogOpen()).toBe(true);
+      expect(component.documentId()).toBeNull();
+      expect(component.newDocumentClearNameToken()).toBeGreaterThan(tokenAfterFirst);
+
+      component.onCloseNewDocumentDialog();
+
+      expect(component.isNewDocumentDialogOpen()).toBe(false);
+      expect(component.documentId()).toBe('b');
+      expect(locationMock.go).toHaveBeenCalledWith('/editor/b');
+    });
+
+    it('closing with nothing created is a no-op beyond hiding the dialog', () => {
+      fixture.detectChanges();
+      component.onNewDocument();
+      locationMock.go.mockClear();
+
+      component.onCloseNewDocumentDialog();
+
+      expect(component.isNewDocumentDialogOpen()).toBe(false);
+      expect(locationMock.go).not.toHaveBeenCalled();
+    });
+
+    it('keeps the dialog open and surfaces the failure via the error toast when create fails', () => {
+      fixture.detectChanges();
+      component.onNewDocument();
+      documentsServiceMock.create.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+
+      component.onCreateNewDocument({ name: 'Doomed', folderId: null, kind: 'plantuml', createAnother: false });
+
+      expect(component.isNewDocumentDialogOpen()).toBe(true);
+      expect(component.saveError()).toBe('Could not create "Doomed".');
+    });
+  });
+
   describe('Save As via Ctrl+Shift+S', () => {
     function ctrlShiftSEvent(): KeyboardEvent {
       const event = new KeyboardEvent('keydown', { key: 'S', ctrlKey: true, shiftKey: true, cancelable: true });

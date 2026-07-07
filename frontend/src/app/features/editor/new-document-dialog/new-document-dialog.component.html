@@ -1,0 +1,74 @@
+@if (visible) {
+  <div class="new-document-dialog" data-testid="new-document-dialog">
+    <div class="new-document-dialog__backdrop" (click)="onCloseClicked()"></div>
+    <div class="new-document-dialog__panel">
+      <h2 class="new-document-dialog__title">New document</h2>
+
+      <label class="new-document-dialog__label" for="new-document-dialog-name-input">Name</label>
+      <input
+        #nameInput
+        id="new-document-dialog-name-input"
+        type="text"
+        class="new-document-dialog__input"
+        data-testid="new-document-dialog-name"
+        [ngModel]="name()"
+        (ngModelChange)="onNameInput($event)"
+      />
+
+      <label class="new-document-dialog__label" for="new-document-dialog-kind-select">Type</label>
+      <select
+        id="new-document-dialog-kind-select"
+        class="new-document-dialog__select"
+        data-testid="new-document-dialog-kind"
+        [ngModel]="selectedKind()"
+        (ngModelChange)="onKindChange($event)"
+      >
+        <option value="plantuml">PlantUML</option>
+        <option value="markdown">Markdown</option>
+      </select>
+
+      <label class="new-document-dialog__label" for="new-document-dialog-folder-select">Folder</label>
+      <select
+        id="new-document-dialog-folder-select"
+        class="new-document-dialog__select"
+        data-testid="new-document-dialog-folder"
+        [ngModel]="selectedFolderId() ?? ''"
+        (ngModelChange)="onFolderChange($event)"
+      >
+        <option value="">(No folder)</option>
+        @for (option of folderOptions; track option.id) {
+          <option [value]="option.id">{{ option.label }}</option>
+        }
+      </select>
+
+      <label class="new-document-dialog__checkbox-row">
+        <input
+          type="checkbox"
+          data-testid="new-document-dialog-create-another"
+          [ngModel]="createAnother()"
+          (ngModelChange)="onCreateAnotherChange($event)"
+        />
+        Create another
+      </label>
+
+      <div class="new-document-dialog__actions">
+        <button
+          type="button"
+          class="new-document-dialog__button new-document-dialog__button--close"
+          data-testid="new-document-dialog-close"
+          (click)="onCloseClicked()"
+        >
+          Close
+        </button>
+        <button
+          type="button"
+          class="new-document-dialog__button new-document-dialog__button--confirm"
+          data-testid="new-document-dialog-confirm"
+          (click)="onCreateClicked()"
+        >
+          Create
+        </button>
+      </div>
+    </div>
+  </div>
+}
