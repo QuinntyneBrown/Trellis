@@ -17,6 +17,9 @@ namespace Trellis.Api.Controllers;
 [Route("api/folders")]
 public class FoldersController : ControllerBase
 {
+    /// <summary>The document name (case-insensitive) that renders first in a folder's export.</summary>
+    private const string IndexDocumentName = "index";
+
     private readonly ApplicationDbContext context;
 
     /// <summary>
@@ -132,9 +135,10 @@ public class FoldersController : ControllerBase
     /// markdown document. The markdown format is the contract:
     /// the exported folder's name is the H1; each subfolder's heading sits one
     /// level below its parent's (capped at H6); each document's heading sits
-    /// one level below its containing folder's (same cap). Within a level,
-    /// subfolders come first, then documents, both sorted case-insensitively
-    /// by name (mirroring the documents panel's display order). Markdown
+    /// one level below its containing folder's (same cap). Within a folder, a
+    /// document named "index" (case-insensitive) comes first, then subfolders,
+    /// then the remaining documents sorted case-insensitively by name
+    /// (mirroring the documents panel's display order). Markdown
     /// documents are inlined verbatim under their heading; PlantUML documents
     /// are wrapped in a ```plantuml fenced code block. Subfolders whose
     /// subtree contains no documents are pruned entirely; a wholly empty
@@ -218,8 +222,8 @@ public class FoldersController : ControllerBase
     }
 
     /// <summary>
-    /// Recursively appends one folder's heading, its (pruned) subfolder
-    /// sections, and its document sections.
+    /// Recursively appends one folder's heading, its "index" document (if any),
+    /// its (pruned) subfolder sections, and its remaining document sections.
     /// </summary>
     /// <param name="folder">The folder to append.</param>
     /// <param name="depth">The heading depth of this folder (1 = H1).</param>
@@ -243,6 +247,16 @@ public class FoldersController : ControllerBase
 
         sections.Add($"{Heading(depth)} {folder.Name}");
         var containsAnyDocument = false;
+        var documents = folderDocuments[folder.Id];
+
+        // An "index" document is the folder's landing page, so it renders at the
+        // very top - above the subfolder sections, not merely first among the
+        // folder's own documents.
+        foreach (var document in documents.Where(IsIndexDocument).OrderBy(d => d.Name, StringComparer.OrdinalIgnoreCase))
+        {
+            AppendDocumentSection(document, depth + 1, sections);
+            containsAnyDocument = true;
+        }
 
         foreach (var child in childFolders[folder.Id].OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase))
         {
@@ -256,17 +270,39 @@ public class FoldersController : ControllerBase
             }
         }
 
-        foreach (var document in folderDocuments[folder.Id].OrderBy(d => d.Name, StringComparer.OrdinalIgnoreCase))
+        foreach (var document in documents.Where(d => !IsIndexDocument(d)).OrderBy(d => d.Name, StringComparer.OrdinalIgnoreCase))
         {
-            sections.Add($"{Heading(depth + 1)} {document.Name}");
-            var content = NormalizeContent(document.Content);
-            sections.Add(document.Kind == DocumentKinds.Markdown
-                ? content
-                : $"```plantuml\n{content}\n```");
+            AppendDocumentSection(document, depth + 1, sections);
             containsAnyDocument = true;
         }
 
         return containsAnyDocument;
+    }
+
+    /// <summary>
+    /// Whether a document is a folder's "index" (landing) document, matched by
+    /// name case-insensitively - the same comparison the rest of the export
+    /// ordering uses.
+    /// </summary>
+    /// <param name="document">The document to test.</param>
+    /// <returns>True if the document's name is "index" (any casing).</returns>
+    private static bool IsIndexDocument(PlantUmlDocument document) =>
+        string.Equals(document.Name, IndexDocumentName, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Appends one document's heading and its content (markdown inlined
+    /// verbatim, plantuml wrapped in a fenced code block).
+    /// </summary>
+    /// <param name="document">The document to append.</param>
+    /// <param name="depth">The heading depth of the document's section.</param>
+    /// <param name="sections">The output list of markdown sections.</param>
+    private static void AppendDocumentSection(PlantUmlDocument document, int depth, List<string> sections)
+    {
+        sections.Add($"{Heading(depth)} {document.Name}");
+        var content = NormalizeContent(document.Content);
+        sections.Add(document.Kind == DocumentKinds.Markdown
+            ? content
+            : $"```plantuml\n{content}\n```");
     }
 
     /// <summary>

@@ -213,6 +213,49 @@ public class FoldersControllerTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task Export_RendersIndexDocumentFirst_AboveSubfoldersAndOtherDocuments()
+    {
+        // "index" is the folder's landing page: it renders directly under the
+        // folder heading, before the subfolder section, with the remaining
+        // documents following after the subfolders in name order.
+        var docs = await this.CreateFolderAsync("Docs");
+        var guide = await this.CreateFolderAsync("Guide", docs.Id);
+
+        await this.CreateDocumentAsync("about", "About page.", docs.Id, "markdown");
+        await this.CreateDocumentAsync("index", "# Home", docs.Id, "markdown");
+        await this.CreateDocumentAsync("setup", "Setup steps.", guide.Id, "markdown");
+
+        var markdown = await this.client.GetStringAsync($"/api/folders/{docs.Id}/export");
+
+        var expected =
+            "# Docs\n\n" +
+            "## index\n\n" +
+            "# Home\n\n" +
+            "## Guide\n\n" +
+            "### setup\n\n" +
+            "Setup steps.\n\n" +
+            "## about\n\n" +
+            "About page.\n";
+        Assert.Equal(expected, markdown);
+    }
+
+    [Fact]
+    public async Task Export_MatchesIndexNameCaseInsensitively()
+    {
+        // "Index" (capitalized) is still the index doc, so it leads even though
+        // a plain name sort would put "alpha" ahead of it.
+        var folder = await this.CreateFolderAsync("Export index casing");
+        await this.CreateDocumentAsync("alpha", "a", folder.Id, "markdown");
+        await this.CreateDocumentAsync("Index", "home", folder.Id, "markdown");
+
+        var markdown = await this.client.GetStringAsync($"/api/folders/{folder.Id}/export");
+
+        var indexIndex = markdown.IndexOf("## Index", StringComparison.Ordinal);
+        var alphaIndex = markdown.IndexOf("## alpha", StringComparison.Ordinal);
+        Assert.True(indexIndex >= 0 && alphaIndex >= 0 && indexIndex < alphaIndex, markdown);
+    }
+
+    [Fact]
     public async Task Export_ReturnsTextMarkdownContentType()
     {
         var folder = await this.CreateFolderAsync("Export content type");
