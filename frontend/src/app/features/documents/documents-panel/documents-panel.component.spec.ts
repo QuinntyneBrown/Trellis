@@ -124,7 +124,7 @@ describe('DocumentsPanelComponent', () => {
   });
 
   it('exports a folder: fetches the aggregated markdown and downloads it as <name>.md', () => {
-    const markdown = '# Diagrams\n\n## Nested Doc\n\ncontent\n';
+    const markdown = 'Nested doc content.\n\n```plantuml\n@startuml\n@enduml\n```\n';
     foldersServiceMock.exportFolder.mockReturnValue(of(markdown));
     openPanel();
 

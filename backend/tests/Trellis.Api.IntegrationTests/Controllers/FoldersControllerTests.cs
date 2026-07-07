@@ -172,12 +172,13 @@ public class FoldersControllerTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
-    public async Task Export_AggregatesSubtree_WithHierarchyFencingAndInlineMarkdown()
+    public async Task Export_AggregatesSubtree_WithFencingAndInlineMarkdown_WithoutNames()
     {
         // outer > Inner; a plantuml doc in outer and a markdown doc in Inner.
-        // Subfolder sections come before the parent's own documents, so the
-        // expected document is: H1 outer, H2 Inner, H3 markdown doc (inline),
-        // then H2 plantuml doc (fenced).
+        // Folder and document names never appear in the export - only content.
+        // Subfolder content comes before the parent's own documents, so the
+        // expected document is: the markdown doc (inline), then the plantuml
+        // doc (fenced).
         var outer = await this.CreateFolderAsync("Export outer");
         var inner = await this.CreateFolderAsync("Inner", outer.Id);
 
@@ -189,11 +190,7 @@ public class FoldersControllerTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var markdown = await response.Content.ReadAsStringAsync();
         var expected =
-            "# Export outer\n\n" +
-            "## Inner\n\n" +
-            "### alpha-notes\n\n" +
             "# Title\n\nBody *text*.\n\n" +
-            "## beta-diagram\n\n" +
             "```plantuml\n@startuml\nA -> B\n@enduml\n```\n";
         Assert.Equal(expected, markdown);
     }
@@ -202,22 +199,20 @@ public class FoldersControllerTests : IClassFixture<CustomWebApplicationFactory>
     public async Task Export_SortsSiblingDocumentsCaseInsensitivelyByName()
     {
         var folder = await this.CreateFolderAsync("Export sorting");
-        await this.CreateDocumentAsync("beta", "b", folder.Id, "markdown");
-        await this.CreateDocumentAsync("Alpha", "a", folder.Id, "markdown");
+        await this.CreateDocumentAsync("beta", "beta content", folder.Id, "markdown");
+        await this.CreateDocumentAsync("Alpha", "alpha content", folder.Id, "markdown");
 
         var markdown = await this.client.GetStringAsync($"/api/folders/{folder.Id}/export");
 
-        var alphaIndex = markdown.IndexOf("## Alpha", StringComparison.Ordinal);
-        var betaIndex = markdown.IndexOf("## beta", StringComparison.Ordinal);
-        Assert.True(alphaIndex >= 0 && betaIndex >= 0 && alphaIndex < betaIndex, markdown);
+        Assert.Equal("alpha content\n\nbeta content\n", markdown);
     }
 
     [Fact]
     public async Task Export_RendersIndexDocumentFirst_AboveSubfoldersAndOtherDocuments()
     {
-        // "index" is the folder's landing page: it renders directly under the
-        // folder heading, before the subfolder section, with the remaining
-        // documents following after the subfolders in name order.
+        // "index" is the folder's landing page: its content renders at the very
+        // top, before the subfolder content, with the remaining documents
+        // following after the subfolders in name order.
         var docs = await this.CreateFolderAsync("Docs");
         var guide = await this.CreateFolderAsync("Guide", docs.Id);
 
@@ -228,13 +223,8 @@ public class FoldersControllerTests : IClassFixture<CustomWebApplicationFactory>
         var markdown = await this.client.GetStringAsync($"/api/folders/{docs.Id}/export");
 
         var expected =
-            "# Docs\n\n" +
-            "## index\n\n" +
             "# Home\n\n" +
-            "## Guide\n\n" +
-            "### setup\n\n" +
             "Setup steps.\n\n" +
-            "## about\n\n" +
             "About page.\n";
         Assert.Equal(expected, markdown);
     }
@@ -242,17 +232,15 @@ public class FoldersControllerTests : IClassFixture<CustomWebApplicationFactory>
     [Fact]
     public async Task Export_MatchesIndexNameCaseInsensitively()
     {
-        // "Index" (capitalized) is still the index doc, so it leads even though
-        // a plain name sort would put "alpha" ahead of it.
+        // "Index" (capitalized) is still the index doc, so its content leads
+        // even though a plain name sort would put "alpha" ahead of it.
         var folder = await this.CreateFolderAsync("Export index casing");
-        await this.CreateDocumentAsync("alpha", "a", folder.Id, "markdown");
-        await this.CreateDocumentAsync("Index", "home", folder.Id, "markdown");
+        await this.CreateDocumentAsync("alpha", "alpha content", folder.Id, "markdown");
+        await this.CreateDocumentAsync("Index", "home content", folder.Id, "markdown");
 
         var markdown = await this.client.GetStringAsync($"/api/folders/{folder.Id}/export");
 
-        var indexIndex = markdown.IndexOf("## Index", StringComparison.Ordinal);
-        var alphaIndex = markdown.IndexOf("## alpha", StringComparison.Ordinal);
-        Assert.True(indexIndex >= 0 && alphaIndex >= 0 && indexIndex < alphaIndex, markdown);
+        Assert.Equal("home content\n\nalpha content\n", markdown);
     }
 
     [Fact]
@@ -267,16 +255,17 @@ public class FoldersControllerTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
-    public async Task Export_PrunesSubfoldersWithoutDocuments()
+    public async Task Export_OmitsFolderAndDocumentNames()
     {
-        var folder = await this.CreateFolderAsync("Export pruning");
+        // Names never appear in the export - an empty subfolder leaves no
+        // trace, and the kept document contributes only its content.
+        var folder = await this.CreateFolderAsync("Export names");
         await this.CreateFolderAsync("Empty branch", folder.Id);
         await this.CreateDocumentAsync("kept-doc", "content", folder.Id, "markdown");
 
         var markdown = await this.client.GetStringAsync($"/api/folders/{folder.Id}/export");
 
-        Assert.DoesNotContain("Empty branch", markdown);
-        Assert.Contains("## kept-doc", markdown);
+        Assert.Equal("content\n", markdown);
     }
 
     [Fact]
@@ -287,14 +276,14 @@ public class FoldersControllerTests : IClassFixture<CustomWebApplicationFactory>
 
         var markdown = await this.client.GetStringAsync($"/api/folders/{folder.Id}/export");
 
-        Assert.Equal("# Export empty\n\n_This folder contains no documents._\n", markdown);
+        Assert.Equal("_This folder contains no documents._\n", markdown);
     }
 
     [Fact]
-    public async Task Export_CapsHeadingDepthAtH6()
+    public async Task Export_IncludesContentFromDeeplyNestedFolders()
     {
-        // A 7-deep folder chain: the 7th folder and its document would sit at
-        // H7/H8, which markdown does not have - both cap at H6.
+        // A 7-deep folder chain: the deepest document's content is still
+        // aggregated, with no folder names in the output.
         var current = await this.CreateFolderAsync("Depth 1");
         var rootId = current.Id;
         for (var depth = 2; depth <= 7; depth++)
@@ -302,13 +291,11 @@ public class FoldersControllerTests : IClassFixture<CustomWebApplicationFactory>
             current = await this.CreateFolderAsync($"Depth {depth}", current.Id);
         }
 
-        await this.CreateDocumentAsync("deep-doc", "deep", current.Id, "markdown");
+        await this.CreateDocumentAsync("deep-doc", "deep content", current.Id, "markdown");
 
         var markdown = await this.client.GetStringAsync($"/api/folders/{rootId}/export");
 
-        Assert.Contains("\n###### Depth 7\n", markdown);
-        Assert.Contains("\n###### deep-doc\n", markdown);
-        Assert.DoesNotContain("#######", markdown);
+        Assert.Equal("deep content\n", markdown);
     }
 
     [Fact]

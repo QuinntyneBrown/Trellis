@@ -132,19 +132,15 @@ public class FoldersController : ControllerBase
 
     /// <summary>
     /// Exports a folder and all of its descendant folders as one aggregated
-    /// markdown document. The markdown format is the contract:
-    /// the exported folder's name is the H1; each subfolder's heading sits one
-    /// level below its parent's (capped at H6); each document's heading sits
-    /// one level below its containing folder's (same cap). Within a folder, a
-    /// document named "index" (case-insensitive) comes first, then subfolders,
-    /// then the remaining documents sorted case-insensitively by name
-    /// (mirroring the documents panel's display order). Markdown
-    /// documents are inlined verbatim under their heading; PlantUML documents
-    /// are wrapped in a ```plantuml fenced code block. Subfolders whose
-    /// subtree contains no documents are pruned entirely; a wholly empty
-    /// export still returns the H1 plus an italic "no documents" note.
-    /// Sections are separated by blank lines and line endings are normalized
-    /// to LF.
+    /// markdown document. The markdown format is the contract: folder and
+    /// document names never appear in the output - only document content.
+    /// Within a folder, a document named "index" (case-insensitive) comes
+    /// first, then the subfolders' content, then the remaining documents
+    /// sorted case-insensitively by name (mirroring the documents panel's
+    /// display order). Markdown documents are inlined verbatim; PlantUML
+    /// documents are wrapped in a ```plantuml fenced code block. A wholly
+    /// empty export returns just an italic "no documents" note. Sections are
+    /// separated by blank lines and line endings are normalized to LF.
     /// </summary>
     /// <param name="id">The identifier of the folder to export.</param>
     /// <param name="cancellationToken">A token used to observe cancellation requests.</param>
@@ -209,8 +205,8 @@ public class FoldersController : ControllerBase
             .ToLookup(d => d.FolderId!.Value);
 
         var sections = new List<string>();
-        var containsAnyDocument = AppendFolderSections(root, 1, new HashSet<Guid>(), childFolders, folderDocuments, sections);
-        if (!containsAnyDocument)
+        AppendFolderSections(root, new HashSet<Guid>(), childFolders, folderDocuments, sections);
+        if (sections.Count == 0)
         {
             sections.Add("_This folder contains no documents._");
         }
@@ -222,19 +218,17 @@ public class FoldersController : ControllerBase
     }
 
     /// <summary>
-    /// Recursively appends one folder's heading, its "index" document (if any),
-    /// its (pruned) subfolder sections, and its remaining document sections.
+    /// Recursively appends one folder's "index" document (if any), its
+    /// subfolder sections, and its remaining document sections. Folder and
+    /// document names are never emitted - only document content.
     /// </summary>
     /// <param name="folder">The folder to append.</param>
-    /// <param name="depth">The heading depth of this folder (1 = H1).</param>
     /// <param name="visited">Folders already emitted, guarding against parent cycles.</param>
     /// <param name="childFolders">All folders keyed by parent folder id.</param>
     /// <param name="folderDocuments">Subtree documents keyed by containing folder id.</param>
     /// <param name="sections">The output list of markdown sections.</param>
-    /// <returns>Whether this folder's subtree contributed any document.</returns>
-    private static bool AppendFolderSections(
+    private static void AppendFolderSections(
         Folder folder,
-        int depth,
         HashSet<Guid> visited,
         ILookup<Guid, Folder> childFolders,
         ILookup<Guid, PlantUmlDocument> folderDocuments,
@@ -242,11 +236,9 @@ public class FoldersController : ControllerBase
     {
         if (!visited.Add(folder.Id))
         {
-            return false;
+            return;
         }
 
-        sections.Add($"{Heading(depth)} {folder.Name}");
-        var containsAnyDocument = false;
         var documents = folderDocuments[folder.Id];
 
         // An "index" document is the folder's landing page, so it renders at the
@@ -254,29 +246,18 @@ public class FoldersController : ControllerBase
         // folder's own documents.
         foreach (var document in documents.Where(IsIndexDocument).OrderBy(d => d.Name, StringComparer.OrdinalIgnoreCase))
         {
-            AppendDocumentSection(document, depth + 1, sections);
-            containsAnyDocument = true;
+            AppendDocumentSection(document, sections);
         }
 
         foreach (var child in childFolders[folder.Id].OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase))
         {
-            // Build the child's sections off to the side so a document-less
-            // subtree can be pruned without leaving its heading behind.
-            var childSections = new List<string>();
-            if (AppendFolderSections(child, depth + 1, visited, childFolders, folderDocuments, childSections))
-            {
-                sections.AddRange(childSections);
-                containsAnyDocument = true;
-            }
+            AppendFolderSections(child, visited, childFolders, folderDocuments, sections);
         }
 
         foreach (var document in documents.Where(d => !IsIndexDocument(d)).OrderBy(d => d.Name, StringComparer.OrdinalIgnoreCase))
         {
-            AppendDocumentSection(document, depth + 1, sections);
-            containsAnyDocument = true;
+            AppendDocumentSection(document, sections);
         }
-
-        return containsAnyDocument;
     }
 
     /// <summary>
@@ -290,28 +271,18 @@ public class FoldersController : ControllerBase
         string.Equals(document.Name, IndexDocumentName, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Appends one document's heading and its content (markdown inlined
-    /// verbatim, plantuml wrapped in a fenced code block).
+    /// Appends one document's content (markdown inlined verbatim, plantuml
+    /// wrapped in a fenced code block). The document's name is not emitted.
     /// </summary>
     /// <param name="document">The document to append.</param>
-    /// <param name="depth">The heading depth of the document's section.</param>
     /// <param name="sections">The output list of markdown sections.</param>
-    private static void AppendDocumentSection(PlantUmlDocument document, int depth, List<string> sections)
+    private static void AppendDocumentSection(PlantUmlDocument document, List<string> sections)
     {
-        sections.Add($"{Heading(depth)} {document.Name}");
         var content = NormalizeContent(document.Content);
         sections.Add(document.Kind == DocumentKinds.Markdown
             ? content
             : $"```plantuml\n{content}\n```");
     }
-
-    /// <summary>
-    /// Renders a markdown heading marker for the given depth, capped at H6
-    /// (markdown has no deeper heading).
-    /// </summary>
-    /// <param name="depth">The 1-based nesting depth.</param>
-    /// <returns>The heading marker, e.g. "##".</returns>
-    private static string Heading(int depth) => new('#', Math.Min(depth, 6));
 
     /// <summary>
     /// Normalizes document content for embedding: CRLF becomes LF and
