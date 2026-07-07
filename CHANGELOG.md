@@ -9,8 +9,9 @@ All notable changes to Trellis are recorded in this file.
 - Folder export: a Documents-explorer folder row action that aggregates
   every PlantUML and Markdown document in the folder and its subfolders
   into one markdown file downloaded by the browser as `<folder-name>.md` —
-  headings mirror the folder hierarchy, PlantUML sources are fenced as
-  ```` ```plantuml ```` blocks, and markdown content is inlined verbatim.
+  only document content is included (no folder or document names),
+  PlantUML sources are fenced as ```` ```plantuml ```` blocks, and
+  markdown content is inlined verbatim.
 - Templates explorer side panel with full template CRUD: create from the
   current editor content, apply, update-from-editor, rename, and delete.
   The six built-in starters are migration-seeded, editable rows.

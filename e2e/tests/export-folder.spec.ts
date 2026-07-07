@@ -10,8 +10,9 @@ const MD_CONTENT = ['# Notes heading', '', 'Some exported *prose*.'].join('\n');
  * D-013: a folder row's Export action aggregates every document in that
  * folder and its descendant folders into one markdown file, downloaded by
  * the browser as "<folder-name>.md" — PlantUML documents as ```plantuml
- * fenced blocks, markdown documents inlined verbatim, headings mirroring
- * the folder hierarchy. First waitForEvent('download') in this suite.
+ * fenced blocks, markdown documents inlined verbatim, with no folder or
+ * document names in the output. First waitForEvent('download') in this
+ * suite.
  */
 test.describe('export a folder as markdown', () => {
   test('downloads <folder>.md aggregating the subtree with fenced plantuml and inline markdown', async ({
@@ -43,16 +44,27 @@ test.describe('export a folder as markdown', () => {
       await editorPage.saveDialog.confirmSave();
       await expect(editorPage.saveDialog.root).toBeHidden();
 
-      // ...and a markdown document in the nested subfolder. Alt+N starts a
-      // fresh document so the next Save opens a create dialog; the editor is
-      // clean right after saving, so no discard confirm appears.
+      // ...and a markdown document in the nested subfolder, created blank
+      // through the New Document dialog (Alt+N; the editor is clean right
+      // after saving, so no discard confirm appears). Nested folder options
+      // are nbsp-indented four per depth level. The editor adopts the new
+      // blank document when the dialog closes.
       await page.keyboard.press('Alt+KeyN');
+      const newDocumentDialog = page.getByTestId('new-document-dialog');
+      await expect(newDocumentDialog).toBeVisible();
+      await page.getByTestId('new-document-dialog-name').fill(mdDocName);
+      await page.getByTestId('new-document-dialog-kind').selectOption('markdown');
+      await page
+        .getByTestId('new-document-dialog-folder')
+        .selectOption({ label: `    ${subfolderName}` });
+      await page.getByTestId('new-document-dialog-confirm').click();
+      await expect(newDocumentDialog).toBeHidden();
+
+      // Type the markdown content into the adopted blank document and
+      // quick-save it (the save dialog updates the existing document).
       await expect.poll(async () => (await editorPage.editor.getValue()).trim()).toBe('');
       await editorPage.editor.replaceAllText(MD_CONTENT);
       await editorPage.fileMenu.openSaveDialog();
-      await editorPage.saveDialog.typeName(mdDocName);
-      await editorPage.saveDialog.selectKind('markdown');
-      await editorPage.saveDialog.selectFolder(`    ${subfolderName}`);
       await editorPage.saveDialog.confirmSave();
       await expect(editorPage.saveDialog.root).toBeHidden();
 
@@ -64,17 +76,17 @@ test.describe('export a folder as markdown', () => {
       await download.saveAs(savedPath);
       const markdown = await readFile(savedPath, 'utf-8');
 
-      // Headings mirror the hierarchy: H1 folder, H2 subfolder.
-      expect(markdown).toContain(`# ${folderName}`);
-      expect(markdown).toContain(`## ${subfolderName}`);
+      // Folder and document names never appear in the export.
+      expect(markdown).not.toContain(folderName);
+      expect(markdown).not.toContain(subfolderName);
+      expect(markdown).not.toContain(pumlDocName);
+      expect(markdown).not.toContain(mdDocName);
 
-      // The PlantUML document is a ```plantuml fence wrapping its source
-      // verbatim (export normalizes line endings to LF)...
-      expect(markdown).toContain('```plantuml\n' + PUML_CONTENT + '\n```');
-
-      // ...while the markdown document is inlined directly under its H3
-      // heading (subfolder is H2, its documents one deeper) — no fence.
-      expect(markdown).toContain(`### ${mdDocName}\n\n${MD_CONTENT}`);
+      // Only document content is aggregated: the subfolder's markdown
+      // document inlined verbatim (no fence) followed by the folder's own
+      // PlantUML document as a ```plantuml fence wrapping its source
+      // verbatim (export normalizes line endings to LF).
+      expect(markdown).toBe(`${MD_CONTENT}\n\n\`\`\`plantuml\n${PUML_CONTENT}\n\`\`\`\n`);
     } finally {
       if (folderExists) {
         try {
