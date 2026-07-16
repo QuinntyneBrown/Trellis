@@ -22,6 +22,11 @@
     &:hover {
       background-color: var(--tds-hover-wash);
     }
+
+    &:focus-visible {
+      outline: 1px solid var(--tds-accent);
+      outline-offset: -1px;
+    }
   }
 
   .#{$block}__chevron,
@@ -57,18 +62,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    // Lets the actions group below sit flush to the row's own right edge
-    // instead of hugging the (possibly short) name.
     flex: 1 1 auto;
   }
 
-  // Always visible (not hover-revealed). The buttons themselves are
-  // <app-tree-action-button> compact icon buttons, which carry their own
-  // visuals -- this group only lays them out.
-  .#{$block}__actions {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    flex: 0 0 auto;
+  .#{$block}__row--context-target {
+    background-color: var(--tds-accent-tint-12);
   }
 }

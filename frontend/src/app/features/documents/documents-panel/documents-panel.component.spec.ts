@@ -42,6 +42,7 @@ describe('DocumentsPanelComponent', () => {
   ];
 
   beforeEach(async () => {
+    jest.useFakeTimers();
     documentsServiceMock = {
       list: jest.fn().mockReturnValue(of(summaries)),
       delete: jest.fn().mockReturnValue(of(undefined)),
@@ -82,6 +83,7 @@ describe('DocumentsPanelComponent', () => {
 
   afterEach(() => {
     jest.restoreAllMocks();
+    jest.useRealTimers();
   });
 
   function openPanel(): void {
@@ -92,6 +94,16 @@ describe('DocumentsPanelComponent', () => {
 
   function byTestId(testId: string): HTMLElement | null {
     return fixture.nativeElement.querySelector(`[data-testid="${testId}"]`);
+  }
+
+  function runContextCommand(target: HTMLElement, command: string): void {
+    target.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 40, clientY: 40 }));
+    fixture.detectChanges();
+    const item = fixture.nativeElement.querySelector(`[data-command="${command}"]`) as HTMLButtonElement | null;
+    expect(item).toBeTruthy();
+    item!.click();
+    jest.runOnlyPendingTimers();
+    fixture.detectChanges();
   }
 
   it('renders nothing when closed', () => {
@@ -116,13 +128,29 @@ describe('DocumentsPanelComponent', () => {
     expect(fixture.nativeElement.querySelectorAll('[data-testid="document-item"]').length).toBe(1);
   });
 
+  it('replaces row/header action icons with contextual text commands', () => {
+    openPanel();
+    expect(byTestId('documents-new-folder')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="document-folder-delete"]')).toBeNull();
+
+    byTestId('document-folder')!.dispatchEvent(
+      new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 40, clientY: 40 }),
+    );
+    fixture.detectChanges();
+
+    const labels = Array.from(
+      fixture.nativeElement.querySelectorAll('[data-testid="tree-context-menu-item"]') as NodeListOf<HTMLElement>,
+    ).map((item) => item.textContent?.trim());
+    expect(labels).toEqual(['New Folder', 'Scope to This Folder', 'Export Folder as Markdown', 'Rename', 'Delete']);
+  });
+
   it('shows the empty message only when there are no folders and no documents', () => {
     documentsServiceMock.list.mockReturnValue(of([]));
     foldersServiceMock.list.mockReturnValue(of([]));
     openPanel();
 
     expect(byTestId('documents-panel')!.textContent).toContain('No saved documents yet.');
-    expect(byTestId('documents-tree')).toBeNull();
+    expect(byTestId('documents-tree')).toBeTruthy();
   });
 
   it('exports a folder via the dialog: fetches the aggregated markdown and downloads it as <name>.md', () => {
@@ -130,8 +158,7 @@ describe('DocumentsPanelComponent', () => {
     foldersServiceMock.exportFolder.mockReturnValue(of(markdown));
     openPanel();
 
-    (byTestId('document-folder-export') as HTMLButtonElement).click();
-    fixture.detectChanges();
+    runContextCommand(byTestId('document-folder')!, 'export');
 
     // The export button only opens the dialog -- nothing is fetched yet.
     expect(byTestId('export-folder-dialog')).toBeTruthy();
@@ -148,8 +175,7 @@ describe('DocumentsPanelComponent', () => {
   it('exports with includeExcluded=true when the dialog checkbox is ticked', () => {
     openPanel();
 
-    (byTestId('document-folder-export') as HTMLButtonElement).click();
-    fixture.detectChanges();
+    runContextCommand(byTestId('document-folder')!, 'export');
 
     const checkbox = byTestId('export-folder-dialog-include-excluded') as HTMLInputElement;
     checkbox.click();
@@ -163,8 +189,7 @@ describe('DocumentsPanelComponent', () => {
   it('cancelling the export dialog fetches nothing', () => {
     openPanel();
 
-    (byTestId('document-folder-export') as HTMLButtonElement).click();
-    fixture.detectChanges();
+    runContextCommand(byTestId('document-folder')!, 'export');
 
     (byTestId('export-folder-dialog-cancel') as HTMLButtonElement).click();
     fixture.detectChanges();
@@ -177,7 +202,7 @@ describe('DocumentsPanelComponent', () => {
   it('toggles a document\'s export exclusion and refreshes the tree', () => {
     openPanel();
 
-    (byTestId('document-item-toggle-export') as HTMLButtonElement).click();
+    runContextCommand(byTestId('document-item')!, 'toggle-export');
 
     expect(documentsServiceMock.setExportExclusion).toHaveBeenCalledWith('1', true);
     // The mutate-then-refresh convention: both lists are refetched.
@@ -191,7 +216,7 @@ describe('DocumentsPanelComponent', () => {
     );
     openPanel();
 
-    (byTestId('document-item-toggle-export') as HTMLButtonElement).click();
+    runContextCommand(byTestId('document-item')!, 'toggle-export');
 
     expect(documentsServiceMock.setExportExclusion).toHaveBeenCalledWith('1', false);
   });
@@ -201,7 +226,7 @@ describe('DocumentsPanelComponent', () => {
     const spy = jest.fn();
     component.documentOpened.subscribe(spy);
 
-    (byTestId('document-item-open') as HTMLButtonElement).click();
+    runContextCommand(byTestId('document-item')!, 'open');
 
     expect(spy).toHaveBeenCalledWith(summaries[0]);
   });
@@ -229,31 +254,30 @@ describe('DocumentsPanelComponent', () => {
     expect(fixture.nativeElement.querySelectorAll('[data-testid="document-item"]').length).toBe(2);
   });
 
-  it('creates a root folder from the header button and refreshes', () => {
+  it('creates a root folder from the tree background context menu and refreshes', () => {
     jest.spyOn(window, 'prompt').mockReturnValue('Fresh folder');
     openPanel();
 
-    (byTestId('documents-new-folder') as HTMLButtonElement).click();
+    runContextCommand(byTestId('documents-tree')!, 'new-folder');
 
     expect(foldersServiceMock.create).toHaveBeenCalledWith({ name: 'Fresh folder', parentFolderId: null });
     expect(foldersServiceMock.list).toHaveBeenCalledTimes(2);
   });
 
-  it('does not create a folder when the header prompt is cancelled', () => {
+  it('does not create a folder when the background-menu prompt is cancelled', () => {
     jest.spyOn(window, 'prompt').mockReturnValue(null);
     openPanel();
 
-    (byTestId('documents-new-folder') as HTMLButtonElement).click();
+    runContextCommand(byTestId('documents-tree')!, 'new-folder');
 
     expect(foldersServiceMock.create).not.toHaveBeenCalled();
   });
 
-  it('creates a subfolder via the row button and pre-expands its parent', () => {
+  it('creates a subfolder via the row context menu and pre-expands its parent', () => {
     jest.spyOn(window, 'prompt').mockReturnValue('Nested folder');
     openPanel();
 
-    (byTestId('document-folder-new-folder') as HTMLButtonElement).click();
-    fixture.detectChanges();
+    runContextCommand(byTestId('document-folder')!, 'new-folder');
 
     expect(foldersServiceMock.create).toHaveBeenCalledWith({ name: 'Nested folder', parentFolderId: 'f1' });
     // The parent was pre-expanded, so after the refresh its nested document shows.
@@ -264,7 +288,7 @@ describe('DocumentsPanelComponent', () => {
     jest.spyOn(window, 'prompt').mockReturnValue('Renamed folder');
     openPanel();
 
-    (byTestId('document-folder-rename') as HTMLButtonElement).click();
+    runContextCommand(byTestId('document-folder')!, 'rename');
 
     expect(foldersServiceMock.rename).toHaveBeenCalledWith('f1', 'Renamed folder');
     expect(documentsServiceMock.rename).not.toHaveBeenCalled();
@@ -274,7 +298,7 @@ describe('DocumentsPanelComponent', () => {
     jest.spyOn(window, 'prompt').mockReturnValue('Renamed doc');
     openPanel();
 
-    (byTestId('document-item-rename') as HTMLButtonElement).click();
+    runContextCommand(byTestId('document-item')!, 'rename');
 
     expect(documentsServiceMock.rename).toHaveBeenCalledWith('1', 'Renamed doc');
     expect(foldersServiceMock.rename).not.toHaveBeenCalled();
@@ -284,10 +308,10 @@ describe('DocumentsPanelComponent', () => {
     jest.spyOn(window, 'confirm').mockReturnValue(true);
     openPanel();
 
-    (byTestId('document-folder-delete') as HTMLButtonElement).click();
+    runContextCommand(byTestId('document-folder')!, 'delete');
     expect(foldersServiceMock.delete).toHaveBeenCalledWith('f1');
 
-    (byTestId('document-item-delete') as HTMLButtonElement).click();
+    runContextCommand(byTestId('document-item')!, 'delete');
     expect(documentsServiceMock.delete).toHaveBeenCalledWith('1');
   });
 
@@ -407,8 +431,7 @@ describe('DocumentsPanelComponent', () => {
     it('opens the move dialog from a row moveRequested event and moves on confirm', () => {
       openPanel();
 
-      (byTestId('document-item-move') as HTMLButtonElement).click();
-      fixture.detectChanges();
+      runContextCommand(byTestId('document-item')!, 'move');
 
       expect(byTestId('move-document-dialog')).toBeTruthy();
       expect(component.movingDocument()!.id).toBe('1');
@@ -423,8 +446,7 @@ describe('DocumentsPanelComponent', () => {
     it('closes the move dialog without moving on cancel', () => {
       openPanel();
 
-      (byTestId('document-item-move') as HTMLButtonElement).click();
-      fixture.detectChanges();
+      runContextCommand(byTestId('document-item')!, 'move');
 
       component.onMoveDialogCancel();
       fixture.detectChanges();
@@ -509,11 +531,10 @@ describe('DocumentsPanelComponent', () => {
     }
 
     function scopeTo(folderName: string): void {
-      const button = fixture.nativeElement.querySelector(
-        `[data-folder-name="${folderName}"] [data-testid="document-folder-scope"]`,
-      ) as HTMLButtonElement;
-      button.click();
-      fixture.detectChanges();
+      const row = fixture.nativeElement.querySelector(
+        `[data-testid="document-folder"][data-folder-name="${folderName}"]`,
+      ) as HTMLElement;
+      runContextCommand(row, 'scope');
     }
 
     function visibleFolderNames(): (string | null)[] {
@@ -578,12 +599,12 @@ describe('DocumentsPanelComponent', () => {
       expect(layoutPreferencesMock.setDocumentsScopeFolderId).toHaveBeenLastCalledWith(null);
     });
 
-    it('creates header New Folder inside the scope while scoped', () => {
+    it('creates a root-context New Folder inside the scope while scoped', () => {
       jest.spyOn(window, 'prompt').mockReturnValue('Inside');
       openPanel();
       scopeTo('Work');
 
-      (byTestId('documents-new-folder') as HTMLButtonElement).click();
+      runContextCommand(byTestId('documents-tree')!, 'new-folder');
 
       expect(foldersServiceMock.create).toHaveBeenCalledWith({ name: 'Inside', parentFolderId: 'work' });
     });

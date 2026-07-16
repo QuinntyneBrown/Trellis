@@ -9,7 +9,7 @@ namespace Trellis.Api.Contracts;
 public record ExplainAggregateRequest
 {
     /// <summary>
-    /// Gets the files to aggregate into the prompt.
+    /// Gets the files to aggregate into the downloadable attachment.
     /// </summary>
     [Required]
     [MinLength(1)]

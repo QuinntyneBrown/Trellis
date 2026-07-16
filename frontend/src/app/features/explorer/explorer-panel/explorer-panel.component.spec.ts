@@ -225,6 +225,91 @@ describe('ExplorerPanelComponent', () => {
     });
   });
 
+  describe('context menus', () => {
+    beforeEach(() => jest.useFakeTimers());
+    afterEach(() => jest.useRealTimers());
+
+    function showTree(): ExplorerTreeNode {
+      const root: ExplorerTreeNode = {
+        name: 'root',
+        kind: 'directory',
+        handle: fakeDirHandle('root'),
+        children: [
+          {
+            name: 'diagram.puml',
+            kind: 'file',
+            handle: fakeFileHandle('diagram.puml'),
+            children: undefined,
+            loadState: 'loaded',
+            expanded: false,
+          },
+        ],
+        loadState: 'loaded',
+        expanded: true,
+      };
+      component.rootNode = root;
+      fixture.detectChanges();
+      return root;
+    }
+
+    function openMenu(target: HTMLElement): HTMLElement {
+      target.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 20, clientY: 30 }));
+      fixture.detectChanges();
+      return byTestId('tree-context-menu')!;
+    }
+
+    it('offers root creation on the row and blank tree surface without a root delete command', async () => {
+      createFixture();
+      fixture.detectChanges();
+      await flush();
+      showTree();
+
+      const menu = openMenu(byTestId('explorer-tree')!);
+      expect(menu.querySelector('[data-command="new-file"]')).toBeTruthy();
+      expect(menu.querySelector('[data-command="new-folder"]')).toBeTruthy();
+      expect(menu.querySelector('[data-command="delete"]')).toBeNull();
+      expect(fixture.nativeElement.querySelector('[data-testid="file-tree-node-new-file"]')).toBeNull();
+    });
+
+    it('offers Open and Delete for a file and runs Open through the existing file handler', async () => {
+      fileSystemAccessServiceMock.readTextFile.mockResolvedValue('@startuml');
+      createFixture();
+      fixture.detectChanges();
+      await flush();
+      showTree();
+      const openedSpy = jest.fn();
+      component.fileOpened.subscribe(openedSpy);
+      const fileRow = fixture.nativeElement.querySelector('[data-name="diagram.puml"]') as HTMLElement;
+
+      const menu = openMenu(fileRow);
+      expect(menu.querySelector('[data-command="open"]')).toBeTruthy();
+      expect(menu.querySelector('[data-command="delete"]')).toBeTruthy();
+      (menu.querySelector('[data-command="open"]') as HTMLButtonElement).click();
+      jest.runOnlyPendingTimers();
+      await flush();
+
+      expect(fileSystemAccessServiceMock.readTextFile).toHaveBeenCalled();
+      expect(openedSpy).toHaveBeenCalledWith(expect.objectContaining({ name: 'diagram.puml', content: '@startuml' }));
+    });
+
+    it('creates from a context command using the existing prompt and filesystem flow', async () => {
+      jest.spyOn(window, 'prompt').mockReturnValue('new.puml');
+      fileSystemAccessServiceMock.listChildren.mockResolvedValue([]);
+      createFixture();
+      fixture.detectChanges();
+      await flush();
+      showTree();
+
+      const menu = openMenu(byTestId('explorer-tree')!);
+      (menu.querySelector('[data-command="new-file"]') as HTMLButtonElement).click();
+      jest.runOnlyPendingTimers();
+      await flush();
+
+      expect(window.prompt).toHaveBeenCalledWith('New file name');
+      expect(fileSystemAccessServiceMock.createFile).toHaveBeenCalledWith(component.rootNode!.handle, 'new.puml');
+    });
+  });
+
   describe('expand/collapse lazy loading', () => {
     function loadedRoot(): ExplorerTreeNode {
       return {

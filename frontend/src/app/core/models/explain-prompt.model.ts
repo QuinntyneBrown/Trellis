@@ -1,10 +1,14 @@
 /**
- * The response of both explain endpoints: the ready-to-paste prompt markdown
- * and how many files it aggregates (surfaced by the wizard as confirmation).
+ * The response of both explain endpoints: a compact ready-to-paste prompt
+ * plus the markdown attachment the user uploads alongside it.
  */
 export interface ExplainPrompt {
-  /** The complete "Explain This" prompt as markdown. */
+  /** The compact "Explain This" prompt; names the attachment to upload. */
   prompt: string;
   /** The number of files included in the aggregation. */
   fileCount: number;
+  /** The exact filename to use for the downloaded source attachment. */
+  attachmentFileName: string;
+  /** Aggregated source-file blocks written to the downloaded attachment. */
+  attachmentContent: string;
 }

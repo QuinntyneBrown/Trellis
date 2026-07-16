@@ -1317,7 +1317,12 @@ describe('EditorPageComponent', () => {
     it('loads a generated prompt as an unsaved markdown document named "Explain This" and renders it', () => {
       fixture.detectChanges();
 
-      component.onExplainPromptGenerated({ prompt: '# Explain This\n\nbody', fileCount: 2 });
+      component.onExplainPromptGenerated({
+        prompt: '# Explain This\n\nbody',
+        fileCount: 2,
+        attachmentFileName: 'explain-this-files.md',
+        attachmentContent: '=== FILE: src/main.ts ===',
+      });
 
       expect(component.documentId()).toBeNull();
       expect(component.documentName()).toBe('Explain This');
@@ -1333,7 +1338,12 @@ describe('EditorPageComponent', () => {
       component.sourceCode.set('unsaved content');
 
       const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(false);
-      component.onExplainPromptGenerated({ prompt: '# Explain This', fileCount: 1 });
+      component.onExplainPromptGenerated({
+        prompt: '# Explain This',
+        fileCount: 1,
+        attachmentFileName: 'explain-this-files.md',
+        attachmentContent: '=== FILE: src/main.ts ===',
+      });
 
       expect(confirmSpy).toHaveBeenCalled();
       expect(component.sourceCode()).toBe('unsaved content');

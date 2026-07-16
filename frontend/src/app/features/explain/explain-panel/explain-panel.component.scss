@@ -165,3 +165,9 @@
   font-size: 0.8rem;
   line-height: 1.4;
 }
+
+.explain-panel__result-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}

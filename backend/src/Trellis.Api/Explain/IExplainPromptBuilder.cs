@@ -6,9 +6,11 @@ namespace Trellis.Api.Explain;
 public interface IExplainPromptBuilder
 {
     /// <summary>
-    /// Wraps <paramref name="aggregation"/> in the explain-this instructions.
+    /// Builds explain-this instructions that direct the LLM to the separately
+    /// uploaded source attachment.
     /// </summary>
     /// <param name="aggregation">The aggregated files.</param>
-    /// <returns>The complete prompt as markdown.</returns>
-    string Build(AggregationResult aggregation);
+    /// <param name="attachmentFileName">The exact filename the user will upload.</param>
+    /// <returns>The compact prompt as markdown.</returns>
+    string Build(AggregationResult aggregation, string attachmentFileName);
 }

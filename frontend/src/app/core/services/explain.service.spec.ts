@@ -24,7 +24,12 @@ describe('ExplainService', () => {
 
   it('posts local path+content pairs to the aggregate endpoint', () => {
     const files = [{ path: 'src/main.ts', content: 'const x = 1;' }];
-    const response = { prompt: '# Explain This', fileCount: 1 };
+    const response = {
+      prompt: '# Explain This',
+      fileCount: 1,
+      attachmentFileName: 'explain-this-files.md',
+      attachmentContent: '=== FILE: src/main.ts ===',
+    };
 
     service.aggregateFiles(files).subscribe((result) => {
       expect(result).toEqual(response);
@@ -37,7 +42,12 @@ describe('ExplainService', () => {
   });
 
   it('posts a repository URL to the aggregate-url endpoint', () => {
-    const response = { prompt: '# Explain This', fileCount: 12 };
+    const response = {
+      prompt: '# Explain This',
+      fileCount: 12,
+      attachmentFileName: 'explain-this-files.md',
+      attachmentContent: '=== FILE: README.md ===',
+    };
 
     service.aggregateUrl('https://github.com/owner/repo').subscribe((result) => {
       expect(result).toEqual(response);

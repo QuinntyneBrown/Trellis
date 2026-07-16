@@ -1,0 +1,31 @@
+<div
+  #menu
+  class="tree-context-menu"
+  data-testid="tree-context-menu"
+  role="menu"
+  [attr.aria-label]="ariaLabel"
+  [style.left.px]="left()"
+  [style.top.px]="top()"
+  (keydown)="onKeydown($event)"
+>
+  @for (item of items; track item.id; let index = $index) {
+    @if (item.separatorBefore) {
+      <div class="tree-context-menu__separator" role="separator"></div>
+    }
+    <button
+      #menuItem
+      type="button"
+      class="tree-context-menu__item"
+      role="menuitem"
+      data-testid="tree-context-menu-item"
+      [attr.data-command]="item.id"
+      [class.tree-context-menu__item--danger]="item.danger"
+      [disabled]="item.disabled"
+      [tabIndex]="activeIndex() === index ? 0 : -1"
+      (mouseenter)="onItemMouseEnter(index)"
+      (click)="onItemClicked(item)"
+    >
+      {{ item.label }}
+    </button>
+  }
+</div>

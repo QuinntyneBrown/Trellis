@@ -5,6 +5,7 @@ import { ExplainFileEntry } from '../../../core/models/explain-file-entry.model'
 import { ExplainPrompt } from '../../../core/models/explain-prompt.model';
 import { ExplainService } from '../../../core/services/explain.service';
 import { ClipboardService } from '../../../core/services/clipboard.service';
+import { FileDownloadService } from '../../../core/services/file-download.service';
 import { FileSystemAccessService } from '../../../core/services/file-system-access.service';
 import { ExplainCollectionError, collectExplainFiles, isExplainableFile } from '../collect-explain-files';
 
@@ -19,10 +20,10 @@ const COPIED_RESET_MS = 2000;
  * are read in the browser and posted as path+content pairs; URLs are
  * fetched and aggregated entirely server-side.
  *
- * On success the prompt is emitted to the editor page (which loads it as an
- * unsaved markdown document, so the preview pane renders it), and a Copy
- * button puts the whole prompt on the clipboard for pasting into any
- * LLM/ollama chat.
+ * On success the compact prompt is emitted to the editor page (which loads it
+ * as an unsaved markdown document, so the preview pane renders it). The result
+ * actions copy that prompt and download the separately aggregated source-file
+ * attachment for use together in any LLM/ollama chat.
  *
  * The three source choices are mutually exclusive: picking a file clears a
  * picked folder and vice versa, and typing a URL clears both -- the
@@ -40,6 +41,7 @@ export class ExplainPanelComponent {
 
   private readonly explainService = inject(ExplainService);
   private readonly clipboardService = inject(ClipboardService);
+  private readonly fileDownloadService = inject(FileDownloadService);
   private readonly fileSystemAccess = inject(FileSystemAccessService);
 
   /** Hides the native-picker buttons in browsers without the File System Access API (same gate as the Explorer). */
@@ -176,6 +178,16 @@ export class ExplainPanelComponent {
         this.copiedResetHandle = setTimeout(() => this.copied.set(false), COPIED_RESET_MS);
       })
       .catch((err: unknown) => this.error.set(extractErrorMessage(err)));
+  }
+
+  /** Downloads only the aggregated source blocks; the prompt names this file for the LLM. */
+  onDownloadAttachmentClicked(): void {
+    const prompt = this.lastPrompt();
+    if (!prompt) {
+      return;
+    }
+
+    this.fileDownloadService.downloadTextFile(prompt.attachmentFileName, prompt.attachmentContent);
   }
 }
 

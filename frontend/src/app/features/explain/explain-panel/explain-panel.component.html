@@ -69,17 +69,27 @@
     @if (lastPrompt(); as prompt) {
       <div class="explain-panel__result" data-testid="explain-result">
         <p class="explain-panel__result-summary">
-          Prompt generated from {{ prompt.fileCount }} file{{ prompt.fileCount === 1 ? '' : 's' }} and loaded into
-          the editor.
+          Prompt generated for {{ prompt.fileCount }} file{{ prompt.fileCount === 1 ? '' : 's' }} and loaded into
+          the editor. Copy the prompt, then download and upload its source attachment in your LLM chat.
         </p>
-        <button
-          type="button"
-          class="explain-panel__button"
-          data-testid="explain-copy-prompt"
-          (click)="onCopyPromptClicked()"
-        >
-          {{ copied() ? 'Copied!' : 'Copy prompt to clipboard' }}
-        </button>
+        <div class="explain-panel__result-actions">
+          <button
+            type="button"
+            class="explain-panel__button"
+            data-testid="explain-copy-prompt"
+            (click)="onCopyPromptClicked()"
+          >
+            {{ copied() ? 'Copied!' : 'Copy prompt to clipboard' }}
+          </button>
+          <button
+            type="button"
+            class="explain-panel__button"
+            data-testid="explain-download-attachment"
+            (click)="onDownloadAttachmentClicked()"
+          >
+            Download {{ prompt.attachmentFileName }}
+          </button>
+        </div>
       </div>
     }
   </div>

@@ -1,5 +1,5 @@
 @if (isSupported) {
-  <div class="explorer-panel" data-testid="explorer-panel">
+  <div class="explorer-panel" data-testid="explorer-panel" (scroll)="closeContextMenu(false)">
     @if (errorMessage()) {
       <app-error-banner class="explorer-panel__error" [message]="errorMessage()"></app-error-banner>
     }
@@ -16,16 +16,26 @@
         Reconnect to {{ rootNode.name }}
       </button>
     } @else if (rootNode) {
-      <app-file-tree-node
+      <div
         class="explorer-panel__tree"
-        [node]="rootNode"
-        [depth]="0"
-        [parentNode]="null"
-        (toggleExpand)="onToggleExpand($event)"
-        (fileClicked)="onFileClicked($event)"
-        (createEntry)="onCreateEntry($event)"
-        (deleteEntry)="onDeleteEntry($event)"
-      ></app-file-tree-node>
+        data-testid="explorer-tree"
+        role="tree"
+        aria-label="File Explorer"
+        aria-haspopup="menu"
+        tabindex="0"
+        (contextmenu)="onTreeContextMenu($event)"
+        (keydown)="onTreeKeydown($event)"
+      >
+        <app-file-tree-node
+          [node]="rootNode"
+          [depth]="0"
+          [parentNode]="null"
+          [contextMenuTarget]="contextMenuRequest()?.target?.node ?? null"
+          (toggleExpand)="onToggleExpand($event)"
+          (fileClicked)="onFileClicked($event)"
+          (contextMenuRequested)="onContextMenuRequested($event)"
+        ></app-file-tree-node>
+      </div>
     } @else {
       <button
         type="button"
@@ -37,4 +47,15 @@
       </button>
     }
   </div>
+
+  @if (contextMenuRequest(); as request) {
+    <app-tree-context-menu
+      ariaLabel="File Explorer commands"
+      [items]="contextMenuItems"
+      [clientX]="request.clientX"
+      [clientY]="request.clientY"
+      (commandSelected)="onContextMenuCommand($event)"
+      (menuClosed)="closeContextMenu($event.restoreFocus)"
+    />
+  }
 }

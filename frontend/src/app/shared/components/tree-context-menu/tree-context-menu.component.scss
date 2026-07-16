@@ -1,0 +1,56 @@
+:host {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+
+.tree-context-menu {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  min-width: 13rem;
+  max-width: min(20rem, calc(100vw - 0.5rem));
+  padding: 0.25rem;
+  background-color: var(--tds-surface-raised);
+  border: 1px solid var(--tds-border-strong);
+  border-radius: var(--tds-radius-lg);
+  box-shadow: var(--tds-shadow-raised);
+  pointer-events: auto;
+}
+
+.tree-context-menu__item {
+  display: block;
+  width: 100%;
+  border: none;
+  border-radius: 0.25rem;
+  padding: 0.35rem 0.6rem;
+  background-color: transparent;
+  color: var(--tds-ink);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    outline: none;
+    background-color: var(--tds-hover-wash);
+  }
+
+  &:disabled {
+    color: var(--tds-ink-disabled);
+    cursor: default;
+  }
+}
+
+.tree-context-menu__item--danger:not(:disabled) {
+  color: var(--tds-status-error-ink);
+}
+
+.tree-context-menu__separator {
+  height: 1px;
+  margin: 0.25rem 0.4rem;
+  background-color: var(--tds-border);
+}

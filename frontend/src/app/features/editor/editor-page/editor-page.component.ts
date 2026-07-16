@@ -619,7 +619,7 @@ export class EditorPageComponent implements OnInit {
   }
 
   /**
-   * Loads a generated "Explain This" prompt as an unsaved markdown document
+   * Loads a generated compact "Explain This" prompt as an unsaved markdown document
    * (the template-apply idiom: no document identity, savedSourceCode
    * untouched so the buffer counts as unsaved and the normal save flow can
    * persist it). The preview pane renders the prompt's markdown through the

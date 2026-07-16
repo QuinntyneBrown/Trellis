@@ -3,54 +3,55 @@ using System.Text;
 namespace Trellis.Api.Explain;
 
 /// <summary>
-/// Default <see cref="IExplainPromptBuilder"/>: an "explain this" prompt
-/// adapted from Geoffrey Litt's explain-diff prompt
-/// (https://gist.github.com/geoffreylitt/a29df1b5f9865506e8952488eac3d524)
-/// for a plain LLM/ollama chat -- same Background / Intuition / Code
-/// walkthrough / Quiz structure, but asking for markdown chat output instead
-/// of an interactive HTML file, with diagrams as PlantUML fences instead of
-/// HTML figures. It mandates the architecture description style guide at
-/// https://github.com/QuinntyneBrown/architecture-description-style-guide.
+/// Default <see cref="IExplainPromptBuilder"/>: a self-contained prompt for
+/// authoring an evidence-based enterprise Software Design Document from the
+/// separately uploaded source attachment. All style and document-structure
+/// rules are embedded because the target LLM may have no network access.
 /// </summary>
 public class ExplainPromptBuilder : IExplainPromptBuilder
 {
     /// <inheritdoc />
-    public string Build(AggregationResult aggregation)
+    public string Build(AggregationResult aggregation, string attachmentFileName)
     {
         var builder = new StringBuilder();
 
-        builder.Append("# Explain This\n\n");
-        builder.Append("Please give me a rich explanation of the code included below.\n\n");
+        builder.Append("# Explain This — Software Design Document\n\n");
+        builder.Append("Author a publication-ready Software Design Document in structured Markdown from the source code ");
+        builder.Append("in the uploaded attachment. The document is intended for an enterprise Confluence knowledge base. ");
+        builder.Append("Use only this prompt and the attachment: do not make HTTP calls, follow external links, or assume ");
+        builder.Append("access to repositories, standards, tickets, or organizational knowledge.\n\n");
 
-        builder.Append("## What to cover\n\n");
-        builder.Append("Structure your explanation in these sections:\n\n");
-        builder.Append("- **Background** — Explain the system this code belongs to. We don't know how much the reader ");
-        builder.Append("already knows, so start with a deep background for beginners (note that it can be skipped if the ");
-        builder.Append("reader is already familiar), then narrow to the background directly relevant to this code.\n");
-        builder.Append("- **Intuition** — Explain the core intuition behind how the code works. Focus on the essence, ");
-        builder.Append("not the full details. Use concrete examples with toy data, and use diagrams liberally.\n");
-        builder.Append("- **Code walkthrough** — Do a high-level walkthrough of the files. Group and order them in an ");
-        builder.Append("understandable way rather than file-by-file in listing order.\n");
-        builder.Append("- **Quiz** — Finish with five multiple-choice questions that test whether the reader actually ");
-        builder.Append("understood the substance of the code — medium difficulty, no gotchas. Put the answers, with a ");
-        builder.Append("short explanation of each, at the very end.\n\n");
+        builder.Append("## Required deliverable\n\n");
+        builder.Append("Return only the Software Design Document. Use this exact section order and retain every section. ");
+        builder.Append("When the source does not establish required enterprise context, keep the section and insert a ");
+        builder.Append("specific `<TO SUPPLY: …>` placeholder. Begin with `# Software Design Document — <entity name>`, ");
+        builder.Append("using `<TO SUPPLY: entity name>` when the name is not established.\n\n");
+        builder.Append("- `## 1. Document control` — title, entity of interest, owner, status, version, date, audience, and references.\n");
+        builder.Append("- `## 2. Executive summary` — purpose, design scope, principal capabilities, and material constraints.\n");
+        builder.Append("- `## 3. Scope and objectives` — included and excluded responsibilities, goals, and success criteria.\n");
+        builder.Append("- `## 4. System context` — environment, external actors, upstream/downstream dependencies, trust boundaries, and a PlantUML context diagram.\n");
+        builder.Append("- `## 5. Stakeholders and concerns` — role-based stakeholders, their concerns, and a traceable mapping table.\n");
+        builder.Append("- `## 6. Requirements, constraints, and assumptions` — separate evidenced requirements, technical constraints, and unresolved assumptions.\n");
+        builder.Append("- `## 7. Architecture overview` — architectural style, boundaries, responsibilities, principal components, and a PlantUML component or container view.\n");
+        builder.Append("- `## 8. Detailed design` — module breakdown, interfaces, contracts, data model, state, runtime workflows, error handling, and PlantUML sequence diagrams where useful.\n");
+        builder.Append("- `## 9. Quality attributes` — security and privacy, reliability, performance and scalability, maintainability and testability, and accessibility where applicable.\n");
+        builder.Append("- `## 10. Deployment and operations` — topology, configuration, secrets, observability, release, recovery, and operational ownership.\n");
+        builder.Append("- `## 11. Architecture decisions and rationale` — choices, alternatives, rationale, consequences, affected concerns, and evidence.\n");
+        builder.Append("- `## 12. Risks, limitations, and known inconsistencies` — severity, impact, mitigation, owner, and unresolved design questions.\n");
+        builder.Append("- `## 13. Testing and verification` — test strategy, existing evidence, gaps, and acceptance or verification criteria.\n");
+        builder.Append("- `## 14. Traceability and source map` — map material claims, components, interfaces, views, and decisions to attachment file paths.\n");
+        builder.Append("- `## 15. Glossary` — stable definitions for domain-specific and architecture terms used in the document.\n\n");
 
-        builder.Append("## Style guide\n\n");
-        builder.Append("When describing the architecture you MUST follow the architecture description style guide at ");
-        builder.Append("https://github.com/QuinntyneBrown/architecture-description-style-guide.\n\n");
+        builder.Append("## Embedded architecture writing guide\n\n");
+        builder.Append(SoftwareDesignDocumentStyleGuide.Content).Append("\n\n");
 
-        builder.Append("## Format\n\n");
-        builder.Append("- Respond in plain markdown suitable for a chat window — no HTML.\n");
-        builder.Append("- Write with clarity and flow, in classic style, with smooth transitions between sections.\n");
-        builder.Append("- Use fenced code blocks for code excerpts.\n");
-        builder.Append("- Express diagrams as ```plantuml fenced code blocks — never ASCII art.\n");
-        builder.Append("- Use block-quote callouts for key concepts, definitions, and important edge cases.\n\n");
-
-        builder.Append("## Files (").Append(aggregation.FileCount).Append(aggregation.FileCount == 1 ? " file" : " files").Append(")\n\n");
-        builder.Append("Each file below sits between `=== FILE: path ===` and `=== END FILE: path ===` markers, inside a ");
-        builder.Append("fenced code block tagged with its language (PlantUML sources are tagged `plantuml`). Comments and ");
-        builder.Append("blank lines may have been stripped from code files to save context.\n\n");
-        builder.Append(aggregation.Content);
+        builder.Append("## Uploaded files\n\n");
+        builder.Append("The source files are provided in the uploaded attachment `").Append(attachmentFileName).Append("` ");
+        builder.Append("(").Append(aggregation.FileCount).Append(aggregation.FileCount == 1 ? " file" : " files").Append("). ");
+        builder.Append("Read that attachment before answering. Each source file sits between `=== FILE: path ===` and ");
+        builder.Append("`=== END FILE: path ===` markers inside a fenced code block tagged with its language ");
+        builder.Append("(PlantUML sources are tagged `plantuml`). Comments and blank lines may have been stripped from ");
+        builder.Append("code files to save context.\n");
 
         return builder.ToString();
     }

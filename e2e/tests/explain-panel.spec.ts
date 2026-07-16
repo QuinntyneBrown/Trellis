@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
 import { EditorPage } from '../pom/pages/editor.page';
 import { OPFS_ROOT_DIR_NAME, installFakeDirectoryPicker, seedOpfsFixtureTree } from '../utils/opfs-fixture';
 
@@ -7,8 +8,8 @@ import { OPFS_ROOT_DIR_NAME, installFakeDirectoryPicker, seedOpfsFixtureTree } f
  * panel, where picking a local folder (native directory picker, faked onto
  * OPFS exactly like the Explorer specs) and confirming generates an
  * LLM-ready markdown prompt -- aggregated GetFiles-style by the backend --
- * that loads into the editor as an unsaved markdown document and renders
- * in the preview pane, with a copy-to-clipboard button in the panel.
+ * that loads a compact prompt into the editor and makes the aggregated source
+ * blocks available as a separate markdown download.
  */
 test.describe('Explain This wizard', () => {
   test('rail toggle opens and closes the Explain panel exclusively', async ({ page }) => {
@@ -29,10 +30,13 @@ test.describe('Explain This wizard', () => {
     await expect(editorPage.explainPanel.root).toBeHidden();
   });
 
-  test('generates a prompt from a picked folder, loads it into the editor, and renders the markdown', async ({
+  test('generates an offline SDD prompt and source attachment from a picked folder', async ({
     page,
-  }) => {
+  }, testInfo) => {
     await installFakeDirectoryPicker(page);
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write'], {
+      origin: 'http://localhost:4200',
+    });
 
     const editorPage = new EditorPage(page);
     await editorPage.goto();
@@ -57,24 +61,53 @@ test.describe('Explain This wizard', () => {
     await expect(editorPage.explainPanel.result).toBeVisible();
     await expect(editorPage.explainPanel.result).toContainText('3 files');
     await expect(editorPage.explainPanel.copyPromptButton).toBeVisible();
+    await expect(editorPage.explainPanel.downloadAttachmentButton).toBeVisible();
 
-    // The generated prompt is now the editor buffer: gist-derived sections,
-    // the mandated style guide, GetFiles-style delimiters, plantuml fencing,
-    // comment stripping, and the node_modules exclusion.
+    // The editor and clipboard receive only the compact prompt, which names
+    // the separate attachment the user must upload in the LLM chat.
     const prompt = await editorPage.editor.getValue();
-    expect(prompt).toContain('# Explain This');
-    expect(prompt).toContain('https://github.com/QuinntyneBrown/architecture-description-style-guide');
-    expect(prompt).toContain('=== FILE: README.md ===');
-    expect(prompt).toContain('=== FILE: src/flow.puml ===');
-    expect(prompt).toContain('```plantuml');
-    expect(prompt).toContain('const x = 1;');
-    expect(prompt).not.toContain('a comment that stripping removes');
-    expect(prompt).not.toContain('ignored.ts');
+    expect(prompt).toContain('# Explain This — Software Design Document');
+    expect(prompt).toContain('enterprise Confluence knowledge base');
+    expect(prompt).toContain('do not make HTTP calls');
+    expect(prompt).toContain('`## 1. Document control`');
+    expect(prompt).toContain('`## 15. Glossary`');
+    expect(prompt).toContain('### Controlled architecture vocabulary');
+    expect(prompt).toContain('| system of interest | entity of interest (EoI) |');
+    expect(prompt).toContain('<TO SUPPLY: …>');
+    expect(prompt).not.toContain('Quiz');
+    expect(prompt).not.toContain('architecture-description-style-guide');
+    expect(prompt).toContain('`explain-this-files.md` (3 files)');
+    expect(prompt).not.toMatch(/^=== FILE:/m);
+
+    await editorPage.explainPanel.copyPromptButton.click();
+    await expect(editorPage.explainPanel.copyPromptButton).toHaveText('Copied!');
+    await expect
+      .poll(() => page.evaluate(() => navigator.clipboard.readText()).then((text) => text.replace(/\r\n/g, '\n')))
+      .toBe(prompt.replace(/\r\n/g, '\n'));
+
+    // The download contains only GetFiles-style source blocks: PlantUML is
+    // fenced correctly, code comments are stripped, and excluded trees stay out.
+    const downloadPromise = page.waitForEvent('download');
+    await editorPage.explainPanel.downloadAttachmentButton.click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toBe('explain-this-files.md');
+    const attachmentPath = testInfo.outputPath('explain-this-files.md');
+    await download.saveAs(attachmentPath);
+    const attachment = await readFile(attachmentPath, 'utf8');
+    expect(attachment).toContain('=== FILE: README.md ===');
+    expect(attachment).toContain('=== FILE: src/flow.puml ===');
+    expect(attachment).toContain('```plantuml');
+    expect(attachment).toContain('const x = 1;');
+    expect(attachment).not.toContain('# Explain This');
+    expect(attachment).not.toContain('a comment that stripping removes');
+    expect(attachment).not.toContain('ignored.ts');
 
     // And it renders through the markdown preview pipeline.
     await expect.poll(() => editorPage.preview.getRenderSequence()).toBeGreaterThan(seqBefore);
     await expect(editorPage.preview.markdownPane()).toBeVisible();
-    await expect(editorPage.preview.markdownPane().locator('h1')).toHaveText('Explain This');
+    await expect(editorPage.preview.markdownPane().locator('h1')).toHaveText(
+      'Explain This — Software Design Document',
+    );
   });
 
   test('surfaces the backend validation message for a non-GitHub/GitLab URL', async ({ page }) => {

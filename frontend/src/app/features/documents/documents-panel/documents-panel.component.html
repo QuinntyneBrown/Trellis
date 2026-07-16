@@ -1,13 +1,7 @@
 @if (open) {
-  <aside class="documents-panel" data-testid="documents-panel">
+  <aside class="documents-panel" data-testid="documents-panel" (scroll)="closeContextMenu(false)">
     <div class="documents-panel__header">
       <span class="documents-panel__header-title">Documents</span>
-      <app-tree-action-button
-        icon="new-folder"
-        label="New Folder"
-        testId="documents-new-folder"
-        (clicked)="onHeaderNewFolderClicked()"
-      />
     </div>
 
     @if (scopedFolder(); as scoped) {
@@ -34,37 +28,38 @@
       </div>
     }
 
-    @if (tree().length === 0) {
-      <p class="documents-panel__empty">{{ scopedFolder() ? 'This folder is empty.' : 'No saved documents yet.' }}</p>
-    } @else {
-      <div
-        class="documents-panel__tree"
-        data-testid="documents-tree"
-        [class.documents-panel__tree--drop-target]="isRootDragOver"
-        (dragenter)="onRootDragEnter($event)"
-        (dragover)="onRootDragOver($event)"
-        (dragleave)="onRootDragLeave()"
-        (drop)="onRootDrop($event)"
-      >
+    <div
+      class="documents-panel__tree"
+      data-testid="documents-tree"
+      role="tree"
+      aria-label="Documents Explorer"
+      aria-haspopup="menu"
+      tabindex="0"
+      [class.documents-panel__tree--drop-target]="isRootDragOver"
+      (contextmenu)="onTreeContextMenu($event)"
+      (keydown)="onTreeKeydown($event)"
+      (dragenter)="onRootDragEnter($event)"
+      (dragover)="onRootDragOver($event)"
+      (dragleave)="onRootDragLeave()"
+      (drop)="onRootDrop($event)"
+    >
+      @if (tree().length === 0) {
+        <p class="documents-panel__empty">{{ scopedFolder() ? 'This folder is empty.' : 'No saved documents yet.' }}</p>
+      } @else {
         @for (node of tree(); track node.id) {
           <app-document-tree-node
             [node]="node"
             [depth]="0"
             [activeDocumentId]="activeDocumentId"
+            [contextMenuTarget]="contextMenuRequest()?.target ?? null"
             (toggleExpand)="onToggleExpand($event)"
             (openDocument)="onOpenDocument($event)"
-            (createFolder)="onCreateFolder($event)"
-            (renameNode)="onRenameNode($event)"
-            (deleteNode)="onDeleteNode($event)"
             (moveDocument)="onMoveDocumentDropped($event)"
-            (moveRequested)="onMoveRequested($event)"
-            (scopeRequested)="onScopeToFolder($event)"
-            (exportRequested)="onExportFolder($event)"
-            (exportExclusionToggleRequested)="onToggleExportExclusion($event)"
+            (contextMenuRequested)="onContextMenuRequested($event)"
           ></app-document-tree-node>
         }
-      </div>
-    }
+      }
+    </div>
 
     <app-move-document-dialog
       [visible]="movingDocument() !== null"
@@ -81,5 +76,16 @@
       (confirm)="onExportDialogConfirm($event)"
       (cancel)="onExportDialogCancel()"
     />
+
+    @if (contextMenuRequest(); as request) {
+      <app-tree-context-menu
+        ariaLabel="Documents Explorer commands"
+        [items]="contextMenuItems"
+        [clientX]="request.clientX"
+        [clientY]="request.clientY"
+        (commandSelected)="onContextMenuCommand($event)"
+        (menuClosed)="closeContextMenu($event.restoreFocus)"
+      />
+    }
   </aside>
 }
