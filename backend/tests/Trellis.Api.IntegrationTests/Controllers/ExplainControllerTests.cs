@@ -45,14 +45,11 @@ public class ExplainControllerTests : IClassFixture<ExplainControllerTests.Expla
         var dto = await response.Content.ReadFromJsonAsync<ExplainPromptDto>();
         Assert.NotNull(dto);
         Assert.Equal(3, dto!.FileCount);
-        Assert.StartsWith("# Explain This — Software Design Document", dto.Prompt);
-        Assert.Contains("enterprise Confluence knowledge base", dto.Prompt);
+        Assert.StartsWith("# Explain This", dto.Prompt);
         Assert.Contains("do not make HTTP calls", dto.Prompt);
-        Assert.Contains("`## 1. Document control`", dto.Prompt);
-        Assert.Contains("`## 15. Glossary`", dto.Prompt);
-        Assert.Contains("### Controlled architecture vocabulary", dto.Prompt);
-        Assert.Contains("| system of interest | entity of interest (EoI) |", dto.Prompt);
-        Assert.Contains("<TO SUPPLY: …>", dto.Prompt);
+        Assert.Contains("## Overview", dto.Prompt);
+        Assert.Contains("## Class Diagrams", dto.Prompt);
+        Assert.Contains("## Sequence Diagrams", dto.Prompt);
         Assert.DoesNotContain("Quiz", dto.Prompt);
         Assert.DoesNotContain("architecture-description-style-guide", dto.Prompt);
         Assert.Contains("## Uploaded files", dto.Prompt);

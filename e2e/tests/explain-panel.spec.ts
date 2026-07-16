@@ -30,7 +30,7 @@ test.describe('Explain This wizard', () => {
     await expect(editorPage.explainPanel.root).toBeHidden();
   });
 
-  test('generates an offline SDD prompt and source attachment from a picked folder', async ({
+  test('generates an offline explain prompt and source attachment from a picked folder', async ({
     page,
   }, testInfo) => {
     await installFakeDirectoryPicker(page);
@@ -66,14 +66,11 @@ test.describe('Explain This wizard', () => {
     // The editor and clipboard receive only the compact prompt, which names
     // the separate attachment the user must upload in the LLM chat.
     const prompt = await editorPage.editor.getValue();
-    expect(prompt).toContain('# Explain This — Software Design Document');
-    expect(prompt).toContain('enterprise Confluence knowledge base');
+    expect(prompt).toContain('# Explain This');
     expect(prompt).toContain('do not make HTTP calls');
-    expect(prompt).toContain('`## 1. Document control`');
-    expect(prompt).toContain('`## 15. Glossary`');
-    expect(prompt).toContain('### Controlled architecture vocabulary');
-    expect(prompt).toContain('| system of interest | entity of interest (EoI) |');
-    expect(prompt).toContain('<TO SUPPLY: …>');
+    expect(prompt).toContain('## Overview');
+    expect(prompt).toContain('## Class Diagrams');
+    expect(prompt).toContain('## Sequence Diagrams');
     expect(prompt).not.toContain('Quiz');
     expect(prompt).not.toContain('architecture-description-style-guide');
     expect(prompt).toContain('`explain-this-files.md` (3 files)');
@@ -105,9 +102,7 @@ test.describe('Explain This wizard', () => {
     // And it renders through the markdown preview pipeline.
     await expect.poll(() => editorPage.preview.getRenderSequence()).toBeGreaterThan(seqBefore);
     await expect(editorPage.preview.markdownPane()).toBeVisible();
-    await expect(editorPage.preview.markdownPane().locator('h1')).toHaveText(
-      'Explain This — Software Design Document',
-    );
+    await expect(editorPage.preview.markdownPane().locator('h1')).toHaveText('Explain This');
   });
 
   test('surfaces the backend validation message for a non-GitHub/GitLab URL', async ({ page }) => {
