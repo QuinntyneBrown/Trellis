@@ -3,7 +3,16 @@
  * path `d` strings on a shared 24x24 viewBox, drawn in an outline
  * (Heroicons/Feather-like) style: `fill="none" stroke="currentColor"`.
  */
-export type RailIconName = 'menu' | 'new' | 'save' | 'upload' | 'templates' | 'documents' | 'explorer' | 'explain';
+export type RailIconName =
+  | 'menu'
+  | 'new'
+  | 'save'
+  | 'upload'
+  | 'templates'
+  | 'documents'
+  | 'explorer'
+  | 'explain'
+  | 'wizard';
 
 /**
  * Hand-authored outline icon paths -- no icon-library dependency. Kept
@@ -51,4 +60,10 @@ export const RAIL_ICON_PATHS: Record<RailIconName, string[]> = {
     'M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-7l-4 4v-4H6a2 2 0 0 1-2-2z',
     'M9.9 8.2a2.2 2.2 0 1 1 3 2.05c-.65.26-.9.65-.9 1.35M12 13.9h.01',
   ],
+
+  // A magic wand drawn corner to corner, with a divider near the tip and two
+  // plus-shaped sparkles either side -- "conjure a diagram step by step", the
+  // Diagram Wizard's metaphor. Distinct from every icon above: it is the only
+  // diagonal one.
+  wizard: ['M15 5l4 4L7 21l-4-4zM13 7l4 4', 'M5 3v4M3 5h4M19 13v4M17 15h4'],
 };

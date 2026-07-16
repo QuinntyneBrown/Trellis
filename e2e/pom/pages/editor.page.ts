@@ -10,6 +10,7 @@ import { DocumentsPanelComponent } from '../components/documents-panel.component
 import { DividerComponent } from '../components/divider.component';
 import { ExplainPanelComponent } from '../components/explain-panel.component';
 import { ExplorerPanelComponent } from '../components/explorer-panel.component';
+import { WizardPanelComponent } from '../components/wizard-panel.component';
 
 /**
  * The single routed page of the Trellis app: the editor route at '/',
@@ -34,6 +35,7 @@ export class EditorPage extends BasePage {
   readonly divider: DividerComponent;
   readonly explorerPanel: ExplorerPanelComponent;
   readonly explainPanel: ExplainPanelComponent;
+  readonly wizardPanel: WizardPanelComponent;
   readonly sidePanelDivider: DividerComponent;
 
   constructor(page: Page) {
@@ -48,6 +50,7 @@ export class EditorPage extends BasePage {
     this.divider = new DividerComponent(page, 'resize-divider');
     this.explorerPanel = new ExplorerPanelComponent(page);
     this.explainPanel = new ExplainPanelComponent(page);
+    this.wizardPanel = new WizardPanelComponent(page);
     this.sidePanelDivider = new DividerComponent(page, 'pixel-resize-divider');
   }
 

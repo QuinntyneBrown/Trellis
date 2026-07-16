@@ -17,6 +17,7 @@
     (documentsPanelToggle)="toggleSidePanel('documents')"
     (templatesPanelToggle)="toggleSidePanel('templates')"
     (explainPanelToggle)="toggleSidePanel('explain')"
+    (wizardPanelToggle)="toggleSidePanel('wizard')"
   ></app-editor-toolbar>
 
   <!-- Hidden target of File > Upload and Ctrl+U; lives here because this
@@ -58,6 +59,11 @@
         [style.display]="activeSidePanel() === 'explain' ? '' : 'none'"
         (promptGenerated)="onExplainPromptGenerated($event)"
       ></app-explain-panel>
+      <app-wizard-panel
+        [style.display]="activeSidePanel() === 'wizard' ? '' : 'none'"
+        (diagramChanged)="onWizardDiagramChanged($event)"
+        (closed)="toggleSidePanel('wizard')"
+      ></app-wizard-panel>
     </div>
 
     @if (activeSidePanel()) {

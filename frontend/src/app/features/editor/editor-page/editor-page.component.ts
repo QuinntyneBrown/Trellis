@@ -16,7 +16,7 @@ import { Folder } from '../../../core/models/folder.model';
 import { ClipboardService } from '../../../core/services/clipboard.service';
 import { DiagramHubService } from '../../../core/services/diagram-hub.service';
 import { DocumentsService } from '../../../core/services/documents.service';
-import { EditorLayoutPreferencesService } from '../../../core/services/editor-layout-preferences.service';
+import { EditorLayoutPreferencesService, SidePanelChoice } from '../../../core/services/editor-layout-preferences.service';
 import { FileSystemAccessService } from '../../../core/services/file-system-access.service';
 import { FoldersService } from '../../../core/services/folders.service';
 import { TemplatesService } from '../../../core/services/templates.service';
@@ -25,6 +25,9 @@ import { DocumentsPanelComponent } from '../../documents/documents-panel/documen
 import { ExplainPanelComponent } from '../../explain/explain-panel/explain-panel.component';
 import { ExplorerPanelComponent } from '../../explorer/explorer-panel/explorer-panel.component';
 import { TemplatesPanelComponent } from '../../templates/templates-panel/templates-panel.component';
+import { applyWizardDiagram } from '../../wizard/wizard-panel/build-wizard-plantuml';
+import { WizardDiagramChange } from '../../wizard/wizard-panel/wizard-model';
+import { WizardPanelComponent } from '../../wizard/wizard-panel/wizard-panel.component';
 import { DiagramPreviewComponent } from '../diagram-preview/diagram-preview.component';
 import {
   DEFAULT_EDITOR_PANE_RATIO,
@@ -48,8 +51,12 @@ import {
 
 const BLANK_DOCUMENT_NAME = 'Untitled diagram';
 
-/** Which (if either) of the exclusive side panels is currently showing. */
-export type SidePanel = 'explorer' | 'documents' | 'templates' | 'explain' | null;
+/**
+ * Which (if any) of the exclusive side panels is currently showing. Derived
+ * from the persistence layer's list rather than restated, so a new panel is
+ * added in exactly one place.
+ */
+export type SidePanel = SidePanelChoice | null;
 
 /**
  * Route root for both 'editor' (blank) and 'editor/:documentId' (resolved
@@ -72,6 +79,7 @@ export type SidePanel = 'explorer' | 'documents' | 'templates' | 'explain' | nul
     ExplorerPanelComponent,
     TemplatesPanelComponent,
     ExplainPanelComponent,
+    WizardPanelComponent,
     ErrorBannerComponent,
   ],
   templateUrl: './editor-page.component.html',
@@ -640,13 +648,41 @@ export class EditorPageComponent implements OnInit {
   }
 
   /**
+   * Writes the Diagram Wizard's document into the buffer and re-renders.
+   *
+   * Unlike onTemplateApplied/onExplainPromptGenerated -- which replace the
+   * buffer and therefore ask before discarding unsaved work -- the wizard is
+   * additive: applyWizardDiagram only ever rewrites the exact text the wizard
+   * itself last wrote, and otherwise appends. There is nothing to discard, so
+   * there is deliberately no confirm here; making someone approve a dialog to
+   * add the element they just asked for would be nonsense.
+   *
+   * The document identity is left alone for the same reason: the wizard can be
+   * used to extend an open, saved document, and that document should stay
+   * itself. savedSourceCode is untouched, so the change registers as unsaved
+   * and the normal save flow persists it.
+   */
+  onWizardDiagramChanged(change: WizardDiagramChange): void {
+    const next = applyWizardDiagram(this.sourceCode(), change);
+    this.documentKind.set('plantuml');
+    this.sourceCode.set(next);
+
+    // A C4 skeleton with no elements in it yet is real content worth showing in
+    // the editor, but PlantUML would only answer it with an error -- so it is
+    // written and left unrendered until there is something to draw.
+    if (change.renderable) {
+      void this.hubService.render(next, 'plantuml');
+    }
+  }
+
+  /**
    * The panel the title bar's sidebar toggle reopens after a close --
    * whichever was open most recently, the way VS Code's own toggle restores
    * the last-used sidebar view. Falls back to 'documents' when nothing has
    * been opened yet this session ('explorer' additionally requires the File
    * System Access API).
    */
-  private lastOpenSidePanel: 'explorer' | 'documents' | 'templates' | 'explain' | null = this.activeSidePanel();
+  private lastOpenSidePanel: SidePanel = this.activeSidePanel();
 
   /**
    * Sets the shared selection to `panel`, or clears it if `panel` is already
@@ -654,7 +690,7 @@ export class EditorPageComponent implements OnInit {
    * (including an explicit null for a deliberate close) so the layout comes
    * back identically after a refresh.
    */
-  toggleSidePanel(panel: 'explorer' | 'documents' | 'templates' | 'explain'): void {
+  toggleSidePanel(panel: SidePanelChoice): void {
     this.activeSidePanel.update((current) => (current === panel ? null : panel));
     const active = this.activeSidePanel();
     if (active) {

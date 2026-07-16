@@ -1,0 +1,331 @@
+// Chrome mirrors the other four side panels (explain-panel.component.scss et
+// al.) and the body is that panel's form column. One deliberate departure:
+// the Explain panel scrolls as a whole, whereas the wizard clips at the root
+// and scrolls its body instead, so the Back/Next footer stays pinned and
+// reachable however long a step's form grows.
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.wizard-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--tds-surface-chrome);
+  border-left: 1px solid var(--tds-border);
+  color: var(--tds-ink);
+}
+
+.wizard-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--tds-border);
+}
+
+.wizard-panel__header-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tds-ink-muted);
+}
+
+// Dot pips with hairline connectors; the caption below carries the step words,
+// which don't fit as labels at the 260px default panel width.
+.wizard-panel__progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.6rem 0.75rem 0;
+}
+
+.wizard-panel__steps {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wizard-panel__step {
+  position: relative;
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--tds-border-strong);
+  border-radius: 50%;
+  background-color: var(--tds-surface-chrome);
+
+  & + & {
+    margin-left: 16px;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: -15px;
+      width: 13px;
+      height: 1px;
+      background-color: var(--tds-border);
+    }
+  }
+}
+
+.wizard-panel__step--done {
+  border-color: var(--tds-accent);
+  background-color: var(--tds-accent);
+}
+
+.wizard-panel__step--current {
+  border-color: var(--tds-accent);
+  box-shadow: 0 0 0 3px var(--tds-accent-tint-20);
+}
+
+.wizard-panel__progress-caption {
+  margin: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tds-ink-muted);
+}
+
+.wizard-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0.75rem;
+}
+
+.wizard-panel__hint {
+  margin: 0;
+  color: var(--tds-ink-muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.wizard-panel__options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.wizard-panel__option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--tds-border-strong);
+  border-radius: 0.35rem;
+  background-color: var(--tds-surface-raised);
+  color: var(--tds-ink);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--tds-hover-wash);
+  }
+}
+
+.wizard-panel__option--selected {
+  border-color: var(--tds-accent);
+  box-shadow: inset 0 0 0 1px var(--tds-accent);
+  background-color: var(--tds-accent-tint-12);
+
+  &:hover {
+    background-color: var(--tds-accent-tint-12);
+  }
+}
+
+.wizard-panel__option-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.wizard-panel__option-desc {
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--tds-ink-muted);
+}
+
+.wizard-panel__label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tds-ink-muted);
+}
+
+.wizard-panel__input,
+.wizard-panel__select {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--tds-border-strong);
+  border-radius: 0.35rem;
+  background-color: var(--tds-surface-raised);
+  color: var(--tds-ink);
+  font-family: inherit;
+  font-size: 0.85rem;
+
+  &:focus {
+    outline: 1px solid var(--tds-accent);
+    outline-offset: -1px;
+  }
+}
+
+.wizard-panel__input::placeholder {
+  color: var(--tds-ink-muted);
+}
+
+// Same button chrome as the Explain panel (itself the Explorer's Open Folder).
+.wizard-panel__button {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--tds-border-strong);
+  border-radius: 0.35rem;
+  background-color: var(--tds-surface-raised);
+  color: var(--tds-ink);
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background-color: var(--tds-hover-wash);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+
+.wizard-panel__button--confirm {
+  border-color: var(--tds-accent-strong);
+  background-color: var(--tds-accent-strong);
+  color: #fff;
+  font-weight: 600;
+
+  &:hover:not(:disabled) {
+    background-color: var(--tds-accent-hover);
+  }
+}
+
+.wizard-panel__divider {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--tds-ink-muted);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    border-top: 1px solid var(--tds-border);
+  }
+}
+
+.wizard-panel__added {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+// Row actions stay visible, unlike the tree rows (whose actions moved into the
+// right-click context menu): the running list is short, and removing something
+// just added is part of the flow rather than a rare correction.
+.wizard-panel__added-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.35rem;
+  border-radius: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--tds-ink);
+
+  &:hover {
+    background-color: var(--tds-hover-wash);
+  }
+}
+
+.wizard-panel__added-kind {
+  flex: 0 0 auto;
+  padding: 0.1rem 0.3rem;
+  border: 1px solid var(--tds-border);
+  border-radius: 0.25rem;
+  background-color: var(--tds-surface-raised);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--tds-ink-muted);
+}
+
+.wizard-panel__added-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wizard-panel__added-context {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.7rem;
+  color: var(--tds-ink-muted);
+}
+
+.wizard-panel__added-arrow {
+  flex: 0 0 auto;
+  font-family: var(--tds-font-mono);
+  font-size: 0.75rem;
+  color: var(--tds-ink-muted);
+}
+
+.wizard-panel__empty {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--tds-ink-muted);
+}
+
+.wizard-panel__summary {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--tds-ink);
+}
+
+.wizard-panel__summary-counts {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--tds-ink-muted);
+}
+
+.wizard-panel__footer {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: auto;
+  padding: 0.75rem;
+  border-top: 1px solid var(--tds-border);
+
+  .wizard-panel__button {
+    flex: 1 1 0;
+  }
+}

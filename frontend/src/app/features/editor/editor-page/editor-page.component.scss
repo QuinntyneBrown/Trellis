@@ -61,9 +61,16 @@ app-title-bar {
   // against this `position: relative` wrapper instead makes each
   // independently fill the full box, stacked, with only the active one ever
   // actually visible.
+  //
+  // EVERY panel must be listed here. The Explain panel used to be missing and
+  // still rendered correctly by luck -- as the only in-flow child left, it had
+  // the box to itself. Adding the wizard as a second in-flow sibling would
+  // have quietly split the wrapper between the two.
   app-explorer-panel,
   app-documents-panel,
-  app-templates-panel {
+  app-templates-panel,
+  app-explain-panel,
+  app-wizard-panel {
     position: absolute;
     inset: 0;
   }

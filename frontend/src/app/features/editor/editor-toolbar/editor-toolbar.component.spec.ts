@@ -26,10 +26,28 @@ describe('EditorToolbarComponent', () => {
     expect(byTestId('templates-panel-toggle')).toBeTruthy();
     expect(byTestId('documents-panel-toggle')).toBeTruthy();
     expect(byTestId('explain-panel-toggle')).toBeTruthy();
+    expect(byTestId('wizard-panel-toggle')).toBeTruthy();
     expect(byTestId('connection-status')).toBeTruthy();
     expect(byTestId('toolbar-new')).toBeNull();
     expect(byTestId('toolbar-save')).toBeNull();
     expect(byTestId('toolbar-upload')).toBeNull();
+  });
+
+  it('marks only the active panel\'s toggle active', () => {
+    component.activeSidePanel = 'wizard';
+    fixture.detectChanges();
+
+    expect(byTestId('wizard-panel-toggle').classList).toContain('rail-button--active');
+    expect(byTestId('explain-panel-toggle').classList).not.toContain('rail-button--active');
+  });
+
+  it('emits wizardPanelToggle when the Diagram Wizard button is clicked', () => {
+    const emitted = jest.fn();
+    component.wizardPanelToggle.subscribe(emitted);
+
+    byTestId('wizard-panel-toggle').click();
+
+    expect(emitted).toHaveBeenCalledTimes(1);
   });
 
   describe('application (hamburger) menu', () => {

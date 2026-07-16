@@ -1,0 +1,487 @@
+<aside class="wizard-panel" data-testid="wizard-panel">
+  <div class="wizard-panel__header">
+    <span class="wizard-panel__header-title">Diagram Wizard</span>
+  </div>
+
+  <!-- Dot pips carry the shape of the flow; the caption below carries the
+       words, which do not fit as labels at the default panel width. -->
+  <div class="wizard-panel__progress" data-testid="wizard-progress">
+    <ol class="wizard-panel__steps" aria-label="Wizard steps">
+      @for (pip of pips(); track pip.label) {
+        <li
+          class="wizard-panel__step"
+          [class.wizard-panel__step--done]="pip.done"
+          [class.wizard-panel__step--current]="pip.current"
+          [attr.aria-current]="pip.current ? 'step' : null"
+          [attr.aria-label]="pip.done ? pip.label + ' (completed)' : pip.label"
+        ></li>
+      }
+    </ol>
+    <p class="wizard-panel__progress-caption" data-testid="wizard-progress-caption">{{ caption() }}</p>
+  </div>
+
+  <div class="wizard-panel__body">
+    @switch (step()) {
+      @case ('type') {
+        <p class="wizard-panel__hint">
+          Choose what you want to build. The wizard writes the PlantUML into the editor for you, one step at a
+          time.
+        </p>
+
+        <div class="wizard-panel__options" role="radiogroup" aria-label="Diagram type" data-testid="wizard-diagram-type">
+          <button
+            type="button"
+            class="wizard-panel__option"
+            [class.wizard-panel__option--selected]="track() === 'c4'"
+            role="radio"
+            [attr.aria-checked]="track() === 'c4'"
+            data-testid="wizard-option-c4"
+            (click)="selectTrack('c4')"
+          >
+            <span class="wizard-panel__option-title">C4 Model</span>
+            <span class="wizard-panel__option-desc">
+              Context, container, component, dynamic or deployment views of your system.
+            </span>
+          </button>
+          <button
+            type="button"
+            class="wizard-panel__option"
+            [class.wizard-panel__option--selected]="track() === 'sequence'"
+            role="radio"
+            [attr.aria-checked]="track() === 'sequence'"
+            data-testid="wizard-option-sequence"
+            (click)="selectTrack('sequence')"
+          >
+            <span class="wizard-panel__option-title">Sequence Diagram</span>
+            <span class="wizard-panel__option-desc">Participants exchanging messages over time.</span>
+          </button>
+        </div>
+      }
+
+      @case ('c4-type') {
+        <p class="wizard-panel__hint">Pick the C4 view to build. Selecting one writes the diagram skeleton into the editor.</p>
+
+        <div class="wizard-panel__options" role="radiogroup" aria-label="C4 diagram type" data-testid="wizard-c4-type">
+          @for (option of c4TypeOptions; track option.type) {
+            <button
+              type="button"
+              class="wizard-panel__option"
+              [class.wizard-panel__option--selected]="c4Type() === option.type"
+              role="radio"
+              [attr.aria-checked]="c4Type() === option.type"
+              [attr.data-testid]="'wizard-option-' + option.type.toLowerCase()"
+              (click)="selectC4Type(option.type)"
+            >
+              <span class="wizard-panel__option-title">{{ option.type }}</span>
+              <span class="wizard-panel__option-desc">{{ option.description }}</span>
+            </button>
+          }
+        </div>
+      }
+
+      @case ('c4-elements') {
+        <p class="wizard-panel__hint">
+          Add the people, systems and containers of your diagram. Each addition is written into the editor and
+          rendered immediately.
+        </p>
+
+        <label class="wizard-panel__label" for="wizard-element-kind">Kind</label>
+        <select
+          id="wizard-element-kind"
+          class="wizard-panel__select"
+          data-testid="wizard-element-kind"
+          [ngModel]="elementKind()"
+          (ngModelChange)="elementKind.set($event)"
+        >
+          @for (kind of c4ElementKinds; track kind) {
+            <option [value]="kind">{{ kind }}</option>
+          }
+        </select>
+
+        <label class="wizard-panel__label" for="wizard-element-name">Name</label>
+        <input
+          id="wizard-element-name"
+          class="wizard-panel__input"
+          data-testid="wizard-element-name"
+          type="text"
+          placeholder="e.g. Web Application"
+          autocomplete="off"
+          spellcheck="false"
+          [value]="elementName()"
+          (input)="onTextInput($event, elementName)"
+        />
+
+        <label class="wizard-panel__label" for="wizard-element-technology">Technology</label>
+        <input
+          id="wizard-element-technology"
+          class="wizard-panel__input"
+          data-testid="wizard-element-technology"
+          type="text"
+          placeholder="e.g. Angular"
+          autocomplete="off"
+          spellcheck="false"
+          [value]="elementTechnology()"
+          (input)="onTextInput($event, elementTechnology)"
+        />
+
+        <label class="wizard-panel__label" for="wizard-element-description">Description</label>
+        <input
+          id="wizard-element-description"
+          class="wizard-panel__input"
+          data-testid="wizard-element-description"
+          type="text"
+          placeholder="What does it do?"
+          autocomplete="off"
+          spellcheck="false"
+          [value]="elementDescription()"
+          (input)="onTextInput($event, elementDescription)"
+        />
+
+        <label class="wizard-panel__label" for="wizard-element-boundary">Inside boundary</label>
+        <select
+          id="wizard-element-boundary"
+          class="wizard-panel__select"
+          data-testid="wizard-element-boundary"
+          [ngModel]="elementBoundaryId() ?? ''"
+          (ngModelChange)="elementBoundaryId.set($event || null)"
+        >
+          <option value="">— Root —</option>
+          @for (boundary of boundaries(); track boundary.id) {
+            <option [value]="boundary.id">{{ boundary.name }}</option>
+          }
+        </select>
+
+        <button
+          type="button"
+          class="wizard-panel__button wizard-panel__button--confirm"
+          data-testid="wizard-add-element"
+          [disabled]="!canAddElement()"
+          (click)="addElement()"
+        >
+          Add Element
+        </button>
+
+        <div class="wizard-panel__divider" aria-hidden="true">added</div>
+
+        @if (elements().length === 0) {
+          <p class="wizard-panel__empty" data-testid="wizard-added-empty">No elements yet — add your first above.</p>
+        } @else {
+          <ul class="wizard-panel__added" data-testid="wizard-added-list" aria-label="Added elements">
+            @for (element of elements(); track element.id) {
+              <li class="wizard-panel__added-item" [attr.data-element-name]="element.name">
+                <span class="wizard-panel__added-kind">{{ kindLabel(element.kind) }}</span>
+                <span class="wizard-panel__added-name">{{ element.name }}</span>
+                @if (element.boundaryId) {
+                  <span class="wizard-panel__added-context">in {{ boundaryName(element.boundaryId) }}</span>
+                }
+                <app-tree-action-button
+                  icon="delete"
+                  label="Remove"
+                  testId="wizard-added-remove"
+                  [danger]="true"
+                  (clicked)="removeElement(element.id)"
+                ></app-tree-action-button>
+              </li>
+            }
+          </ul>
+        }
+      }
+
+      @case ('c4-relationships') {
+        <p class="wizard-panel__hint">Connect the elements. Each relationship appends a Rel(...) line and re-renders the preview.</p>
+
+        <label class="wizard-panel__label" for="wizard-rel-from">From</label>
+        <select
+          id="wizard-rel-from"
+          class="wizard-panel__select"
+          data-testid="wizard-rel-from"
+          [ngModel]="relationshipFromId() ?? ''"
+          (ngModelChange)="relationshipFromId.set($event || null)"
+        >
+          @for (element of connectableElements(); track element.id) {
+            <option [value]="element.id">{{ element.name }}</option>
+          }
+        </select>
+
+        <label class="wizard-panel__label" for="wizard-rel-to">To</label>
+        <select
+          id="wizard-rel-to"
+          class="wizard-panel__select"
+          data-testid="wizard-rel-to"
+          [ngModel]="relationshipToId() ?? ''"
+          (ngModelChange)="relationshipToId.set($event || null)"
+        >
+          @for (element of connectableElements(); track element.id) {
+            <option [value]="element.id">{{ element.name }}</option>
+          }
+        </select>
+
+        <label class="wizard-panel__label" for="wizard-rel-label">Label</label>
+        <input
+          id="wizard-rel-label"
+          class="wizard-panel__input"
+          data-testid="wizard-rel-label"
+          type="text"
+          placeholder="e.g. Uses"
+          autocomplete="off"
+          spellcheck="false"
+          [value]="relationshipLabel()"
+          (input)="onTextInput($event, relationshipLabel)"
+        />
+
+        <label class="wizard-panel__label" for="wizard-rel-technology">Technology</label>
+        <input
+          id="wizard-rel-technology"
+          class="wizard-panel__input"
+          data-testid="wizard-rel-technology"
+          type="text"
+          placeholder="e.g. HTTPS"
+          autocomplete="off"
+          spellcheck="false"
+          [value]="relationshipTechnology()"
+          (input)="onTextInput($event, relationshipTechnology)"
+        />
+
+        <button
+          type="button"
+          class="wizard-panel__button wizard-panel__button--confirm"
+          data-testid="wizard-add-relationship"
+          [disabled]="!canAddRelationship()"
+          (click)="addRelationship()"
+        >
+          Add Relationship
+        </button>
+
+        <div class="wizard-panel__divider" aria-hidden="true">added</div>
+
+        @if (relationships().length === 0) {
+          <p class="wizard-panel__empty" data-testid="wizard-added-empty">
+            No relationships yet — the diagram renders without them.
+          </p>
+        } @else {
+          <ul class="wizard-panel__added" data-testid="wizard-added-list" aria-label="Added relationships">
+            @for (relationship of relationships(); track $index) {
+              <li class="wizard-panel__added-item">
+                <span class="wizard-panel__added-name">{{ elementName_(relationship.fromId) }}</span>
+                <span class="wizard-panel__added-arrow">-&gt;</span>
+                <span class="wizard-panel__added-name">{{ elementName_(relationship.toId) }}</span>
+                <span class="wizard-panel__added-context">
+                  {{ relationship.label }}{{ relationship.technology ? ' · ' + relationship.technology : '' }}
+                </span>
+                <app-tree-action-button
+                  icon="delete"
+                  label="Remove"
+                  testId="wizard-added-remove"
+                  [danger]="true"
+                  (clicked)="removeRelationship($index)"
+                ></app-tree-action-button>
+              </li>
+            }
+          </ul>
+        }
+      }
+
+      @case ('sequence-participants') {
+        <p class="wizard-panel__hint">
+          Add the actors and systems that take part. Each participant is written into the editor and rendered
+          immediately.
+        </p>
+
+        <label class="wizard-panel__label" for="wizard-participant-kind">Kind</label>
+        <select
+          id="wizard-participant-kind"
+          class="wizard-panel__select"
+          data-testid="wizard-participant-kind"
+          [ngModel]="participantKind()"
+          (ngModelChange)="participantKind.set($event)"
+        >
+          @for (kind of sequenceParticipantKinds; track kind) {
+            <option [value]="kind">{{ kind }}</option>
+          }
+        </select>
+
+        <label class="wizard-panel__label" for="wizard-participant-name">Name</label>
+        <input
+          id="wizard-participant-name"
+          class="wizard-panel__input"
+          data-testid="wizard-participant-name"
+          type="text"
+          placeholder="e.g. Web App"
+          autocomplete="off"
+          spellcheck="false"
+          [value]="participantName()"
+          (input)="onTextInput($event, participantName)"
+        />
+
+        <button
+          type="button"
+          class="wizard-panel__button wizard-panel__button--confirm"
+          data-testid="wizard-add-participant"
+          [disabled]="!canAddParticipant()"
+          (click)="addParticipant()"
+        >
+          Add Participant
+        </button>
+
+        <div class="wizard-panel__divider" aria-hidden="true">added</div>
+
+        @if (participants().length === 0) {
+          <p class="wizard-panel__empty" data-testid="wizard-added-empty">
+            No participants yet — add your first above.
+          </p>
+        } @else {
+          <ul class="wizard-panel__added" data-testid="wizard-added-list" aria-label="Added participants">
+            @for (participant of participants(); track participant.id) {
+              <li class="wizard-panel__added-item" [attr.data-participant-name]="participant.name">
+                <span class="wizard-panel__added-kind">{{ participant.kind }}</span>
+                <span class="wizard-panel__added-name">{{ participant.name }}</span>
+                <app-tree-action-button
+                  icon="delete"
+                  label="Remove"
+                  testId="wizard-added-remove"
+                  [danger]="true"
+                  (clicked)="removeParticipant(participant.id)"
+                ></app-tree-action-button>
+              </li>
+            }
+          </ul>
+        }
+      }
+
+      @case ('sequence-messages') {
+        <p class="wizard-panel__hint">
+          Send messages between participants, top to bottom. Each message appends a line and re-renders the
+          preview.
+        </p>
+
+        <label class="wizard-panel__label" for="wizard-message-from">From</label>
+        <select
+          id="wizard-message-from"
+          class="wizard-panel__select"
+          data-testid="wizard-message-from"
+          [ngModel]="messageFromId() ?? ''"
+          (ngModelChange)="messageFromId.set($event || null)"
+        >
+          @for (participant of participants(); track participant.id) {
+            <option [value]="participant.id">{{ participant.name }}</option>
+          }
+        </select>
+
+        <label class="wizard-panel__label" for="wizard-message-to">To</label>
+        <select
+          id="wizard-message-to"
+          class="wizard-panel__select"
+          data-testid="wizard-message-to"
+          [ngModel]="messageToId() ?? ''"
+          (ngModelChange)="messageToId.set($event || null)"
+        >
+          @for (participant of participants(); track participant.id) {
+            <option [value]="participant.id">{{ participant.name }}</option>
+          }
+        </select>
+
+        <label class="wizard-panel__label" for="wizard-message-arrow">Arrow</label>
+        <select
+          id="wizard-message-arrow"
+          class="wizard-panel__select"
+          data-testid="wizard-message-arrow"
+          [ngModel]="messageArrow()"
+          (ngModelChange)="messageArrow.set($event)"
+        >
+          @for (option of arrowOptions; track option.arrow) {
+            <option [value]="option.arrow">{{ option.label }}</option>
+          }
+        </select>
+
+        <label class="wizard-panel__label" for="wizard-message-label">Message</label>
+        <input
+          id="wizard-message-label"
+          class="wizard-panel__input"
+          data-testid="wizard-message-label"
+          type="text"
+          placeholder="e.g. Place order"
+          autocomplete="off"
+          spellcheck="false"
+          [value]="messageLabel()"
+          (input)="onTextInput($event, messageLabel)"
+        />
+
+        <button
+          type="button"
+          class="wizard-panel__button wizard-panel__button--confirm"
+          data-testid="wizard-add-message"
+          [disabled]="!canAddMessage()"
+          (click)="addMessage()"
+        >
+          Add Message
+        </button>
+
+        <div class="wizard-panel__divider" aria-hidden="true">added</div>
+
+        @if (messages().length === 0) {
+          <p class="wizard-panel__empty" data-testid="wizard-added-empty">No messages yet — add your first above.</p>
+        } @else {
+          <ul class="wizard-panel__added" data-testid="wizard-added-list" aria-label="Added messages">
+            @for (message of messages(); track $index) {
+              <li class="wizard-panel__added-item">
+                <span class="wizard-panel__added-name">{{ participantName_(message.fromId) }}</span>
+                <span class="wizard-panel__added-arrow">{{ message.arrow }}</span>
+                <span class="wizard-panel__added-name">{{ participantName_(message.toId) }}</span>
+                <span class="wizard-panel__added-context">{{ message.label }}</span>
+                <app-tree-action-button
+                  icon="delete"
+                  label="Remove"
+                  testId="wizard-added-remove"
+                  [danger]="true"
+                  (clicked)="removeMessage($index)"
+                ></app-tree-action-button>
+              </li>
+            }
+          </ul>
+        }
+      }
+
+      @case ('done') {
+        <p class="wizard-panel__summary" data-testid="wizard-summary">{{ summary() }}</p>
+        <p class="wizard-panel__summary-counts">{{ summaryCounts() }}</p>
+        <p class="wizard-panel__hint">
+          The diagram stays in the editor — keep editing it by hand or save it with Ctrl+S. The wizard only ever
+          rewrites what it wrote itself; it never overwrites your own edits.
+        </p>
+      }
+    }
+  </div>
+
+  <div class="wizard-panel__footer">
+    @if (step() === 'done') {
+      <button
+        type="button"
+        class="wizard-panel__button wizard-panel__button--confirm"
+        data-testid="wizard-restart"
+        (click)="restart()"
+      >
+        Start another diagram
+      </button>
+      <button type="button" class="wizard-panel__button" data-testid="wizard-close" (click)="close()">Close</button>
+    } @else {
+      <button
+        type="button"
+        class="wizard-panel__button"
+        data-testid="wizard-back"
+        [disabled]="!canGoBack()"
+        (click)="back()"
+      >
+        Back
+      </button>
+      <button
+        type="button"
+        class="wizard-panel__button wizard-panel__button--confirm"
+        data-testid="wizard-next"
+        [disabled]="!canGoNext()"
+        (click)="next()"
+      >
+        {{ isLastBuildStep() ? 'Finish' : 'Next' }}
+      </button>
+    }
+  </div>
+</aside>

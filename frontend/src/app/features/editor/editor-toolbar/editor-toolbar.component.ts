@@ -1,14 +1,15 @@
 import { Component, ElementRef, EventEmitter, HostListener, Input, Output, inject, signal } from '@angular/core';
 
 import { HubConnectionState } from '../../../core/models/hub-connection-state.model';
+import { SidePanelChoice } from '../../../core/services/editor-layout-preferences.service';
 import { ConnectionStatusComponent } from '../../../shared/components/connection-status/connection-status.component';
 import { RailButtonComponent } from '../../../shared/components/rail-button/rail-button.component';
 
 /**
  * Presentational activity rail: the vscode.dev-style application (hamburger)
- * menu at the top, the Explorer, Templates and Documents panel toggles, and
- * the connection status indicator. Emits events up rather than owning
- * document/document-hub state itself.
+ * menu at the top, the Explorer, Templates, Documents, Explain This and
+ * Diagram Wizard panel toggles, and the connection status indicator. Emits
+ * events up rather than owning document/document-hub state itself.
  *
  * The hamburger opens a flyout to the rail's right listing the app menus
  * (File / Edit / View / Help), exactly like vscode.dev's compact title-bar
@@ -29,13 +30,14 @@ export class EditorToolbarComponent {
   @Input() connectionState: HubConnectionState = 'disconnected';
   /** Gates the Explorer rail button entirely (hidden, not disabled) in browsers without the File System Access API. */
   @Input() explorerSupported = false;
-  /** Which (if any) side panel is currently active -- drives the [active] state of the four panel-toggle rail buttons. */
-  @Input() activeSidePanel: 'explorer' | 'documents' | 'templates' | 'explain' | null = null;
+  /** Which (if any) side panel is currently active -- drives the [active] state of the panel-toggle rail buttons. */
+  @Input() activeSidePanel: SidePanelChoice | null = null;
 
   @Output() readonly explorerPanelToggle = new EventEmitter<void>();
   @Output() readonly documentsPanelToggle = new EventEmitter<void>();
   @Output() readonly templatesPanelToggle = new EventEmitter<void>();
   @Output() readonly explainPanelToggle = new EventEmitter<void>();
+  @Output() readonly wizardPanelToggle = new EventEmitter<void>();
   /** Fired by File > New (Alt+N lives with the parent's keydown handler). */
   @Output() readonly newDocument = new EventEmitter<void>();
   /** Fired by File > Save. */

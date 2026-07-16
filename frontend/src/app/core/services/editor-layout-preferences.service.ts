@@ -2,6 +2,22 @@ import { Injectable } from '@angular/core';
 
 const STORAGE_KEY = 'trellis.editorLayout.v1';
 
+/**
+ * The exclusive side panels, in rail order. The single source of truth for the
+ * choice: the type below is derived from it, and so is the runtime check that
+ * validates a stored blob -- previously those were two hand-kept copies of the
+ * same list, and forgetting the runtime one made a new panel's persistence
+ * fail silently rather than fail to compile.
+ */
+const SIDE_PANEL_CHOICES = ['explorer', 'documents', 'templates', 'explain', 'wizard'] as const;
+
+/** Which side panel is showing; `null` (below) means all of them are closed. */
+export type SidePanelChoice = (typeof SIDE_PANEL_CHOICES)[number];
+
+function asSidePanelChoice(value: unknown): SidePanelChoice | null {
+  return SIDE_PANEL_CHOICES.includes(value as SidePanelChoice) ? (value as SidePanelChoice) : null;
+}
+
 interface StoredEditorLayout {
   editorPaneRatio: number;
   /**
@@ -15,7 +31,7 @@ interface StoredEditorLayout {
    * explicitly (not just absent) when the user closes the panel, so a
    * deliberately-closed panel also survives a reload as closed.
    */
-  activeSidePanel?: 'explorer' | 'documents' | 'templates' | 'explain' | null;
+  activeSidePanel?: SidePanelChoice | null;
   /**
    * Additive field, same story as activeSidePanel: `null` is stored
    * explicitly when the user clears the Documents panel's folder scope.
@@ -60,14 +76,11 @@ export class EditorLayoutPreferencesService {
   }
 
   /** Returns the persisted side-panel choice, or null (panel closed, never stored, or a corrupt value). */
-  getActiveSidePanel(): 'explorer' | 'documents' | 'templates' | 'explain' | null {
-    const stored = this.readStored()?.activeSidePanel;
-    return stored === 'explorer' || stored === 'documents' || stored === 'templates' || stored === 'explain'
-      ? stored
-      : null;
+  getActiveSidePanel(): SidePanelChoice | null {
+    return asSidePanelChoice(this.readStored()?.activeSidePanel);
   }
 
-  setActiveSidePanel(panel: 'explorer' | 'documents' | 'templates' | 'explain' | null): void {
+  setActiveSidePanel(panel: SidePanelChoice | null): void {
     this.writeStored({ activeSidePanel: panel });
   }
 

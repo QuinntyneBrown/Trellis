@@ -106,6 +106,14 @@
       [active]="activeSidePanel === 'explain'"
       (clicked)="explainPanelToggle.emit()"
     ></app-rail-button>
+
+    <app-rail-button
+      icon="wizard"
+      label="Diagram Wizard"
+      testId="wizard-panel-toggle"
+      [active]="activeSidePanel === 'wizard'"
+      (clicked)="wizardPanelToggle.emit()"
+    ></app-rail-button>
   </div>
 
   <div class="editor-toolbar__group editor-toolbar__group--bottom">

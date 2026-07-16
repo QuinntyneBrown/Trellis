@@ -19,6 +19,7 @@ import { FileSystemAccessService } from '../../../core/services/file-system-acce
 import { FoldersService } from '../../../core/services/folders.service';
 import { MonacoLoaderService } from '../../../core/services/monaco-loader.service';
 import { TemplatesService } from '../../../core/services/templates.service';
+import { WizardPanelComponent } from '../../wizard/wizard-panel/wizard-panel.component';
 import { DiagramPreviewComponent } from '../diagram-preview/diagram-preview.component';
 import { MAX_EDITOR_PANE_RATIO, MIN_EDITOR_PANE_RATIO } from '../editor-pane-ratio.constants';
 import { MonacoEditorComponent } from '../monaco-editor/monaco-editor.component';
@@ -1360,6 +1361,130 @@ describe('EditorPageComponent', () => {
 
       component.onTitleBarSidebarToggle();
       expect(component.activeSidePanel()).toBe('explain');
+    });
+  });
+
+  describe('Diagram Wizard side panel (fifth exclusive panel)', () => {
+    it('toggles open/closed, persists the choice, and participates in exclusivity', () => {
+      fixture.detectChanges();
+
+      component.toggleSidePanel('wizard');
+      expect(component.activeSidePanel()).toBe('wizard');
+      expect(layoutPreferencesMock.setActiveSidePanel).toHaveBeenCalledWith('wizard');
+
+      component.toggleSidePanel('documents');
+      expect(component.activeSidePanel()).toBe('documents');
+
+      component.toggleSidePanel('wizard');
+      component.toggleSidePanel('wizard');
+      expect(component.activeSidePanel()).toBeNull();
+    });
+
+    it('is reopened by the title-bar toggle as the last-used panel', () => {
+      fixture.detectChanges();
+
+      component.toggleSidePanel('wizard');
+      component.onTitleBarSidebarToggle();
+      expect(component.activeSidePanel()).toBeNull();
+
+      component.onTitleBarSidebarToggle();
+      expect(component.activeSidePanel()).toBe('wizard');
+    });
+
+    it('writes the wizard\'s first diagram into an empty buffer and renders it', () => {
+      fixture.detectChanges();
+
+      component.onWizardDiagramChanged({
+        plantUml: '@startuml\nactor Customer\n@enduml',
+        previousPlantUml: null,
+        renderable: true,
+      });
+
+      expect(component.sourceCode()).toBe('@startuml\nactor Customer\n@enduml');
+      expect(component.documentKind()).toBe('plantuml');
+      expect(component.hasUnsavedChanges()).toBe(true);
+      expect(hubServiceMock.render).toHaveBeenCalledWith('@startuml\nactor Customer\n@enduml', 'plantuml');
+    });
+
+    it('rewrites its own previous diagram in place, leaving the rest of the buffer alone', () => {
+      fixture.detectChanges();
+      component.sourceCode.set('my notes\n\n@startuml\nactor Customer\n@enduml');
+
+      component.onWizardDiagramChanged({
+        plantUml: '@startuml\nactor Customer\nactor Auditor\n@enduml',
+        previousPlantUml: '@startuml\nactor Customer\n@enduml',
+        renderable: true,
+      });
+
+      expect(component.sourceCode()).toBe('my notes\n\n@startuml\nactor Customer\nactor Auditor\n@enduml');
+    });
+
+    it('never asks to discard: the wizard adds, so there is nothing to lose', () => {
+      fixture.detectChanges();
+      component.sourceCode.set('hand-written content');
+      const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(false);
+
+      component.onWizardDiagramChanged({
+        plantUml: '@startuml\nactor Customer\n@enduml',
+        previousPlantUml: null,
+        renderable: true,
+      });
+
+      expect(confirmSpy).not.toHaveBeenCalled();
+      expect(component.sourceCode()).toContain('hand-written content');
+      expect(component.sourceCode()).toContain('actor Customer');
+
+      confirmSpy.mockRestore();
+    });
+
+    it('keeps the open document\'s identity -- the wizard extends a document, it does not replace it', () => {
+      fixture.detectChanges();
+      component.documentId.set('doc-1');
+      component.documentName.set('My diagram');
+      locationMock.go.mockClear();
+
+      component.onWizardDiagramChanged({
+        plantUml: '@startuml\nactor Customer\n@enduml',
+        previousPlantUml: null,
+        renderable: true,
+      });
+
+      expect(component.documentId()).toBe('doc-1');
+      expect(component.documentName()).toBe('My diagram');
+      expect(locationMock.go).not.toHaveBeenCalled();
+    });
+
+    it('writes an unrenderable skeleton into the editor without asking PlantUML to draw it', () => {
+      fixture.detectChanges();
+      hubServiceMock.render.mockClear();
+
+      component.onWizardDiagramChanged({
+        plantUml: '@startuml\n!define RELATIVE_INCLUDE\n!include C4_Container.puml\n@enduml',
+        previousPlantUml: null,
+        renderable: false,
+      });
+
+      expect(component.sourceCode()).toContain('!include C4_Container.puml');
+      expect(hubServiceMock.render).not.toHaveBeenCalled();
+    });
+
+    it('wires the panel\'s outputs to the page through the template', () => {
+      fixture.detectChanges();
+
+      const wizard = fixture.debugElement.query(By.directive(WizardPanelComponent))
+        .componentInstance as WizardPanelComponent;
+
+      wizard.diagramChanged.emit({
+        plantUml: '@startuml\nactor A\n@enduml',
+        previousPlantUml: null,
+        renderable: true,
+      });
+      expect(component.sourceCode()).toBe('@startuml\nactor A\n@enduml');
+
+      component.toggleSidePanel('wizard');
+      expect(component.activeSidePanel()).toBe('wizard');
+      wizard.closed.emit();
+      expect(component.activeSidePanel()).toBeNull();
     });
   });
 
