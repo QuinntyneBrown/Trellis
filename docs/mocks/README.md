@@ -9,9 +9,11 @@ app as plain HTML/CSS — no build step, no JavaScript, no network.
 [`design-system/`](design-system/) is a separate, self-contained product:
 the **Trellis Design System** documentation site (tokens, foundations,
 components, patterns), heavily inspired by the VS Code design system and
-expressed in **dark mode** — the *target* theme. The mocks in this folder
-document the *current app* (light theme) and are deliberately untouched by
-it. The design system is published to an Azure Static Web App by
+expressed in **dark mode**. That dark token set is no longer a *target*:
+the app has adopted it — `frontend/src/styles/tokens.scss` is a verbatim
+copy of [`design-system/assets/tokens.css`](design-system/assets/tokens.css)
+and every component now consumes those `--tds-*` properties, so the running
+app is dark. The design system is published to an Azure Static Web App by
 [`.github/workflows/deploy-design-system.yml`](../../.github/workflows/deploy-design-system.yml)
 on pushes to `main`; start at
 [`design-system/index.html`](design-system/index.html) or its
@@ -33,11 +35,26 @@ impression:
   names, `data-testid` attributes, and ARIA roles/labels/values the
   templates produce. Angular's style bindings appear as literal `style`
   attributes (e.g. the side panel's `display`/`width`).
-- **Same styles.** [`assets/mock.css`](assets/mock.css) is hand-compiled
-  from the component SCSS files; every rule block is annotated with its
-  source file. Colors, sizes, and hover/active/focus states are copied
-  verbatim, so hovering rail icons shows the real tooltips, tree rows and
-  buttons show the real hover fills, etc.
+- **Same styles.** Two hand-compiled stylesheets, each annotated block by
+  block with the SCSS file it came from; colors, sizes, and
+  hover/active/focus states are copied verbatim, so hovering rail icons
+  shows the real tooltips, tree rows and buttons show the real hover fills,
+  etc. **Which sheet a page links tells you which app it documents:**
+  - [`assets/mock-dark.css`](assets/mock-dark.css) — the **current** app.
+    Compiled from today's SCSS, which consumes the dark `--tds-*` tokens;
+    the sheet inlines those tokens verbatim from
+    `frontend/src/styles/tokens.scss`, and `var(--tds-*)` references are
+    preserved exactly as the components write them. Linked by the nine
+    `editor-wizard-*` pages.
+  - [`assets/mock.css`](assets/mock.css) — the **retired light theme**.
+    Compiled from an older revision and still accurate to the fourteen
+    `editor-*` pages it serves, but no longer to the app: since it was
+    written, the theme went dark, New/Save/Upload moved off the rail into
+    the hamburger's File menu, the title bar's menus/logo were replaced by
+    a copy-contents button, `pixel-resize-divider` was folded into one
+    `resize-divider` component, and per-row tree actions moved into a
+    right-click context menu. Re-cutting those pages against the current
+    shell would move them to the dark sheet and retire this one.
 - **Real data shapes.** Template names/categories match the backend's
   static template catalog; document timestamps appear as raw ISO-8601
   strings in each row's `title` tooltip, exactly as
@@ -49,13 +66,21 @@ impression:
 
 Two things are facsimiles, clearly marked with `mock-only` comments:
 
-- **The Monaco surface.** The app instantiates `monaco-editor` (theme `vs`,
-  language `plaintext`, minimap off) at runtime; the mocks approximate the
-  rendered surface with `.mock-monaco` (gutter `#237893` on `#fffffe`,
-  Consolas 14px/19px).
+- **The Monaco surface.** The app instantiates `monaco-editor` (language
+  `plaintext`/`markdown`, minimap off) at runtime; the mocks approximate the
+  rendered surface with `.mock-monaco` at the same metrics (Consolas
+  14px/19px) in whichever theme the page documents — `vs-dark` on the dark
+  sheet (gutter `#6e7681` on `#1f1f1f`), the retired `vs` on the light one
+  (gutter `#237893` on `#fffffe`).
 - **The rendered diagram.** A hand-drawn SVG imitating what the vendored
-  PlantUML 1.2026.6 outputs for the `sequence.puml` starter template
-  (modern default style: `#E2E2F0` shapes, `#181818` lines).
+  PlantUML 1.2026.6 outputs for a starter template (modern default style:
+  `#E2E2F0` shapes, `#181818` lines; C4 renders use the C4-PlantUML
+  palette). This art is **the same on both sheets and stays light**: the
+  app deliberately keeps the rendered plate white
+  (`.diagram-preview__svg { background-color: #ffffff }`) even on the dark
+  pane, so exported diagrams keep the background they'll have outside
+  Trellis. On the dark pages it reads as a white plate with the rounded
+  corners and drop shadow the real app gives it.
 
 
 Static mocks can't capture behavior: pane dragging, keyboard shortcuts
@@ -168,11 +193,14 @@ builds a diagram through guided steps. Key design facts:
   messages) keep final element positions for step-to-step continuity — a
   real render would pack unlinked elements differently.
 - **Current shell, newer than the other mocks.** These pages mirror the
-  app as it is today: empty title-bar left region, copy-contents button in
-  the title-bar center, page-owned upload input, and the hamburger-first
-  rail (Application Menu, Explorer, Templates, Documents, Explain This)
-  plus the proposed wizard toggle. The older mocks above predate that
-  shell and intentionally do not carry the wizard icon.
+  app as it is today and are therefore **dark** (they link
+  `assets/mock-dark.css`; see Fidelity above): empty title-bar left region,
+  copy-contents button in the title-bar center, page-owned upload input,
+  the hamburger-first rail (Application Menu, Explorer, Templates,
+  Documents, Explain This) plus the proposed wizard toggle, one
+  `resize-divider` class for both seams, and the preview's hover-revealed
+  copy/download chip. The older mocks above predate that shell, still
+  render light, and intentionally do not carry the wizard icon.
 - **Panel anatomy.** `wizard-panel` copies the Explain panel's form-column
   idiom in the shared panel chrome: uppercase header, dot-pip progress
   with caption, hint, option cards (`role="radiogroup"`/`radio`), labeled
@@ -223,10 +251,13 @@ Where each piece of mock markup comes from (paths relative to
 - `features/explorer/…` — explorer panel states and recursive tree nodes.
 - `features/wizard/wizard-panel/` — **proposed, not yet implemented**: the
   Diagram Wizard side panel (`editor-wizard-*` pages); its mock styles are
-  hand-authored in the panels' idiom and `rail-icons.ts` would gain a
-  `wizard` entry (see the annotated block at the end of `mock.css`).
+  hand-authored in the Explain panel's idiom against the same tokens, and
+  `rail-icons.ts` would gain a `wizard` entry (see the annotated block at
+  the end of `mock-dark.css`).
 - `shared/components/…` — connection-status, error-banner, loading-spinner.
-- `styles.scss` — global font stack, `#111827` text, border-box sizing.
+- `styles.scss` — global font stack, border-box sizing, and the ink and
+  background that make an otherwise unstyled page dark (`var(--tds-ink)` on
+  `var(--tds-surface-editor)`); `styles/tokens.scss` defines those tokens.
 
 ## Regenerating / editing
 

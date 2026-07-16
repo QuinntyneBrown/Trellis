@@ -4,8 +4,14 @@
   added (route: /editor).
 
   PROPOSED FEATURE — mirrors the current app shell (post-hamburger rail),
-  unlike the older mocks; see editor-wizard-choose-type.html for the shared
+  unlike the older light mocks; see editor-wizard-choose-type.html for the shared
   chrome notes and the wizard's one-way (wizard -> diagram) model.
+
+  Dark theme: these pages link assets/mock-dark.css, hand-compiled from
+  the current component SCSS and the dark tokens in
+  frontend/src/styles/tokens.scss. The rendered PlantUML plate stays
+  white on the dark pane -- that is the app's own deliberate choice, so
+  exported diagrams keep the background they'll have outside Trellis.
 
   State shown: "Sequence Diagram" was chosen in step 1, so the progress
   indicator expanded to the sequence track's four steps. The participants
@@ -21,7 +27,7 @@
   <meta charset="utf-8">
   <title>Trellis mock — Diagram Wizard (sequence participants)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="assets/mock.css">
+  <link rel="stylesheet" href="assets/mock-dark.css">
 </head>
 <body>
   <app-root>
@@ -175,7 +181,39 @@
             </app-explorer-panel>
             <app-documents-panel style="display: none;"><!-- [open]=false renders nothing --></app-documents-panel>
             <app-templates-panel style="display: none;"><!-- [open]=false renders nothing --></app-templates-panel>
-            <app-explain-panel style="display: none;"><!-- renders its panel in the real app; hidden while the wizard is active --></app-explain-panel>
+            <app-explain-panel style="display: none;">
+              <!-- Unlike the Documents and Templates panels (both wrapped in
+                   @if (open), so they really do render nothing), the Explain
+                   panel has no structural guard: editor-page only hides it
+                   with a display binding, so its DOM is always mounted. -->
+              <aside class="explain-panel" data-testid="explain-panel">
+                <div class="explain-panel__header">
+                  <span class="explain-panel__header-title">Explain This</span>
+                </div>
+
+                <div class="explain-panel__body">
+                  <p class="explain-panel__hint">
+                    Generate an LLM-ready &quot;explain this&quot; prompt from a local file or folder, or from a GitHub / GitLab
+                    repository URL.
+                  </p>
+
+                  <div class="explain-panel__pickers">
+                    <button type="button" class="explain-panel__button" data-testid="explain-pick-file">Select File&#8230;</button>
+                    <button type="button" class="explain-panel__button" data-testid="explain-pick-folder">Select Folder&#8230;</button>
+                  </div>
+
+                  <div class="explain-panel__divider" aria-hidden="true">or</div>
+
+                  <label class="explain-panel__label" for="explain-url-input">Repository URL</label>
+                  <input id="explain-url-input" class="explain-panel__url-input" data-testid="explain-url-input" type="url" placeholder="https://github.com/owner/repo" autocomplete="off" spellcheck="false" />
+                  <p class="explain-panel__hint explain-panel__hint--small">
+                    A repository root, or a folder / file inside one (tree and blob URLs work).
+                  </p>
+
+                  <button type="button" class="explain-panel__button explain-panel__button--confirm" data-testid="explain-confirm" disabled>Explain This</button>
+                </div>
+              </aside>
+            </app-explain-panel>
 
             <app-wizard-panel>
               <aside class="wizard-panel" data-testid="wizard-panel">
@@ -280,16 +318,16 @@
           </div>
 
           <app-resize-divider>
-            <div class="pixel-resize-divider" data-testid="pixel-resize-divider" role="separator" aria-orientation="vertical" tabindex="0"
+            <div class="resize-divider" data-testid="pixel-resize-divider" role="separator" aria-orientation="vertical" tabindex="0"
                  aria-valuenow="260" aria-valuemin="170" aria-valuemax="500" aria-label="Resize side panel">
-              <div class="pixel-resize-divider__grab-area"></div>
+              <div class="resize-divider__grab-area"></div>
             </div>
           </app-resize-divider>
 
           <div class="editor-page__editor-pane" style="flex-basis: 50%;">
             <app-monaco-editor>
               <div class="monaco-editor-wrapper__surface" data-testid="monaco-editor">
-                <!-- mock-only facsimile of the Monaco surface (theme 'vs', language 'plaintext') -->
+                <!-- mock-only facsimile of the Monaco surface (theme 'vs-dark', language 'plaintext') -->
                 <div class="mock-monaco">
                   <div class="mock-monaco__gutter">1
 2
@@ -367,6 +405,27 @@ database "Order DB" as DB
                     <path d="M535 158c0 5 13.4 9 30 9s30-4 30-9" fill="none" stroke="#181818" />
                     <text x="565" y="218" text-anchor="middle" font-size="14">Order DB</text>
                   </svg>
+                </div>
+
+                <!-- Hover-revealed (opacity 0 until .diagram-preview:hover
+                     or :focus-within), SVG successes only. -->
+                <div class="diagram-preview__actions" data-testid="preview-image-actions">
+                  <app-tree-action-button>
+                    <button type="button" class="tree-action-button" data-testid="preview-copy-image" title="Copy image to clipboard" aria-label="Copy image to clipboard">
+                      <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M9 9h10a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H11a2 2 0 0 1-2-2V9z" />
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                      </svg>
+                    </button>
+                  </app-tree-action-button>
+                  <app-tree-action-button>
+                    <button type="button" class="tree-action-button" data-testid="preview-download-image" title="Download image as PNG" aria-label="Download image as PNG">
+                      <svg class="tree-action-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 3v12M8 11l4 4 4-4" />
+                        <path d="M4 19h16" />
+                      </svg>
+                    </button>
+                  </app-tree-action-button>
                 </div>
               </div>
             </app-diagram-preview>

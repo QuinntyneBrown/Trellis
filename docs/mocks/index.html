@@ -134,8 +134,13 @@
       panel that builds C4 or sequence diagrams one guided step at a time, writing PlantUML into the
       editor and re-rendering the preview after every action (one-way: wizard → diagram; the editor
       stays hand-editable throughout). Unlike the pages above, these nine mirror the app's
-      <em>current</em> shell — hamburger rail, Explain This toggle, title-bar copy button — plus the
-      proposed wizard rail icon; the older pages intentionally do not carry it.
+      <em>current</em> shell — so they are <strong>dark</strong>, styled by
+      <code>assets/mock-dark.css</code>, hand-compiled from today's component SCSS and the
+      <code>--tds-*</code> tokens in <code>frontend/src/styles/tokens.scss</code>. They also carry the
+      hamburger rail, Explain This toggle and title-bar copy button, plus the proposed wizard rail
+      icon. The older pages still link the light <code>assets/mock.css</code> and document a shell the
+      app has moved on from. (The rendered diagram stays on a white plate by design, even on the dark
+      pane — that is what the app itself does, so exports keep their background.)
     </p>
     <div class="cards">
       <a class="card" href="editor-wizard-choose-type.html">

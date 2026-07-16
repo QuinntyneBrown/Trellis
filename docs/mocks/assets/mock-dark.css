@@ -1,0 +1,1959 @@
+/*
+  Trellis mock stylesheet — DARK, hand-compiled from the CURRENT component
+  SCSS under frontend/src/app/, which consumes the dark design tokens in
+  frontend/src/styles/tokens.scss.
+
+  WHY A SECOND STYLESHEET: assets/mock.css was hand-compiled from an older,
+  LIGHT-theme revision of the app and still documents it — the fourteen
+  editor-*.html pages predate the dark theme, the hamburger rail, and the
+  single resize-divider component. The app has since adopted the VS Code
+  Dark Modern-inspired token set that docs/mocks/design-system publishes, so
+  the nine editor-wizard-*.html pages — which mirror the app as it is today —
+  link this sheet instead. When the older pages are re-cut against the
+  current shell they should move here too, and mock.css can retire.
+
+  Every block is annotated with the SCSS file it was compiled from, and
+  var(--tds-*) references are preserved exactly as the components write them
+  (the components themselves never hardcode a color; the few literals that
+  survive below — #fff on a primary button, #ffffff on the close-button
+  hover and the PlantUML plate, #d4d4d4 Monaco ink — are literals in the
+  real source too, and are called out where they appear).
+
+  Two blocks are NOT compiled from anything and say so: the .mock-monaco
+  facsimile (mock-only — the real surface is a runtime Monaco instance) and
+  wizard-panel (PROPOSED — the feature is not implemented yet).
+*/
+
+/* == design tokens ======================================================= */
+/* Copied verbatim from frontend/src/styles/tokens.scss, which is itself a
+   verbatim copy of docs/mocks/design-system/assets/tokens.css (the
+   authoritative sheet). Verified identical to that source: all 98
+   declarations match; only one prose comment differs. */
+
+:root {
+  /* == Color / surfaces ==================================================
+   * The workbench surface stack, darkest chrome to raised overlays.
+   * VS Code Dark Modern idiom: activity bar & side bars sit on #181818,
+   * the editor/content on #1f1f1f, menus/dialogs raise to #202020+. */
+
+  /* Title bar, activity rail, side panels.
+   * Was: #f3f4f6 (title-bar), #f9fafb (editor-toolbar), #ffffff (panels). */
+  --tds-surface-chrome: #181818;
+
+  /* Editor and preview content plane. Was: #fffffe (Monaco 'vs'), #ffffff. */
+  --tds-surface-editor: #1f1f1f;
+
+  /* Raised surfaces: menus, the template pop-out, tooltips' host layer. */
+  --tds-surface-raised: #202020;
+
+  /* Overlay surfaces: modal dialog panels. Was: #ffffff dialog panels. */
+  --tds-surface-overlay: #242424;
+
+  /* Inset fields on overlay surfaces: inputs, selects. Was: #ffffff. */
+  --tds-surface-field: #2a2a2a;
+
+  /* Modal scrim. Was: rgba(0, 0, 0, 0.4). Slightly heavier on dark. */
+  --tds-scrim: rgba(0, 0, 0, 0.5);
+
+  /* Hairlines. Was: #e5e7eb (structural), #d1d5db (controls). */
+  --tds-border: #2b2b2b;
+  --tds-border-strong: #3c3c3c;
+
+  /* == Color / ink =======================================================
+   * Was (light): #111827 primary, #374151/#4b5563 secondary, #6b7280
+   * muted, #9ca3af disabled. */
+  --tds-ink: #cccccc;          /* primary text            — 9.9:1 on #1f1f1f */
+  --tds-ink-secondary: #a6a6a6; /* menus, labels, controls — 6.5:1 */
+  --tds-ink-muted: #9d9d9d;    /* hints, placeholders     — 5.8:1 */
+  --tds-ink-disabled: #6e6e6e; /* disabled only (contrast-exempt) */
+  --tds-ink-inverse: #1f1f1f;  /* ink on accent fills */
+
+  /* == Color / interaction (Trellis blue) ================================
+   * Was: #3b82f6 (active/focus), #2563eb (primary btn), #1d4ed8 (hover),
+   * #93c5fd (soft outline). Lightened for dark-surface contrast. */
+  --tds-accent: #4d9fff;        /* active icons, links, active-row names — 6.1:1 on #1f1f1f */
+  --tds-accent-strong: #2a6cc9; /* primary button fill — white ink 5.1:1 */
+  --tds-accent-hover: #2970d6;  /* primary button hover fill — white ink 4.8:1 */
+  --tds-accent-soft: #7ab8ff;   /* dashed drop hints, subtle outlines */
+  --tds-focus-ring: #4d9fff;    /* 2px focus outline, offset -2px */
+
+  /* Translucent accent fills (was rgba(59,130,246, .06–.2)): */
+  --tds-accent-tint-06: rgba(77, 159, 255, 0.09);
+  --tds-accent-tint-12: rgba(77, 159, 255, 0.16);
+  --tds-accent-tint-15: rgba(77, 159, 255, 0.2);
+  --tds-accent-tint-20: rgba(77, 159, 255, 0.26);
+
+  /* Neutral hover washes (was rgba(17,24,39, .06/.08) on light): */
+  --tds-hover-wash: rgba(255, 255, 255, 0.06);
+  --tds-hover-wash-strong: rgba(255, 255, 255, 0.09);
+
+  /* == Color / status =====================================================
+   * Semantics from connection-status + error-banner, re-tuned for dark.
+   * Status hues are reserved for connection & operation outcome semantics;
+   * they are never decorative. */
+
+  /* ok — was #22c55e */
+  --tds-status-ok: #3fb950;
+  --tds-status-ok-ink: #56d364;
+
+  /* error — was #ef4444 dot; #fef2f2/#fecaca/#991b1b banner; #b91c1c
+   * danger ink; #c42b1c window-close hover (kept verbatim: Windows chrome
+   * convention, not a palette member). */
+  --tds-status-error: #f85149;
+  --tds-status-error-ink: #ff7b72;      /* 5.5:1 on error-surface */
+  --tds-status-error-surface: #3a1d1d;
+  --tds-status-error-border: #6e2b28;
+
+  /* warn / reconnecting — was #eab308 */
+  --tds-status-warn: #d29922;
+  --tds-status-warn-ink: #e3b341;
+
+  /* unknown / idle — was #9ca3af */
+  --tds-status-unknown: #8b949e;
+
+  /* Window-control close hover, Windows convention (unchanged). */
+  --tds-window-close: #c42b1c;
+
+  /* == Color / editor (Monaco) ===========================================
+   * The app instantiates Monaco with theme 'vs-dark'
+   * (monaco-editor.component.ts). NOTE: the prose in tokens.scss still says
+   * the app uses 'vs' — that comment is stale; the values below are the
+   * correct 'vs-dark' mapping and are reproduced verbatim. */
+  --tds-editor-gutter-ink: #6e7681;    /* was #237893 ('vs' line numbers) */
+  --tds-editor-gutter-active: #cccccc;
+  --tds-editor-cursor: #aeafad;        /* was #000000 */
+  --tds-editor-selection: #264f78;
+  --tds-editor-line-highlight: rgba(255, 255, 255, 0.04);
+
+  /* == Color / badge ======================================================
+   * Kind badge / category chip. Was: #eef2ff bg, #4338ca ink. */
+  --tds-badge-surface: #2b3a55;
+  --tds-badge-ink: #9db8ff;
+
+  /* == Typography =========================================================
+   * Stacks match frontend/src/styles.scss and the Monaco surface. */
+  --tds-font-ui:
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+  --tds-font-mono: Consolas, 'Cascadia Mono', 'Courier New', monospace;
+
+  /* Type scale — sizes in rem are copied from component SCSS; px sizes
+   * (13px title bar, 12px command center, 14px Monaco) are chrome-fixed. */
+  --tds-text-xxs: 0.6rem;    /* kind-badge */
+  --tds-text-xs: 0.7rem;     /* panel header titles, option categories */
+  --tds-text-tooltip: 0.75rem;
+  --tds-text-sm: 0.8rem;     /* dialog labels, picker options */
+  --tds-text-body: 0.85rem;  /* tree rows, buttons, banners */
+  --tds-text-md: 0.9rem;     /* inputs, preview placeholder */
+  --tds-text-lg: 1rem;       /* dialog titles */
+  --tds-text-chrome: 13px;   /* title-bar menus */
+  --tds-text-chrome-sm: 12px;/* command center */
+  --tds-text-code: 14px;     /* Monaco */
+  --tds-line-code: 19px;     /* Monaco */
+
+  --tds-weight-regular: 400;
+  --tds-weight-medium: 500;
+  --tds-weight-semibold: 600;
+  --tds-weight-bold: 700;
+
+  --tds-tracking-caps: 0.06em; /* uppercase panel headers */
+  --tds-tracking-badge: 0.04em;
+
+  /* == Spacing =============================================================
+   * 4px-base scale; values appear verbatim in the component SCSS. */
+  --tds-space-1: 0.15rem;  /* tree-row vertical padding */
+  --tds-space-2: 0.25rem;  /* icon-action gaps */
+  --tds-space-3: 0.35rem;  /* row icon gap, button padding-y */
+  --tds-space-4: 0.5rem;   /* rail gaps, panel header padding-y */
+  --tds-space-5: 0.75rem;  /* panel header padding-x, banner padding-x */
+  --tds-space-6: 1rem;     /* empty-state padding */
+  --tds-space-7: 1.25rem;  /* dialog panel padding */
+
+  /* == Fixed chrome metrics ===============================================
+   * The workbench frame (editor-page.component.scss + title-bar + rail). */
+  --tds-metric-titlebar-h: 35px;
+  --tds-metric-rail-w: 48px;
+  --tds-metric-rail-button: 40px;
+  --tds-metric-rail-icon: 20px;
+  --tds-metric-tree-action: 1.4rem;
+  --tds-metric-tree-action-icon: 14px;
+  --tds-metric-panel-min: 170px;
+  --tds-metric-panel-default: 260px;
+  --tds-metric-panel-max: 500px;
+  --tds-metric-divider: 1px;
+  --tds-metric-divider-grab: 9px;
+  --tds-metric-window-control-w: 46px;
+  --tds-metric-command-center-h: 24px;
+  --tds-metric-status-dot: 0.65rem;
+
+  /* == Shape ==============================================================*/
+  --tds-radius-sm: 0.2rem;   /* kind badge */
+  --tds-radius-md: 0.25rem;  /* buttons, inputs, banners, tooltips */
+  --tds-radius-lg: 0.35rem;  /* rail buttons, pop-out panels */
+  --tds-radius-xl: 0.5rem;   /* dialog panels */
+  --tds-radius-chrome: 5px;  /* title-bar menu/toggle */
+  --tds-radius-pill: 6px;    /* command-center pill */
+
+  /* == Elevation ==========================================================
+   * On dark themes elevation reads primarily through surface lightening
+   * and hairlines; shadows are retained at higher opacity for overlays. */
+  --tds-shadow-raised: 0 4px 12px rgba(0, 0, 0, 0.45);  /* was .12 */
+  --tds-shadow-overlay: 0 8px 24px rgba(0, 0, 0, 0.6);  /* was .2 */
+
+  /* == Motion =============================================================
+   * Durations/easings copied verbatim from the component SCSS. */
+  --tds-motion-tooltip: 0.12s ease;   /* rail tooltip opacity/visibility */
+  --tds-motion-twisty: 0.1s ease;     /* tree chevron rotate */
+  --tds-motion-spin: 0.7s;            /* spinners, linear infinite */
+
+  /* == Z-index ============================================================
+   * The stacking contract across the workbench. */
+  --tds-z-divider: 1;
+  --tds-z-tooltip: 5;
+  --tds-z-popout: 10;
+  --tds-z-toast: 20;
+  --tds-z-dialog: 100;
+
+  color-scheme: dark;
+}
+
+/* == styles.scss ========================================================= */
+/* The app's global sheet. This is what makes an unstyled page dark: the
+   body ink/background come from the tokens, not from any component. */
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  font-family: var(--tds-font-ui);
+  color: var(--tds-ink);
+  background-color: var(--tds-surface-editor);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* == editor-page.component.scss ========================================== */
+/* The workbench shell: a full-viewport column (title bar on top, editor
+   shell filling the rest) that itself never scrolls -- each pane owns its
+   own scrollbar. app.component.scss is empty, so app-root has no styles. */
+
+app-editor-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh; /* excludes mobile browser chrome; falls back to 100vh above */
+  overflow: hidden;
+}
+
+/* Sticky pins the title bar above the panes; the rail's application-menu
+   flyout (z-index 50) still stacks above it, and the save-error toast (20)
+   stays below it. */
+app-title-bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  flex: 0 0 auto;
+}
+
+.editor-page {
+  display: flex;
+  flex-direction: row;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.editor-page__body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
+.editor-page__side-panel {
+  position: relative;
+  flex: 0 0 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Absolutely positioned because ALL panels are simultaneously present in
+   the DOM at all times -- each independently fills the full box, stacked,
+   with only the active one ever actually visible. NOTE (verbatim from the
+   source): app-explain-panel is NOT in this list even though editor-page
+   renders it in the same slot -- it sizes itself from its own :host rule
+   instead. The proposed app-wizard-panel follows the explain panel. */
+.editor-page__side-panel app-explorer-panel,
+.editor-page__side-panel app-documents-panel,
+.editor-page__side-panel app-templates-panel {
+  position: absolute;
+  inset: 0;
+}
+
+.editor-page__editor-pane {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.editor-page__preview-pane {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* The hidden target of File > Upload / Ctrl+U. */
+.editor-page__upload-input {
+  display: none;
+}
+
+/* A fixed-position toast, not an in-flow element. z-index is kept above the
+   rail's own tooltip (5) so a failure is never hidden behind it. */
+.editor-page__save-error {
+  position: fixed;
+  top: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  max-width: min(32rem, calc(100vw - 2rem));
+}
+
+/* == title-bar.component.scss ============================================ */
+/* VS Code-style 35px title bar: empty left spacer, centered command-center
+   pill + copy button, layout toggles and window controls on the right. */
+
+app-title-bar {
+  display: block;
+}
+
+.title-bar {
+  display: flex;
+  align-items: center;
+  height: var(--tds-metric-titlebar-h);
+  background-color: var(--tds-surface-chrome);
+  border-bottom: 1px solid var(--tds-border);
+  color: var(--tds-ink-secondary);
+  font-size: var(--tds-text-chrome);
+  user-select: none;
+}
+
+/* Empty spacer (the app menus live behind the rail's hamburger): keeps its
+   flex share so the command center stays centered between the two side
+   regions. */
+.title-bar__left {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.title-bar__center {
+  display: flex;
+  justify-content: center;
+  flex: 1.5 1 0;
+  min-width: 0;
+}
+
+.title-bar__command-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  max-width: 38rem;
+  height: var(--tds-metric-command-center-h);
+  padding: 0 10px;
+  min-width: 0;
+  border: 1px solid var(--tds-border-strong);
+  border-radius: var(--tds-radius-pill);
+  background-color: var(--tds-surface-raised);
+  color: var(--tds-ink-muted);
+  font-family: inherit;
+  font-size: var(--tds-text-chrome-sm);
+  cursor: pointer;
+}
+
+.title-bar__command-center:hover {
+  background-color: var(--tds-surface-overlay);
+  color: var(--tds-ink);
+}
+
+.title-bar__search-icon {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.title-bar__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Sibling of the command-center pill (the pill is itself a <button>, so the
+   copy action cannot nest inside it). Sized/styled like a layout toggle. */
+.title-bar__copy-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 26px;
+  height: 24px;
+  margin-left: 4px;
+  border: none;
+  border-radius: var(--tds-radius-chrome);
+  background-color: transparent;
+  color: var(--tds-ink-secondary);
+  cursor: pointer;
+}
+
+.title-bar__copy-button:hover {
+  background-color: var(--tds-hover-wash-strong);
+}
+
+.title-bar__copy-button svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.title-bar__right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+}
+
+.title-bar__layout-controls {
+  display: flex;
+  gap: 2px;
+  margin-right: 8px;
+}
+
+.title-bar__layout-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 24px;
+  border: none;
+  border-radius: var(--tds-radius-chrome);
+  background-color: transparent;
+  color: var(--tds-ink-secondary);
+  cursor: pointer;
+}
+
+.title-bar__layout-toggle:hover {
+  background-color: var(--tds-hover-wash-strong);
+}
+
+.title-bar__layout-toggle svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+}
+
+/* The pane the toggle controls is currently visible: its band is filled,
+   the VS Code layout-control idiom. */
+.title-bar__layout-toggle--active svg .title-bar__pane-fill {
+  fill: currentColor;
+  fill-opacity: 0.35;
+}
+
+.title-bar__window-controls {
+  display: flex;
+  height: 100%;
+}
+
+.title-bar__window-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tds-metric-window-control-w);
+  height: 100%;
+  border: none;
+  background-color: transparent;
+  color: var(--tds-ink);
+  cursor: default;
+}
+
+.title-bar__window-control svg {
+  width: 11px;
+  height: 11px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+}
+
+.title-bar__window-control:hover {
+  background-color: var(--tds-hover-wash-strong);
+}
+
+/* Windows convention: close is the one destructive-red hover. The #ffffff
+   is a literal in the source, not a missed token. */
+.title-bar__window-control--close:hover {
+  background-color: var(--tds-window-close);
+  color: #ffffff;
+}
+
+/* == editor-toolbar.component.scss ======================================= */
+/* The 48px VS Code activity-bar rail: hamburger + application menu at the
+   top, panel toggles below it, connection status pinned to the bottom. */
+
+/* The host is the actual flex item of `.editor-page` -- this is what pins
+   the rail to the fixed VS Code activity-bar width of 48px. */
+app-editor-toolbar {
+  display: flex;
+  flex: 0 0 48px;
+  min-width: 0;
+}
+
+.editor-toolbar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  background-color: var(--tds-surface-chrome);
+  border-right: 1px solid var(--tds-border);
+}
+
+.editor-toolbar__group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Positioning context for the hamburger's application-menu flyout. */
+.editor-toolbar__menu-anchor {
+  position: relative;
+  display: flex;
+}
+
+/* The application menu: a raised panel flying out to the rail's right
+   (+0.5rem), above everything in the editor shell (dialogs sit at 100). */
+.editor-toolbar__menu {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 0.5rem);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  min-width: 9rem;
+  padding: 0.25rem;
+  background-color: var(--tds-surface-raised);
+  border: 1px solid var(--tds-border-strong);
+  border-radius: var(--tds-radius-lg);
+  box-shadow: var(--tds-shadow-raised);
+}
+
+/* Positioning context for a menu entry's submenu. */
+.editor-toolbar__submenu-anchor {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* A top-level menu entry (File/Edit/View/Help): label left, submenu chevron
+   right, vscode.dev-style. */
+.editor-toolbar__menu-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  width: 100%;
+  border: none;
+  background-color: transparent;
+  border-radius: 0.25rem;
+  padding: 0.35rem 0.6rem;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--tds-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.editor-toolbar__menu-entry:hover,
+.editor-toolbar__menu-entry[aria-expanded='true'] {
+  background-color: var(--tds-hover-wash);
+}
+
+.editor-toolbar__menu-entry-chevron {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: var(--tds-ink-muted);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* A submenu (File's New/Save/Upload): the same raised-list surface, flying
+   out to the right of its entry, slightly overlapping vscode.dev-style. */
+.editor-toolbar__submenu {
+  position: absolute;
+  top: -0.25rem;
+  left: calc(100% + 0.25rem);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  min-width: 12rem;
+  padding: 0.25rem;
+  background-color: var(--tds-surface-raised);
+  border: 1px solid var(--tds-border-strong);
+  border-radius: var(--tds-radius-lg);
+  box-shadow: var(--tds-shadow-raised);
+}
+
+.editor-toolbar__menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  border: none;
+  background-color: transparent;
+  border-radius: 0.25rem;
+  padding: 0.35rem 0.6rem;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--tds-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.editor-toolbar__menu-item:hover {
+  background-color: var(--tds-hover-wash);
+}
+
+.editor-toolbar__menu-item-shortcut {
+  color: var(--tds-ink-muted);
+  font-size: 12px;
+}
+
+/* Pins this group (the connection status indicator) to the bottom of the
+   rail, VS Code activity-bar style. */
+.editor-toolbar__group--bottom {
+  margin-top: auto;
+}
+
+/* == rail-button.component.scss ========================================== */
+/* VS Code activity-bar-style icon button: a 40x40 icon-only button with a
+   hover/focus-revealed tooltip. */
+
+/* `<app-rail-button>` itself must not generate its own box -- `.rail-button`
+   (the real native <button>) is the actual flex item inside
+   `.editor-toolbar__group`. */
+app-rail-button {
+  display: contents;
+}
+
+.rail-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 0.35rem;
+  background-color: transparent;
+  color: var(--tds-ink-secondary);
+  cursor: pointer;
+}
+
+/* Menu-trigger buttons stay filled while their menu is open, the same idiom
+   the old title-bar menu buttons used. */
+.rail-button:hover,
+.rail-button.rail-button--active,
+.rail-button[aria-expanded='true'] {
+  background-color: var(--tds-hover-wash-strong);
+}
+
+.rail-button:focus-visible {
+  background-color: var(--tds-hover-wash-strong);
+  outline: 2px solid var(--tds-focus-ring);
+  outline-offset: -2px;
+}
+
+/* VS Code activity-bar selected-state indicator: a left-edge accent bar plus
+   a brighter icon color than the resting secondary ink. */
+.rail-button.rail-button--active {
+  color: var(--tds-accent);
+}
+
+.rail-button.rail-button--active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  border-radius: 0.35rem 0 0 0.35rem;
+  background-color: var(--tds-accent);
+}
+
+.rail-button__icon {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* A real element (not a ::after/content:attr() pseudo-element). Revealed via
+   `opacity`/`visibility` (not `display`, which cannot transition) on hover
+   AND focus-visible. z-index is kept modest so overlay surfaces (dialogs at
+   100) always render above a lingering tooltip. */
+.rail-button__tooltip {
+  position: absolute;
+  left: calc(100% + 0.5rem);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--tds-radius-md);
+  background-color: var(--tds-surface-raised);
+  border: 1px solid var(--tds-border-strong);
+  color: var(--tds-ink);
+  font-size: var(--tds-text-tooltip);
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--tds-motion-tooltip), visibility var(--tds-motion-tooltip);
+  pointer-events: none;
+}
+
+.rail-button:hover .rail-button__tooltip,
+.rail-button:focus-visible .rail-button__tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* == connection-status.component.scss ==================================== */
+/* The visible affordance in the rail is just a small colored dot; the
+   `.connection-status` span keeps its exact textContent contract but is
+   visually hidden so it doesn't also render as a text pill in the rail. */
+
+.connection-status-indicator {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 0.65rem;
+  height: 0.65rem;
+}
+
+.connection-status-indicator::before {
+  content: '';
+  display: block;
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  background-color: var(--tds-status-unknown);
+}
+
+.connection-status-indicator--connected::before {
+  background-color: var(--tds-status-ok);
+}
+
+.connection-status-indicator--disconnected::before {
+  background-color: var(--tds-status-error);
+}
+
+.connection-status-indicator--reconnecting::before {
+  background-color: var(--tds-status-warn);
+}
+
+/* Visually hidden ("sr-only") but still present for the DOM/accessibility
+   tree and for tests/E2E assertions that read its exact textContent. */
+.connection-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* == error-banner.component.scss ========================================= */
+/* Small presentational error message banner, reused across features. */
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.25rem;
+  background-color: var(--tds-status-error-surface);
+  border: 1px solid var(--tds-status-error-border);
+  color: var(--tds-status-error-ink);
+  font-size: 0.85rem;
+}
+
+.error-banner__message {
+  white-space: pre-wrap;
+}
+
+/* == explorer-panel.component.scss ======================================= */
+/* The Explorer side panel: a disk-backed file tree, or one of its
+   pre-tree branches (open-folder / reconnect / loading). */
+
+app-explorer-panel {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.explorer-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  background-color: var(--tds-surface-chrome);
+  border-left: 1px solid var(--tds-border);
+  color: var(--tds-ink);
+}
+
+.explorer-panel__error {
+  margin: 0.5rem;
+}
+
+.explorer-panel__loading {
+  padding: 1rem;
+}
+
+.explorer-panel__tree {
+  display: block;
+  flex: 1 1 auto;
+}
+
+.explorer-panel__open-folder,
+.explorer-panel__reconnect {
+  margin: 0.75rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--tds-border-strong);
+  border-radius: 0.35rem;
+  background-color: var(--tds-surface-raised);
+  color: var(--tds-ink);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.explorer-panel__open-folder:hover,
+.explorer-panel__reconnect:hover {
+  background-color: var(--tds-hover-wash);
+}
+
+/* == templates-panel.component.scss ====================================== */
+/* The Templates side panel: a flat list of saved editor templates. Mirrors
+   the Documents panel's chrome minus the tree machinery -- rows here have no
+   chevrons or indentation, and row actions live in the context menu. */
+
+.templates-panel {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  background-color: var(--tds-surface-chrome);
+  border-left: 1px solid var(--tds-border);
+  color: var(--tds-ink);
+  display: flex;
+  flex-direction: column;
+}
+
+.templates-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--tds-border);
+}
+
+.templates-panel__header-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tds-ink-muted);
+}
+
+.templates-panel__empty {
+  padding: 1rem;
+  color: var(--tds-ink-muted);
+  font-size: 0.85rem;
+}
+
+.templates-panel__list {
+  padding: 0.25rem 0;
+  flex: 1;
+}
+
+.templates-panel__row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.5rem 0.15rem 0.75rem;
+  font-size: 0.85rem;
+  color: var(--tds-ink);
+  cursor: pointer;
+  user-select: none;
+}
+
+.templates-panel__row:hover {
+  background-color: var(--tds-hover-wash);
+}
+
+/* Same context-menu-target highlight as the shared tree-row mixin
+   (_tree-row.scss) -- marks the row the open right-click menu acts on. */
+.templates-panel__row--context-target {
+  background-color: var(--tds-accent-tint-12);
+}
+
+.templates-panel__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 1 auto;
+}
+
+/* Same MD chip as the Documents tree's kind badge. */
+.templates-panel__kind-badge {
+  flex: 0 0 auto;
+  padding: 0 0.25rem;
+  border-radius: 0.2rem;
+  background-color: var(--tds-badge-surface);
+  color: var(--tds-badge-ink);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+}
+
+/* == explain-panel.component.scss ======================================== */
+/* The "Explain This" side panel: chrome mirrors the other side panels, but
+   the body is a simple form column (pickers, URL field, confirm button)
+   rather than a row list. This is the idiom the proposed wizard panel at
+   the end of this file follows. */
+
+app-explain-panel {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.explain-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  background-color: var(--tds-surface-chrome);
+  border-left: 1px solid var(--tds-border);
+  color: var(--tds-ink);
+}
+
+.explain-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--tds-border);
+}
+
+.explain-panel__header-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tds-ink-muted);
+}
+
+.explain-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.75rem;
+}
+
+.explain-panel__hint {
+  margin: 0;
+  color: var(--tds-ink-muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.explain-panel__hint--small {
+  font-size: 0.7rem;
+}
+
+.explain-panel__pickers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+/* Same button chrome as the Explorer's Open Folder button. */
+.explain-panel__button {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--tds-border-strong);
+  border-radius: 0.35rem;
+  background-color: var(--tds-surface-raised);
+  color: var(--tds-ink);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.explain-panel__button:hover:not(:disabled) {
+  background-color: var(--tds-hover-wash);
+}
+
+.explain-panel__button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* #fff is a literal in the source, not a token. */
+.explain-panel__button--confirm {
+  border-color: var(--tds-accent-strong);
+  background-color: var(--tds-accent-strong);
+  color: #fff;
+  font-weight: 600;
+}
+
+.explain-panel__button--confirm:hover:not(:disabled) {
+  background-color: var(--tds-accent-hover);
+}
+
+/* The "or" separator between the native pickers and the URL input. */
+.explain-panel__divider {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--tds-ink-muted);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.explain-panel__divider::before,
+.explain-panel__divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--tds-border);
+}
+
+.explain-panel__label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tds-ink-muted);
+}
+
+.explain-panel__url-input {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--tds-border-strong);
+  border-radius: 0.35rem;
+  background-color: var(--tds-surface-raised);
+  color: var(--tds-ink);
+  font-size: 0.85rem;
+}
+
+.explain-panel__url-input:focus {
+  outline: 1px solid var(--tds-accent);
+  outline-offset: -1px;
+}
+
+.explain-panel__url-input::placeholder {
+  color: var(--tds-ink-muted);
+}
+
+.explain-panel__selection {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--tds-border);
+  border-radius: 0.35rem;
+  background-color: var(--tds-surface-raised);
+  font-size: 0.8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.explain-panel__error {
+  margin: 0;
+  color: var(--tds-status-error-ink);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.explain-panel__result {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--tds-border);
+}
+
+.explain-panel__result-summary {
+  margin: 0;
+  color: var(--tds-ink-muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.explain-panel__result-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+/* == tree-action-button.component.scss =================================== */
+/* Compact icon-only action button shared by the panel headers and the
+   preview's hover-revealed action chip. The host is `display: contents` so
+   the real <button> is itself the flex item -- no extra wrapping box. */
+
+app-tree-action-button {
+  display: contents;
+}
+
+.tree-action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 1.4rem;
+  height: 1.4rem;
+  padding: 0;
+  border: none;
+  border-radius: 0.25rem;
+  background-color: transparent;
+  color: var(--tds-ink-secondary);
+  cursor: pointer;
+}
+
+.tree-action-button:hover {
+  background-color: var(--tds-hover-wash-strong);
+}
+
+.tree-action-button:focus-visible {
+  background-color: var(--tds-hover-wash-strong);
+  outline: 2px solid var(--tds-focus-ring);
+  outline-offset: -2px;
+}
+
+.tree-action-button--danger {
+  color: var(--tds-status-error-ink);
+}
+
+.tree-action-button--danger:hover {
+  background-color: var(--tds-status-error-surface);
+}
+
+.tree-action-button__icon {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* == shared/styles/_tree-row.scss ========================================
+   Emitted (per BEM block) by both tree components' SCSS: the Explorer's
+   file-tree-node and the Documents panel's document-tree-node share this
+   one tree-row style source, so the selectors below are grouped in pairs.
+   Row indentation is inline (`style="padding-left: 8px"`, 8 + depth * 16),
+   and row actions live in the right-click context menu, not in the row. */
+
+.file-tree-node__row,
+.document-tree-node__row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding-top: 0.15rem;
+  padding-bottom: 0.15rem;
+  padding-right: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--tds-ink);
+  cursor: pointer;
+  user-select: none;
+}
+
+.file-tree-node__row:hover,
+.document-tree-node__row:hover {
+  background-color: var(--tds-hover-wash);
+}
+
+.file-tree-node__row:focus-visible,
+.document-tree-node__row:focus-visible {
+  outline: 1px solid var(--tds-accent);
+  outline-offset: -1px;
+}
+
+.file-tree-node__chevron,
+.file-tree-node__chevron-spacer,
+.document-tree-node__chevron,
+.document-tree-node__chevron-spacer {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+}
+
+/* A simple right-pointing CSS triangle, rotated 90deg when expanded to
+   point down -- the same idiom VS Code's own Explorer chevrons use. */
+.file-tree-node__chevron::before,
+.document-tree-node__chevron::before {
+  content: '';
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0.3rem 0 0.3rem 0.4rem;
+  border-color: transparent transparent transparent var(--tds-ink-muted);
+}
+
+.file-tree-node__chevron,
+.document-tree-node__chevron {
+  transition: transform 0.1s ease;
+}
+
+.file-tree-node__chevron--expanded,
+.document-tree-node__chevron--expanded {
+  transform: rotate(90deg);
+}
+
+.file-tree-node__name,
+.document-tree-node__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 1 auto;
+}
+
+.file-tree-node__row--context-target,
+.document-tree-node__row--context-target {
+  background-color: var(--tds-accent-tint-12);
+}
+
+/* == monaco-editor.component.scss ======================================== */
+/* Thin wrapper the real app mounts a monaco-editor instance into at runtime. */
+
+app-monaco-editor {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.monaco-editor-wrapper__surface {
+  height: 100%;
+  width: 100%;
+}
+
+/* -- mock-only: static facsimile of the Monaco editor surface ------------
+ * The real app instantiates monaco-editor (language 'plaintext' or
+ * 'markdown', theme 'vs-dark', minimap disabled) inside
+ * .monaco-editor-wrapper__surface at runtime. These classes approximate
+ * that rendered surface for the static mocks, using the Monaco vs-dark
+ * palette. Metrics are unchanged from the light facsimile in mock.css;
+ * only the colors differ. */
+
+.mock-monaco {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background-color: var(--tds-surface-editor); /* Monaco 'vs-dark' editor background */
+  font-family: var(--tds-font-mono);
+  font-size: var(--tds-text-code);
+  line-height: var(--tds-line-code);
+  color: #d4d4d4; /* Monaco 'vs-dark' default foreground; tokens.scss has no editor-ink token */
+  cursor: text;
+}
+
+.mock-monaco__gutter {
+  flex: 0 0 64px;
+  padding-right: 26px;
+  text-align: right;
+  color: var(--tds-editor-gutter-ink); /* Monaco 'vs-dark' line-number foreground */
+  user-select: none;
+  white-space: pre;
+}
+
+.mock-monaco__code {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: pre;
+  overflow: hidden;
+}
+
+.mock-monaco__cursor {
+  display: inline-block;
+  width: 2px;
+  height: 18px;
+  margin-bottom: -3px;
+  background-color: var(--tds-editor-cursor);
+}
+
+/* == diagram-preview.component.scss ====================================== */
+/* The right-hand pane: placeholder text, render errors, the rendered
+   PlantUML SVG plate / markdown prose, and a hover-revealed action chip. */
+
+.diagram-preview {
+  position: relative;
+  display: flex;
+  height: 100%;
+  width: 100%;
+  overflow: auto;
+  background-color: var(--tds-surface-editor);
+}
+
+.diagram-preview__placeholder {
+  color: var(--tds-ink-muted);
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 1rem;
+}
+
+.diagram-preview__error {
+  margin: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.25rem;
+  background-color: var(--tds-status-error-surface);
+  border: 1px solid var(--tds-status-error-border);
+  color: var(--tds-status-error-ink);
+  white-space: pre-wrap;
+  font-size: 0.85rem;
+}
+
+/* auto margins (not the parent's justify-content/align-items) so the svg
+   stays centered while smaller than the pane, but collapses to a natural
+   top-left origin -- fully scrollable on every edge -- once it's larger.
+   Centering via the scroll container itself clips the far edge of
+   overflowing content in most browsers. */
+.diagram-preview__svg {
+  margin: auto;
+  /* The rendered PlantUML plate intentionally stays white -- unlike the
+     rest of the dark surface -- so exported diagrams keep the same
+     background they'll have outside the app. */
+  background-color: #ffffff;
+  border-radius: var(--tds-radius-md);
+  box-shadow: var(--tds-shadow-raised);
+}
+
+.diagram-preview__spinner-overlay {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+}
+
+/* Hover-revealed copy/download chip pinned to the same corner as the spinner
+   overlay (never simultaneously visible: the actions hide while isRendering).
+   Revealed via opacity/visibility -- not display, which can't transition --
+   on hover AND :focus-within so keyboard users can reach the buttons. */
+.diagram-preview__actions {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 5;
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid var(--tds-border-strong);
+  border-radius: 0.35rem;
+  background-color: var(--tds-surface-raised);
+  box-shadow: var(--tds-shadow-raised);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.12s ease,
+    visibility 0.12s ease;
+}
+
+.diagram-preview:hover .diagram-preview__actions,
+.diagram-preview__actions:focus-within {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Prose styling for rendered markdown (:host ::ng-deep in the SCSS, because
+   the markdown arrives via [innerHTML]). Only used by pages that show a
+   rendered markdown document. */
+.diagram-preview__markdown {
+  width: 100%;
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 1.5rem 2rem;
+  align-self: flex-start;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--tds-ink);
+}
+
+.diagram-preview__markdown h1,
+.diagram-preview__markdown h2,
+.diagram-preview__markdown h3,
+.diagram-preview__markdown h4 {
+  margin: 1.25em 0 0.5em;
+  line-height: 1.25;
+  font-weight: 600;
+}
+
+.diagram-preview__markdown h1 {
+  font-size: 1.6rem;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--tds-border);
+}
+
+.diagram-preview__markdown h2 {
+  font-size: 1.3rem;
+  padding-bottom: 0.2em;
+  border-bottom: 1px solid var(--tds-border);
+}
+
+.diagram-preview__markdown h3 {
+  font-size: 1.1rem;
+}
+
+.diagram-preview__markdown h4 {
+  font-size: 1rem;
+}
+
+.diagram-preview__markdown > :first-child {
+  margin-top: 0;
+}
+
+.diagram-preview__markdown p {
+  margin: 0.6em 0;
+}
+
+.diagram-preview__markdown ul,
+.diagram-preview__markdown ol {
+  margin: 0.6em 0;
+  padding-left: 1.6em;
+}
+
+.diagram-preview__markdown li + li {
+  margin-top: 0.2em;
+}
+
+/* Task-list items render their own checkbox; suppress the duplicate bullet. */
+.diagram-preview__markdown li.task-list-item {
+  list-style: none;
+  margin-left: -1.2em;
+}
+
+.diagram-preview__markdown code {
+  background-color: var(--tds-surface-raised);
+  border-radius: 0.25rem;
+  padding: 0.1em 0.35em;
+  font-family: var(--tds-font-mono);
+  font-size: 0.85em;
+}
+
+.diagram-preview__markdown pre {
+  background-color: var(--tds-surface-raised);
+  border: 1px solid var(--tds-border);
+  border-radius: 0.35rem;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+}
+
+.diagram-preview__markdown pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+.diagram-preview__markdown blockquote {
+  margin: 0.75em 0;
+  padding: 0.25em 1em;
+  border-left: 0.25rem solid var(--tds-border-strong);
+  color: var(--tds-ink-muted);
+}
+
+.diagram-preview__markdown table {
+  border-collapse: collapse;
+  margin: 0.75em 0;
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.diagram-preview__markdown th,
+.diagram-preview__markdown td {
+  border: 1px solid var(--tds-border-strong);
+  padding: 0.35em 0.75em;
+}
+
+.diagram-preview__markdown th {
+  background-color: var(--tds-surface-raised);
+  font-weight: 600;
+}
+
+.diagram-preview__markdown hr {
+  border: none;
+  border-top: 1px solid var(--tds-border);
+  margin: 1.5em 0;
+}
+
+.diagram-preview__markdown a {
+  color: var(--tds-accent);
+}
+
+.diagram-preview__markdown a:hover {
+  text-decoration: underline;
+}
+
+.diagram-preview__markdown img {
+  max-width: 100%;
+}
+
+/* == resize-divider.component.scss ======================================= */
+/* VS Code-sash-style draggable seam. ONE component now serves both the
+   editor/preview ratio split and the pixel-width side-panel edge: both
+   render `class="resize-divider"` and differ only by data-testid
+   ("resize-divider" vs "pixel-resize-divider"). The old
+   .pixel-resize-divider class family in mock.css no longer exists. */
+
+/* `<app-resize-divider>` itself must not generate its own box: `.resize-divider`
+   below is the *actual* flex child of `.editor-page__body`, so all sizing,
+   positioning and cursor styling live on it directly rather than being split
+   (and duplicated) across :host and an inner element. */
+app-resize-divider {
+  display: contents;
+}
+
+.resize-divider {
+  position: relative;
+  /* Per the Flexbox spec, flex items with z-index:auto paint like inline
+     blocks in (order-modified) document order -- position:relative alone is
+     NOT enough to guarantee this element paints above its flex siblings.
+     Without an explicit z-index here, `.resize-divider__grab-area` below
+     (which deliberately overflows this element's own 1px-wide box into the
+     editor/preview panes on either side) gets visually and hit-test-wise
+     covered by the preview pane, since it comes later in DOM order. */
+  z-index: 1;
+  flex: 0 0 auto;
+  width: 1px;
+  background-color: var(--tds-border);
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.resize-divider:hover,
+.resize-divider.resize-divider--active {
+  background-color: var(--tds-accent);
+}
+
+/* A comfortably wide (~9px) invisible grab area centered over the 1px visible
+   line -- wide enough to reliably grab with a mouse/touch without needing a
+   visually thick seam between the panes. */
+.resize-divider__grab-area {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 9px;
+  height: 100%;
+  cursor: col-resize;
+}
+
+/* == loading-spinner.component.scss ====================================== */
+/* Small rotating ring + optional label; used in the preview's corner overlay. */
+
+.loading-spinner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.loading-spinner__circle {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  border: 0.15rem solid rgba(255, 255, 255, 0.15);
+  border-top-color: var(--tds-accent);
+  animation: loading-spinner-rotate 0.7s linear infinite;
+}
+
+.loading-spinner__label {
+  font-size: 0.75rem;
+  color: var(--tds-ink-muted);
+}
+
+@keyframes loading-spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* == wizard-panel.component.scss (PROPOSED) ==============================
+   Diagram Wizard -- design styles for a feature that is NOT implemented
+   yet: there is no frontend/src/app/features/wizard/ today, so unlike every
+   other block in this file nothing above was compiled from source. It is
+   hand-authored in the idiom the real panels use: the side-panel chrome and
+   the Explain panel's form column, consuming the same tokens, so that if
+   the feature is built the SCSS can be written straight from here.
+
+   One deliberate departure from the Explain panel: that panel scrolls as a
+   whole (`.explain-panel { overflow-y: auto }`), whereas the wizard clips
+   at the root and scrolls its body instead, so the Back/Next footer stays
+   pinned and reachable however long a step's form grows. */
+
+app-wizard-panel {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.wizard-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--tds-surface-chrome);
+  border-left: 1px solid var(--tds-border);
+  color: var(--tds-ink);
+}
+
+.wizard-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--tds-border);
+}
+
+.wizard-panel__header-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tds-ink-muted);
+}
+
+/* Dot pips with hairline connectors; the caption below carries the step
+   words, which don't fit as labels at the 260px default panel width. */
+.wizard-panel__progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.6rem 0.75rem 0;
+}
+
+.wizard-panel__steps {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wizard-panel__step {
+  position: relative;
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--tds-border-strong);
+  border-radius: 50%;
+  background-color: var(--tds-surface-chrome);
+}
+
+.wizard-panel__step + .wizard-panel__step {
+  margin-left: 16px;
+}
+
+.wizard-panel__step + .wizard-panel__step::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -15px;
+  width: 13px;
+  height: 1px;
+  background-color: var(--tds-border);
+}
+
+.wizard-panel__step--done {
+  border-color: var(--tds-accent);
+  background-color: var(--tds-accent);
+}
+
+.wizard-panel__step--current {
+  border-color: var(--tds-accent);
+  box-shadow: 0 0 0 3px var(--tds-accent-tint-20);
+}
+
+.wizard-panel__progress-caption {
+  margin: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tds-ink-muted);
+}
+
+/* The Explain panel's body column, but flexed and scrollable so the footer
+   below can stay pinned. */
+.wizard-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0.75rem;
+}
+
+.wizard-panel__hint {
+  margin: 0;
+  color: var(--tds-ink-muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+/* Same 0.4rem-gap column as the Explain panel's __pickers. */
+.wizard-panel__options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.wizard-panel__option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--tds-border-strong);
+  border-radius: 0.35rem;
+  background-color: var(--tds-surface-raised);
+  color: var(--tds-ink);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.wizard-panel__option:hover {
+  background-color: var(--tds-hover-wash);
+}
+
+.wizard-panel__option--selected {
+  border-color: var(--tds-accent);
+  box-shadow: inset 0 0 0 1px var(--tds-accent);
+  background-color: var(--tds-accent-tint-12);
+}
+
+.wizard-panel__option-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.wizard-panel__option-desc {
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--tds-ink-muted);
+}
+
+.wizard-panel__label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tds-ink-muted);
+}
+
+.wizard-panel__input,
+.wizard-panel__select {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--tds-border-strong);
+  border-radius: 0.35rem;
+  background-color: var(--tds-surface-raised);
+  color: var(--tds-ink);
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+
+.wizard-panel__input:focus,
+.wizard-panel__select:focus {
+  outline: 1px solid var(--tds-accent);
+  outline-offset: -1px;
+}
+
+.wizard-panel__input::placeholder {
+  color: var(--tds-ink-muted);
+}
+
+/* The Explain panel's button chrome, verbatim (itself the Explorer's Open
+   Folder chrome). */
+.wizard-panel__button {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--tds-border-strong);
+  border-radius: 0.35rem;
+  background-color: var(--tds-surface-raised);
+  color: var(--tds-ink);
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.wizard-panel__button:hover:not(:disabled) {
+  background-color: var(--tds-hover-wash);
+}
+
+.wizard-panel__button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* #fff matches the Explain panel's literal. */
+.wizard-panel__button--confirm {
+  border-color: var(--tds-accent-strong);
+  background-color: var(--tds-accent-strong);
+  color: #fff;
+  font-weight: 600;
+}
+
+.wizard-panel__button--confirm:hover:not(:disabled) {
+  background-color: var(--tds-accent-hover);
+}
+
+.wizard-panel__divider {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--tds-ink-muted);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.wizard-panel__divider::before,
+.wizard-panel__divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--tds-border);
+}
+
+.wizard-panel__added {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Row actions stay visible, unlike the tree rows (whose actions moved into
+   the right-click context menu): the running list is short and removing a
+   just-added item is part of the flow. */
+.wizard-panel__added-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.35rem;
+  border-radius: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--tds-ink);
+}
+
+.wizard-panel__added-item:hover {
+  background-color: var(--tds-hover-wash);
+}
+
+.wizard-panel__added-kind {
+  flex: 0 0 auto;
+  padding: 0.1rem 0.3rem;
+  border: 1px solid var(--tds-border);
+  border-radius: 0.25rem;
+  background-color: var(--tds-surface-raised);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--tds-ink-muted);
+}
+
+.wizard-panel__added-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wizard-panel__added-context {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.7rem;
+  color: var(--tds-ink-muted);
+}
+
+.wizard-panel__added-arrow {
+  flex: 0 0 auto;
+  font-family: var(--tds-font-mono);
+  font-size: 0.75rem;
+  color: var(--tds-ink-muted);
+}
+
+.wizard-panel__empty {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--tds-ink-muted);
+}
+
+.wizard-panel__summary {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--tds-ink);
+}
+
+.wizard-panel__summary-counts {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--tds-ink-muted);
+}
+
+.wizard-panel__footer {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: auto;
+  padding: 0.75rem;
+  border-top: 1px solid var(--tds-border);
+}
+
+.wizard-panel__footer .wizard-panel__button {
+  flex: 1 1 0;
+}
