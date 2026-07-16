@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" class="ds">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Form controls — Trellis Design System</title>
+<link rel="stylesheet" href="../assets/tokens.css">
+<link rel="stylesheet" href="../assets/components.css">
+<link rel="stylesheet" href="../assets/docs.css">
+</head>
+<body class="ds tds-root" data-page="components/form-controls">
+<div class="ds-layout">
+  <nav class="ds-nav" aria-label="Design system"></nav>
+  <main class="ds-main">
+    <h1>Form controls</h1>
+    <p class="ds-lede">
+      Trellis has a deliberately tiny form vocabulary: a text input, a
+      select, and a label — all living inside dialogs — plus a hidden file
+      input behind the rail's Upload button. Free-form prompts (rename, new
+      folder) use the browser's native <code>window.prompt</code>, not
+      custom UI.
+    </p>
+
+    <h2>Text input</h2>
+    <p class="ds-source">Derived from: <code>save-dialog__input</code> — <code>.tds-input</code>.</p>
+    <div class="ds-example ds-example--overlay">
+      <div class="ds-example__col">
+        <label class="tds-field-label" for="fc-name">Diagram name</label>
+        <input class="tds-input" id="fc-name" type="text" value="sequence-checkout">
+        <span class="ds-example__label">resting, filled</span>
+
+        <input class="tds-input" type="text" placeholder="Untitled diagram" aria-label="Diagram name (empty)">
+        <span class="ds-example__label">placeholder (<code>--tds-ink-muted</code>)</span>
+
+        <input class="tds-input" type="text" value="sequence-checkout" style="outline:2px solid var(--tds-focus-ring);outline-offset:-1px;border-color:var(--tds-focus-ring)" aria-label="Diagram name (focused)">
+        <span class="ds-example__label">:focus-visible</span>
+
+        <input class="tds-input tds-input--invalid" type="text" value="" aria-invalid="true" aria-label="Diagram name (invalid)">
+        <span class="ds-example__label">invalid (error border; message in dialog copy)</span>
+
+        <input class="tds-input" type="text" value="read-only value" disabled aria-label="Diagram name (disabled)">
+        <span class="ds-example__label">disabled</span>
+      </div>
+    </div>
+    <table class="ds-table">
+      <thead><tr><th>Property</th><th>Spec</th></tr></thead>
+      <tbody>
+        <tr><td>Padding / radius</td><td>0.4rem 0.6rem / <code>--tds-radius-md</code></td></tr>
+        <tr><td>Surface / border</td><td><code>--tds-surface-field</code> / <code>--tds-border-strong</code></td></tr>
+        <tr><td>Type</td><td><code>--tds-text-md</code> (0.9rem), UI stack</td></tr>
+        <tr><td>Focus</td><td>2px accent ring, −1px offset, accent border</td></tr>
+        <tr><td>Label</td><td><code>.tds-field-label</code>, 0.8rem, <code>--tds-ink-secondary</code>, above the field</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Select</h2>
+    <p class="ds-source">Derived from: <code>save-dialog__select</code> / <code>move-document-dialog__select</code> — <code>.tds-select</code>.</p>
+    <p>
+      The destination-folder picker. Options are the flattened folder tree
+      (shared <code>folder-options.ts</code>): nesting shown by
+      <code>&nbsp;&nbsp;</code> indentation, root first as
+      "(No folder — root)".
+    </p>
+    <div class="ds-example ds-example--overlay">
+      <div class="ds-example__col">
+        <label class="tds-field-label" for="fc-folder">Destination folder</label>
+        <select class="tds-select" id="fc-folder">
+          <option>(No folder — root)</option>
+          <option selected>architecture</option>
+          <option>&nbsp;&nbsp;deployment</option>
+          <option>&nbsp;&nbsp;sequences</option>
+          <option>sketches</option>
+        </select>
+        <span class="ds-example__label">resting — native popup; the control, not the menu, is themed</span>
+      </div>
+    </div>
+
+    <h2>File upload</h2>
+    <p class="ds-source">Derived from: <code>editor-toolbar__upload-input</code> (hidden <code>&lt;input type="file"&gt;</code>).</p>
+    <p>
+      There is no drop-zone or upload widget: the rail's Upload button
+      forwards its click to a visually hidden file input
+      (<code>display: none</code>), and the browser's native picker takes
+      over. The button is the entire visible affordance.
+    </p>
+    <div class="ds-example ds-example--chrome">
+      <div class="ds-example__row">
+        <button type="button" class="tds-rail-button" aria-label="Upload diagram">
+          <svg class="tds-rail-button__icon" aria-hidden="true"><use href="#tds-icon-rail-upload"/></svg>
+          <span class="tds-rail-button__tooltip" role="tooltip">Upload</span>
+        </button>
+        <code style="font-size:.72rem;color:var(--tds-ink-muted)">&lt;input type="file" accept=".puml,.plantuml,.txt" hidden&gt;</code>
+      </div>
+    </div>
+
+    <h2>Native dialogs</h2>
+    <p>
+      Create-folder and rename flows use <code>window.prompt</code>; deletes
+      use <code>window.confirm</code> (a folder delete warns that contents
+      are deleted too). These are contractual: no custom prompt UI exists,
+      so those flows inherit the browser's own styling and accessibility.
+    </p>
+
+    <h2>Rules</h2>
+    <div class="ds-guidance">
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Pair every control with a visible <code>.tds-field-label</code>
+        bound via <code>for</code>/<code>id</code> — placeholder text is
+        never the label.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Mark invalid fields with <code>aria-invalid="true"</code> alongside
+        the error border.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--dont">
+        <span class="ds-guidance__title">Don't</span>
+        Grow the form vocabulary (checkboxes, radios, textareas) without a
+        design-system addition here first — the small surface is deliberate.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--dont">
+        <span class="ds-guidance__title">Don't</span>
+        Rebuild the native select popup or file picker; only the closed
+        control is themed.
+      </div>
+    </div>
+
+    <footer class="ds-footer">
+      Trellis Design System — Components / Form controls.
+    </footer>
+  </main>
+</div>
+<script src="../assets/docs.js"></script>
+</body>
+</html>

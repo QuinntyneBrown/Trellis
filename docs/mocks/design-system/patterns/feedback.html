@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" class="ds">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Feedback &amp; empty states — Trellis Design System</title>
+<link rel="stylesheet" href="../assets/tokens.css">
+<link rel="stylesheet" href="../assets/components.css">
+<link rel="stylesheet" href="../assets/docs.css">
+</head>
+<body class="ds tds-root" data-page="patterns/feedback">
+<div class="ds-layout">
+  <nav class="ds-nav" aria-label="Design system"></nav>
+  <main class="ds-main">
+    <h1>Feedback &amp; empty states</h1>
+    <p class="ds-lede">
+      How Trellis communicates "nothing here yet", "something went wrong",
+      and "I need your permission again". Empty states teach the next
+      action; errors state what happened and what to do; permission flows
+      re-use the panel button so recovery looks like any other action.
+    </p>
+
+    <h2>Empty documents tree</h2>
+    <p class="ds-source">Derived from: <code>features/documents/documents-panel/</code> — <code>.tds-panel__empty</code>.</p>
+    <div class="ds-example ds-example--flush">
+      <div class="tds-panel" style="width:260px;height:150px">
+        <div class="tds-panel__header">Documents</div>
+        <div class="tds-panel__content">
+          <div class="tds-panel__empty">No documents yet.
+Save the current editor with Ctrl+S to create one.</div>
+        </div>
+      </div>
+    </div>
+    <p class="ds-caption">First line: the fact. Second line: the shortest path out of the empty state.</p>
+
+    <h2>Explorer — no folder yet</h2>
+    <p class="ds-source">Derived from: <code>features/explorer/explorer-panel/</code> — <code>.tds-button--panel</code>.</p>
+    <div class="ds-example ds-example--flush">
+      <div class="tds-panel" style="width:260px;height:170px">
+        <div class="tds-panel__header">Explorer</div>
+        <div class="tds-panel__content">
+          <div class="tds-panel__empty" style="gap:10px">
+            <span>You have not yet opened a folder.</span>
+            <button class="tds-button tds-button--panel" type="button">Open Folder</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="ds-caption">
+      The full-width panel button is the VS Code-style call to action.
+      Opening a folder uses the File System Access API
+      (<code>showDirectoryPicker</code>), so it is only offered in browsers
+      that support it.
+    </p>
+
+    <h2>Permission re-grant</h2>
+    <p class="ds-source">Derived from: <code>features/explorer/</code> permission handling — same empty-state + panel-button grammar.</p>
+    <div class="ds-example ds-example--flush">
+      <div class="tds-panel" style="width:260px;height:170px">
+        <div class="tds-panel__header">Explorer</div>
+        <div class="tds-panel__content">
+          <div class="tds-panel__empty" style="gap:10px">
+            <span>Permission to <strong style="color:var(--tds-ink)">diagrams/</strong> has expired.</span>
+            <button class="tds-button tds-button--panel" type="button">Restore access</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="ds-caption">
+      Folder handles persist in IndexedDB across sessions, but the browser
+      may drop read permission. The panel names the remembered folder and
+      offers a single re-grant action that calls
+      <code>requestPermission()</code> — never an error banner, because
+      nothing is broken.
+    </p>
+
+    <h2>Disk-save error toast</h2>
+    <p class="ds-source">Derived from: <code>features/editor/</code> disk-save error toast — <code>.tds-toast-anchor</code> + <code>.tds-error-banner</code>.</p>
+    <div class="ds-example ds-example--flush">
+      <div class="tds-toast-anchor tds-toast-anchor--specimen">
+        <div class="tds-error-banner" role="alert">
+          <span class="tds-error-banner__message">Failed to save "checkout-flow.puml" to disk: the file may be locked by another program.</span>
+        </div>
+      </div>
+    </div>
+    <p class="ds-caption">
+      Fixed top-center (<code>--tds-z-toast</code>), <code>role="alert"</code>
+      so it is announced on appearance. The editor buffer keeps the user's
+      changes — the toast reports the disk write only.
+    </p>
+
+    <h2>Connection loss</h2>
+    <p class="ds-source">Derived from: <code>core/connection-status</code> — <code>.tds-status-dot</code> in the title bar.</p>
+    <div class="ds-example">
+      <div class="ds-example__row">
+        <span class="tds-status-dot tds-status-dot--disconnected" title="Disconnected"></span><span class="ds-example__label">disconnected</span>
+        <span class="tds-status-dot tds-status-dot--reconnecting" title="Reconnecting"></span><span class="ds-example__label">reconnecting</span>
+        <span class="tds-status-dot tds-status-dot--connected" title="Connected"></span><span class="ds-example__label">connected</span>
+      </div>
+    </div>
+    <p>
+      SignalR reconnects automatically; the dot narrates it. Renders
+      requested while disconnected fail into the preview's error state —
+      the shell never blocks input on connectivity.
+    </p>
+
+    <h2>Native confirms</h2>
+    <p>
+      Destructive and buffer-replacing actions confirm through native
+      <code>window.confirm</code> / <code>window.prompt</code> — delete
+      document, delete folder (names its contents), rename, and "discard
+      unsaved changes?" when loading over a dirty buffer. The design system
+      deliberately does not restyle these: a browser-owned dialog cannot be
+      spoofed by page content.
+    </p>
+
+    <h2>Choosing a channel</h2>
+    <table class="ds-table">
+      <thead><tr><th>Situation</th><th>Channel</th></tr></thead>
+      <tbody>
+        <tr><td>Nothing to show yet</td><td>Panel empty state (+ panel button when there's an action)</td></tr>
+        <tr><td>Background operation failed</td><td>Toast (error banner, fixed top-center)</td></tr>
+        <tr><td>Render failed</td><td>Preview error state, in place</td></tr>
+        <tr><td>About to lose data</td><td>Native confirm</td></tr>
+        <tr><td>Connectivity</td><td>Status dot; no modal, no toast</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Rules</h2>
+    <div class="ds-guidance">
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Pair every empty state with its exit: a keyboard hint or a panel
+        button.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--dont">
+        <span class="ds-guidance__title">Don't</span>
+        Use an error treatment for expired permissions or empty trees —
+        reserve red for operations that actually failed.
+      </div>
+    </div>
+
+    <footer class="ds-footer">
+      Trellis Design System — Patterns / Feedback &amp; empty states.
+    </footer>
+  </main>
+</div>
+<script src="../assets/docs.js"></script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" class="ds">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trellis Design System</title>
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/components.css">
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body class="ds tds-root" data-page="index">
+<div class="ds-layout">
+  <nav class="ds-nav" aria-label="Design system"></nav>
+  <main class="ds-main">
+    <h1>Trellis Design System</h1>
+    <p class="ds-lede">
+      The visual contract for Trellis — a dark, workbench-style language
+      heavily inspired by the VS Code design system. Every token, component,
+      and pattern here is derived from the current Angular implementation
+      (<code>frontend/src/app</code>) and re-expressed on the Trellis dark
+      theme. These pages are plain HTML/CSS: no build step, no dependencies,
+      and they work over <code>file://</code>.
+    </p>
+
+    <h2>Principles</h2>
+    <ul>
+      <li><strong>The workbench is chrome; the work is content.</strong>
+        Chrome surfaces (title bar, activity rail, side panels) sit on the
+        darkest layer; the editor and preview sit one step lighter. Nothing
+        in the chrome competes with the document.</li>
+      <li><strong>One accent, used sparingly.</strong> Trellis blue marks
+        interaction — the active rail item, the open document, focus rings,
+        primary actions, drop targets. It is never decorative.</li>
+      <li><strong>Status color is semantic.</strong> Green, amber, and red
+        are reserved for connection state and operation outcomes.</li>
+      <li><strong>Derived, not invented.</strong> Every component page cites
+        the Angular source it documents; metrics and states are carried over
+        verbatim, only colors move to dark tokens.</li>
+      <li><strong>Keyboard and screen-reader parity.</strong> Every pointer
+        affordance has a visible <code>:focus-visible</code> treatment and
+        an ARIA contract, documented per component.</li>
+    </ul>
+
+    <h2>Foundations</h2>
+    <div class="ds-card-grid">
+      <a class="ds-card" href="foundations/color.html">
+        <span class="ds-card__title">Color</span>
+        <span class="ds-card__desc">Surface stack, ink ramp, Trellis blue, status semantics, contrast.</span>
+      </a>
+      <a class="ds-card" href="foundations/typography.html">
+        <span class="ds-card__title">Typography</span>
+        <span class="ds-card__desc">UI and mono stacks, the type scale, uppercase-label rules.</span>
+      </a>
+      <a class="ds-card" href="foundations/spacing.html">
+        <span class="ds-card__title">Spacing &amp; layout</span>
+        <span class="ds-card__desc">4px-base scale and the fixed workbench metrics.</span>
+      </a>
+      <a class="ds-card" href="foundations/elevation.html">
+        <span class="ds-card__title">Elevation</span>
+        <span class="ds-card__desc">Surface layers, hairlines, shadows, scrims, z-index contract.</span>
+      </a>
+      <a class="ds-card" href="foundations/iconography.html">
+        <span class="ds-card__title">Iconography</span>
+        <span class="ds-card__desc">Hand-authored 24×24 outline glyphs; rail and row-action sets.</span>
+      </a>
+      <a class="ds-card" href="foundations/motion.html">
+        <span class="ds-card__title">Motion</span>
+        <span class="ds-card__desc">Durations, easings, and where movement is allowed.</span>
+      </a>
+    </div>
+
+    <h2>Components</h2>
+    <div class="ds-card-grid">
+      <a class="ds-card" href="components/buttons.html">
+        <span class="ds-card__title">Buttons</span>
+        <span class="ds-card__desc">Rail buttons, tree row actions, dialog and panel buttons.</span>
+      </a>
+      <a class="ds-card" href="components/form-controls.html">
+        <span class="ds-card__title">Form controls</span>
+        <span class="ds-card__desc">Text inputs, selects, labels, validation and upload affordances.</span>
+      </a>
+      <a class="ds-card" href="components/dialogs.html">
+        <span class="ds-card__title">Dialogs</span>
+        <span class="ds-card__desc">The one modal pattern: save, new document, move, export.</span>
+      </a>
+      <a class="ds-card" href="components/trees.html">
+        <span class="ds-card__title">Trees</span>
+        <span class="ds-card__desc">The shared tree-row language of the Explorer and Documents trees.</span>
+      </a>
+      <a class="ds-card" href="components/panels.html">
+        <span class="ds-card__title">Panels</span>
+        <span class="ds-card__desc">Side-panel anatomy, headers, empty states, resize dividers.</span>
+      </a>
+      <a class="ds-card" href="components/menus.html">
+        <span class="ds-card__title">Menus</span>
+        <span class="ds-card__desc">Raised lists: app menus, pop-out pickers, the command center.</span>
+      </a>
+      <a class="ds-card" href="components/toolbars.html">
+        <span class="ds-card__title">Toolbars &amp; chrome</span>
+        <span class="ds-card__desc">Title bar, window controls, and the activity rail.</span>
+      </a>
+      <a class="ds-card" href="components/indicators.html">
+        <span class="ds-card__title">Indicators</span>
+        <span class="ds-card__desc">Connection dot, spinners, error banners, toasts, badges.</span>
+      </a>
+    </div>
+
+    <h2>Patterns</h2>
+    <div class="ds-card-grid">
+      <a class="ds-card" href="patterns/shell.html">
+        <span class="ds-card__title">Workbench shell</span>
+        <span class="ds-card__desc">The full frame: title bar, rail, side panel, editor, preview.</span>
+      </a>
+      <a class="ds-card" href="patterns/editor.html">
+        <span class="ds-card__title">Editor surface</span>
+        <span class="ds-card__desc">Monaco (vs-dark) conventions: gutter, selection, cursor, metrics.</span>
+      </a>
+      <a class="ds-card" href="patterns/preview.html">
+        <span class="ds-card__title">Diagram preview</span>
+        <span class="ds-card__desc">The render lifecycle: placeholder, rendering, rendered, error.</span>
+      </a>
+      <a class="ds-card" href="patterns/feedback.html">
+        <span class="ds-card__title">Feedback &amp; empty states</span>
+        <span class="ds-card__desc">Empty trees, reconnect flows, save failures, native dialogs.</span>
+      </a>
+    </div>
+
+    <h2>Using the system</h2>
+    <p>Three stylesheets, three responsibilities:</p>
+    <table class="ds-table">
+      <thead><tr><th>File</th><th>Owns</th><th>Prefix</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>assets/tokens.css</code></td>
+          <td>The authoritative design tokens — color, typography, spacing,
+            shape, elevation, motion, z-index. The Angular theme consumes
+            these values.</td>
+          <td><code>--tds-*</code></td>
+        </tr>
+        <tr>
+          <td><code>assets/components.css</code></td>
+          <td>The reference implementation of every reusable element,
+            annotated with the Angular source it derives from.</td>
+          <td><code>.tds-*</code></td>
+        </tr>
+        <tr>
+          <td><code>assets/docs.css</code></td>
+          <td>Documentation-site chrome only — <em>not</em> part of the
+            product design system.</td>
+          <td><code>.ds-*</code></td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+      The light-theme screen mocks of the current app live one level up in
+      <a href="../index.html">docs/mocks</a>; this site documents the target
+      system those screens converge on.
+    </p>
+
+    <footer class="ds-footer">
+      Trellis Design System — dark theme, derived from
+      <code>frontend/src/app</code>, inspired by the VS Code design system.
+    </footer>
+  </main>
+</div>
+<script src="assets/docs.js"></script>
+</body>
+</html>

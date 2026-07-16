@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en" class="ds">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Elevation — Trellis Design System</title>
+<link rel="stylesheet" href="../assets/tokens.css">
+<link rel="stylesheet" href="../assets/components.css">
+<link rel="stylesheet" href="../assets/docs.css">
+</head>
+<body class="ds tds-root" data-page="foundations/elevation">
+<div class="ds-layout">
+  <nav class="ds-nav" aria-label="Design system"></nav>
+  <main class="ds-main">
+    <h1>Elevation</h1>
+    <p class="ds-lede">
+      On a dark theme, height reads primarily through <em>surface
+      lightening</em> and hairline borders; shadows are kept for the two
+      genuinely floating layers (pop-outs and modals). The z-index contract
+      is small and closed.
+    </p>
+
+    <h2>Layers</h2>
+    <p class="ds-source">Derived from: the light theme's shadow pair (0 4px 12px rgba(0,0,0,.12) pop-outs; 0 8px 24px rgba(0,0,0,.2) dialogs), re-weighted for dark.</p>
+    <table class="ds-table">
+      <thead><tr><th>Layer</th><th>Surface</th><th>Border</th><th>Shadow</th><th>Examples</th></tr></thead>
+      <tbody>
+        <tr><td>0 — Chrome</td><td><code>surface-chrome</code> #181818</td><td><code>--tds-border</code> seams</td><td>—</td><td>Title bar, rail, side panels</td></tr>
+        <tr><td>1 — Content</td><td><code>surface-editor</code> #1f1f1f</td><td>—</td><td>—</td><td>Editor, preview</td></tr>
+        <tr><td>2 — Raised</td><td><code>surface-raised</code> #202020</td><td><code>--tds-border-strong</code></td><td><code>--tds-shadow-raised</code></td><td>Menus, template pop-out, tooltips</td></tr>
+        <tr><td>3 — Overlay</td><td><code>surface-overlay</code> #242424</td><td><code>--tds-border-strong</code></td><td><code>--tds-shadow-overlay</code></td><td>Modal dialogs (over the scrim)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="ds-example ds-example--chrome">
+      <div class="ds-example__row">
+        <div style="width:9.5rem;height:6rem;border-radius:.5rem;background:var(--tds-surface-editor);display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--tds-ink-muted)">content</div>
+        <div style="width:9.5rem;height:6rem;border-radius:.5rem;background:var(--tds-surface-raised);border:1px solid var(--tds-border-strong);box-shadow:var(--tds-shadow-raised);display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--tds-ink-muted)">raised</div>
+        <div style="width:9.5rem;height:6rem;border-radius:.5rem;background:var(--tds-surface-overlay);border:1px solid var(--tds-border-strong);box-shadow:var(--tds-shadow-overlay);display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--tds-ink-muted)">overlay</div>
+      </div>
+    </div>
+    <p class="ds-caption">The three visible steps above the chrome, side by side on the chrome surface.</p>
+
+    <h2>Shadows &amp; scrim</h2>
+    <table class="ds-table">
+      <thead><tr><th>Token</th><th>Value</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td><code>--tds-shadow-raised</code></td><td><code>0 4px 12px rgba(0,0,0,.45)</code></td><td>Pop-out panels, menus (was .12 on light)</td></tr>
+        <tr><td><code>--tds-shadow-overlay</code></td><td><code>0 8px 24px rgba(0,0,0,.6)</code></td><td>Dialog panels (was .2 on light)</td></tr>
+        <tr><td><code>--tds-scrim</code></td><td><code>rgba(0,0,0,.5)</code></td><td>Full-viewport modal backdrop (was .4 on light)</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Hairlines</h2>
+    <p>
+      Structure is drawn with 1px hairlines, never with gaps or heavy
+      strokes: <code>--tds-border</code> (#2b2b2b) separates chrome regions
+      (panel seams, headers, the title bar's bottom edge);
+      <code>--tds-border-strong</code> (#3c3c3c) outlines interactive
+      controls (inputs, buttons, pills) and floating layers.
+    </p>
+
+    <h2>Z-index contract</h2>
+    <p class="ds-source">Derived from: z-index values in <code>resize-divider</code> (1), <code>rail-button</code> tooltip (5), <code>template-picker</code> (10), <code>editor-page__disk-save-error</code> (20), dialogs (100).</p>
+    <table class="ds-table">
+      <thead><tr><th>Token</th><th>Value</th><th>Layer</th></tr></thead>
+      <tbody>
+        <tr><td><code>--tds-z-divider</code></td><td>1</td><td>Resize seams above pane content</td></tr>
+        <tr><td><code>--tds-z-tooltip</code></td><td>5</td><td>Rail tooltips</td></tr>
+        <tr><td><code>--tds-z-popout</code></td><td>10</td><td>Pop-out panels, menus</td></tr>
+        <tr><td><code>--tds-z-toast</code></td><td>20</td><td>Fixed toasts (disk-save error)</td></tr>
+        <tr><td><code>--tds-z-dialog</code></td><td>100</td><td>Modal dialogs + scrim</td></tr>
+      </tbody>
+    </table>
+    <div class="ds-guidance">
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Take z-index values only from this table; the gaps between steps are
+        deliberate headroom, not free slots.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--dont">
+        <span class="ds-guidance__title">Don't</span>
+        Add shadows to layer-0/1 chrome — seams and surface steps carry the
+        structure; shadows mean "floating".
+      </div>
+    </div>
+
+    <footer class="ds-footer">
+      Trellis Design System — Foundations / Elevation.
+    </footer>
+  </main>
+</div>
+<script src="../assets/docs.js"></script>
+</body>
+</html>

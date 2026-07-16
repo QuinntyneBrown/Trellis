@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" class="ds">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trees — Trellis Design System</title>
+<link rel="stylesheet" href="../assets/tokens.css">
+<link rel="stylesheet" href="../assets/components.css">
+<link rel="stylesheet" href="../assets/docs.css">
+</head>
+<body class="ds tds-root" data-page="components/trees">
+<div class="ds-layout">
+  <nav class="ds-nav" aria-label="Design system"></nav>
+  <main class="ds-main">
+    <h1>Trees</h1>
+    <p class="ds-lede">
+      One tree-row language for both trees: the Explorer's disk files and
+      the Documents panel's virtual folders share a single style source, so
+      a row reads identically everywhere — chevron (or spacer), truncating
+      name, always-visible icon actions. Folders sort first, then leaves,
+      case-insensitive.
+    </p>
+
+    <h2>Row anatomy</h2>
+    <p class="ds-source">Derived from: <code>shared/styles/_tree-row.scss</code>, consumed by <code>explorer/file-tree-node/</code> and <code>documents/document-tree-node/</code> — <code>.tds-tree-row</code>.</p>
+    <table class="ds-table">
+      <thead><tr><th>Part</th><th>Spec</th></tr></thead>
+      <tbody>
+        <tr><td><code>.tds-tree-row</code></td><td>Flex row, 0.35rem gap, 0.15rem vertical padding, 0.85rem text, indented 1rem per depth via inline padding-left</td></tr>
+        <tr><td><code>__chevron</code></td><td>1rem box, CSS-triangle twisty; rotates 90° when expanded (0.1s)</td></tr>
+        <tr><td><code>__chevron-spacer</code></td><td>Same 1rem box on leaf rows, keeping names aligned</td></tr>
+        <tr><td><code>__name</code></td><td>Truncates with ellipsis; full value in the row's <code>title</code> tooltip (documents: the raw ISO-8601 <code>updatedAt</code>)</td></tr>
+        <tr><td><code>__actions</code></td><td>Always-visible <code>.tds-tree-action</code> buttons, 0.25rem gap</td></tr>
+        <tr><td>ARIA</td><td><code>role="tree"</code>/<code>treeitem</code>, <code>aria-expanded</code> on folders, <code>aria-current="true"</code> on the active document</td></tr>
+      </tbody>
+    </table>
+
+    <h2>The documents tree</h2>
+    <p class="ds-source">Rows from <code>document-tree-node</code>; kind badge and drag/drop states included. Depth is illustrative.</p>
+    <div class="ds-example ds-example--chrome" style="max-width:21rem;padding:.5rem 0">
+      <div role="tree" aria-label="Documents">
+        <div class="tds-tree-row" role="treeitem" aria-expanded="true" style="padding-left:.25rem">
+          <span class="tds-tree-row__chevron tds-tree-row__chevron--expanded"></span>
+          <span class="tds-tree-row__name">architecture</span>
+          <span class="tds-tree-row__actions">
+            <button type="button" class="tds-tree-action" title="New Folder" aria-label="New Folder"><svg class="tds-tree-action__icon" aria-hidden="true"><use href="#tds-icon-action-new-folder"/></svg></button>
+            <button type="button" class="tds-tree-action" title="Rename" aria-label="Rename"><svg class="tds-tree-action__icon" aria-hidden="true"><use href="#tds-icon-action-rename"/></svg></button>
+            <button type="button" class="tds-tree-action tds-tree-action--danger" title="Delete" aria-label="Delete"><svg class="tds-tree-action__icon" aria-hidden="true"><use href="#tds-icon-action-delete"/></svg></button>
+          </span>
+        </div>
+        <div class="tds-tree-row tds-tree-row--active" role="treeitem" aria-current="true" style="padding-left:1.25rem" title="2026-07-15T18:03:11.402Z">
+          <span class="tds-tree-row__chevron-spacer"></span>
+          <span class="tds-tree-row__name">sequence-checkout</span>
+          <span class="tds-badge">PUML</span>
+          <span class="tds-tree-row__actions">
+            <button type="button" class="tds-tree-action" title="Move to Folder…" aria-label="Move to Folder…"><svg class="tds-tree-action__icon" aria-hidden="true"><use href="#tds-icon-action-move"/></svg></button>
+            <button type="button" class="tds-tree-action tds-tree-action--danger" title="Delete" aria-label="Delete"><svg class="tds-tree-action__icon" aria-hidden="true"><use href="#tds-icon-action-delete"/></svg></button>
+          </span>
+        </div>
+        <div class="tds-tree-row" role="treeitem" style="padding-left:1.25rem" title="2026-07-12T09:44:56.917Z">
+          <span class="tds-tree-row__chevron-spacer"></span>
+          <span class="tds-tree-row__name">deployment-topology</span>
+          <span class="tds-badge">PUML</span>
+          <span class="tds-tree-row__actions">
+            <button type="button" class="tds-tree-action" title="Move to Folder…" aria-label="Move to Folder…"><svg class="tds-tree-action__icon" aria-hidden="true"><use href="#tds-icon-action-move"/></svg></button>
+            <button type="button" class="tds-tree-action tds-tree-action--danger" title="Delete" aria-label="Delete"><svg class="tds-tree-action__icon" aria-hidden="true"><use href="#tds-icon-action-delete"/></svg></button>
+          </span>
+        </div>
+        <div class="tds-tree-row" role="treeitem" aria-expanded="false" style="padding-left:.25rem">
+          <span class="tds-tree-row__chevron"></span>
+          <span class="tds-tree-row__name">sketches</span>
+          <span class="tds-tree-row__actions">
+            <button type="button" class="tds-tree-action" title="Rename" aria-label="Rename"><svg class="tds-tree-action__icon" aria-hidden="true"><use href="#tds-icon-action-rename"/></svg></button>
+            <button type="button" class="tds-tree-action tds-tree-action--danger" title="Delete" aria-label="Delete"><svg class="tds-tree-action__icon" aria-hidden="true"><use href="#tds-icon-action-delete"/></svg></button>
+          </span>
+        </div>
+        <div class="tds-tree-row" role="treeitem" style="padding-left:.25rem" title="2026-07-01T14:20:38.001Z">
+          <span class="tds-tree-row__chevron-spacer"></span>
+          <span class="tds-tree-row__name">notes</span>
+          <span class="tds-badge">MD</span>
+          <span class="tds-tree-row__actions">
+            <button type="button" class="tds-tree-action" title="Move to Folder…" aria-label="Move to Folder…"><svg class="tds-tree-action__icon" aria-hidden="true"><use href="#tds-icon-action-move"/></svg></button>
+            <button type="button" class="tds-tree-action tds-tree-action--danger" title="Delete" aria-label="Delete"><svg class="tds-tree-action__icon" aria-hidden="true"><use href="#tds-icon-action-delete"/></svg></button>
+          </span>
+        </div>
+      </div>
+    </div>
+    <p class="ds-caption">
+      Expanded folder, the active (open) document with accent tint +
+      semibold accent name + <code>aria-current</code>, sibling document,
+      collapsed folder, root-level document. Timestamps live in row
+      <code>title</code> tooltips as raw ISO-8601 strings.
+    </p>
+
+    <h2>Row states</h2>
+    <div class="ds-example ds-example--chrome" style="max-width:21rem;padding:.5rem 0">
+      <div class="tds-tree-row" style="padding-left:.25rem">
+        <span class="tds-tree-row__chevron-spacer"></span>
+        <span class="tds-tree-row__name">resting</span>
+      </div>
+      <div class="tds-tree-row" style="padding-left:.25rem;background-color:var(--tds-hover-wash)">
+        <span class="tds-tree-row__chevron-spacer"></span>
+        <span class="tds-tree-row__name">hover</span>
+      </div>
+      <div class="tds-tree-row tds-tree-row--active" style="padding-left:.25rem">
+        <span class="tds-tree-row__chevron-spacer"></span>
+        <span class="tds-tree-row__name">active document</span>
+      </div>
+      <div class="tds-tree-row tds-tree-row--drop-target" style="padding-left:.25rem">
+        <span class="tds-tree-row__chevron"></span>
+        <span class="tds-tree-row__name">drop target (drag hovering)</span>
+      </div>
+      <div class="tds-tree-row" style="padding-left:.25rem">
+        <span class="tds-tree-row__chevron tds-tree-row__chevron--expanded"></span>
+        <span class="tds-tree-row__name">loading children</span>
+        <span class="tds-tree-row__spinner" role="progressbar" aria-label="Loading"></span>
+      </div>
+    </div>
+    <table class="ds-table">
+      <thead><tr><th>State</th><th>Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>Hover</td><td><code>--tds-hover-wash</code> row fill</td></tr>
+        <tr><td>Active document</td><td><code>--tds-accent-tint-15</code> fill; name in accent, semibold; <code>aria-current="true"</code>; hover deepens to tint-20 (the VS Code active-file idiom)</td></tr>
+        <tr><td>Drop target</td><td><code>--tds-accent-tint-12</code> fill + 1px dashed accent outline, −1px offset</td></tr>
+        <tr><td>Loading</td><td>0.75rem in-row spinner (Explorer, while a directory lists)</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Drag and drop</h2>
+    <p>
+      Document rows are draggable. A hovered folder row takes the
+      drop-target state; the tree's empty space below the last row is the
+      <em>move-to-root</em> zone and takes the panel-level wash
+      (<code>.tds-panel__content--drop-target</code>, dashed
+      <code>--tds-accent-soft</code>). The destination folder auto-expands
+      after a move. The row's "Move to Folder…" dialog is the keyboard
+      fallback — drag is never the only path.
+    </p>
+
+    <h2>Rules</h2>
+    <div class="ds-guidance">
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Sort folders first, then leaves, case-insensitive — both trees, no
+        exceptions.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Keep row actions always visible; hover-revealed actions hide
+        functionality from keyboard and touch users.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--dont">
+        <span class="ds-guidance__title">Don't</span>
+        Add second lines to rows — metadata lives in the <code>title</code>
+        tooltip, keeping the tree dense.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--dont">
+        <span class="ds-guidance__title">Don't</span>
+        Use the active-document treatment for selection; it means "open in
+        the editor", nothing else.
+      </div>
+    </div>
+
+    <footer class="ds-footer">
+      Trellis Design System — Components / Trees.
+    </footer>
+  </main>
+</div>
+<script src="../assets/docs.js"></script>
+</body>
+</html>

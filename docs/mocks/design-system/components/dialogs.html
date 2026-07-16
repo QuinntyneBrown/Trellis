@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en" class="ds">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dialogs — Trellis Design System</title>
+<link rel="stylesheet" href="../assets/tokens.css">
+<link rel="stylesheet" href="../assets/components.css">
+<link rel="stylesheet" href="../assets/docs.css">
+</head>
+<body class="ds tds-root" data-page="components/dialogs">
+<div class="ds-layout">
+  <nav class="ds-nav" aria-label="Design system"></nav>
+  <main class="ds-main">
+    <h1>Dialogs</h1>
+    <p class="ds-lede">
+      One modal pattern, four occupants. Save, New Document, Move to
+      Folder, and Export Folder all render the same anatomy — full-viewport
+      scrim, centered overlay panel, title, fields, right-aligned actions —
+      so the modals read as one component with different contents.
+    </p>
+
+    <h2>Anatomy</h2>
+    <p class="ds-source">Derived from: <code>features/editor/save-dialog/</code>, mirrored by <code>move-document-dialog</code>, <code>new-document-dialog</code>, <code>export-folder-dialog</code> — <code>.tds-dialog</code>.</p>
+    <table class="ds-table">
+      <thead><tr><th>Part</th><th>Spec</th></tr></thead>
+      <tbody>
+        <tr><td><code>.tds-dialog</code></td><td>Fixed, inset 0, centers its panel, <code>--tds-z-dialog</code> (100)</td></tr>
+        <tr><td><code>__backdrop</code></td><td><code>--tds-scrim</code> — click cancels</td></tr>
+        <tr><td><code>__panel</code></td><td>min-width 20rem, padding <code>--tds-space-7</code>, radius <code>--tds-radius-xl</code>, overlay surface + strong border + overlay shadow</td></tr>
+        <tr><td><code>__title</code></td><td>1rem semibold — also the dialog's <code>aria-labelledby</code> target</td></tr>
+        <tr><td><code>__actions</code></td><td>Right-aligned, 0.5rem gap, top margin 0.75rem; primary last</td></tr>
+        <tr><td>ARIA</td><td><code>role="dialog"</code> <code>aria-modal="true"</code>; focus moves to the first field, <span class="ds-kbd">Esc</span> cancels, <span class="ds-kbd">Enter</span> confirms</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Save dialog</h2>
+    <div class="ds-example ds-example--flush">
+      <div class="tds-dialog tds-dialog--specimen" role="dialog" aria-modal="true" aria-labelledby="dlg-save-title">
+        <div class="tds-dialog__backdrop"></div>
+        <div class="tds-dialog__panel">
+          <h2 class="tds-dialog__title" id="dlg-save-title" style="border:none;padding:0;margin:0 0 .25rem">Save diagram</h2>
+          <label class="tds-field-label" for="dlg-save-name">Diagram name</label>
+          <input class="tds-input" id="dlg-save-name" type="text" value="sequence-checkout">
+          <div class="tds-dialog__actions">
+            <button type="button" class="tds-button">Cancel</button>
+            <button type="button" class="tds-button tds-button--primary">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="ds-caption">
+      The base occupant: one name field. When the Documents panel has
+      folders, the destination select (below) joins it.
+    </p>
+
+    <h2>Save with destination folder</h2>
+    <div class="ds-example ds-example--flush">
+      <div class="tds-dialog tds-dialog--specimen" role="dialog" aria-modal="true" aria-labelledby="dlg-save2-title">
+        <div class="tds-dialog__backdrop"></div>
+        <div class="tds-dialog__panel">
+          <h2 class="tds-dialog__title" id="dlg-save2-title" style="border:none;padding:0;margin:0 0 .25rem">Save diagram</h2>
+          <label class="tds-field-label" for="dlg-save2-name">Diagram name</label>
+          <input class="tds-input" id="dlg-save2-name" type="text" value="deployment-topology">
+          <label class="tds-field-label" for="dlg-save2-folder">Destination folder</label>
+          <select class="tds-select" id="dlg-save2-folder">
+            <option>(No folder — root)</option>
+            <option selected>architecture</option>
+            <option>&nbsp;&nbsp;deployment</option>
+            <option>sketches</option>
+          </select>
+          <div class="tds-dialog__actions">
+            <button type="button" class="tds-button">Cancel</button>
+            <button type="button" class="tds-button tds-button--primary">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2>Move to folder</h2>
+    <p class="ds-source">The keyboard-accessible fallback to drag-and-drop; opened from a document row's "Move to Folder…" action. Confirm goes through <code>PUT /api/documents/{id}/folder</code>.</p>
+    <div class="ds-example ds-example--flush">
+      <div class="tds-dialog tds-dialog--specimen" role="dialog" aria-modal="true" aria-labelledby="dlg-move-title">
+        <div class="tds-dialog__backdrop"></div>
+        <div class="tds-dialog__panel">
+          <h2 class="tds-dialog__title" id="dlg-move-title" style="border:none;padding:0;margin:0 0 .25rem">Move "sequence-checkout"</h2>
+          <label class="tds-field-label" for="dlg-move-folder">Move to folder</label>
+          <select class="tds-select" id="dlg-move-folder">
+            <option selected>(No folder — root)</option>
+            <option>architecture</option>
+            <option>&nbsp;&nbsp;deployment</option>
+            <option>sketches</option>
+          </select>
+          <div class="tds-dialog__actions">
+            <button type="button" class="tds-button">Cancel</button>
+            <button type="button" class="tds-button tds-button--primary">Move</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2>Rules</h2>
+    <div class="ds-guidance">
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Keep dialogs one-question small. A dialog asks for a name and/or a
+        destination — anything bigger belongs in a panel.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Name the thing being acted on in the title
+        ("Move&nbsp;"sequence-checkout"") so the scrim never hides the
+        context.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--dont">
+        <span class="ds-guidance__title">Don't</span>
+        Stack dialogs, add close-X buttons (Cancel is the exit), or animate
+        entry/exit.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--dont">
+        <span class="ds-guidance__title">Don't</span>
+        Rebuild confirm/prompt flows as custom dialogs — deletes and renames
+        contractually use <code>window.confirm</code> /
+        <code>window.prompt</code>.
+      </div>
+    </div>
+
+    <footer class="ds-footer">
+      Trellis Design System — Components / Dialogs.
+    </footer>
+  </main>
+</div>
+<script src="../assets/docs.js"></script>
+</body>
+</html>

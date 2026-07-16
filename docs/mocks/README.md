@@ -4,6 +4,19 @@ Static HTML mocks reverse-engineered from the Angular frontend under
 `frontend/src/app`. They capture every screen and meaningful UI state of the
 app as plain HTML/CSS — no build step, no JavaScript, no network.
 
+## Design system
+
+[`design-system/`](design-system/) is a separate, self-contained product:
+the **Trellis Design System** documentation site (tokens, foundations,
+components, patterns), heavily inspired by the VS Code design system and
+expressed in **dark mode** — the *target* theme. The mocks in this folder
+document the *current app* (light theme) and are deliberately untouched by
+it. The design system is published to an Azure Static Web App by
+[`.github/workflows/deploy-design-system.yml`](../../.github/workflows/deploy-design-system.yml)
+on pushes to `main`; start at
+[`design-system/index.html`](design-system/index.html) or its
+[README](design-system/README.md).
+
 ## Viewing
 
 Open [`index.html`](index.html) in a browser (double-click works; everything

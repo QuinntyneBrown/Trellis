@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en" class="ds">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Color — Trellis Design System</title>
+<link rel="stylesheet" href="../assets/tokens.css">
+<link rel="stylesheet" href="../assets/components.css">
+<link rel="stylesheet" href="../assets/docs.css">
+</head>
+<body class="ds tds-root" data-page="foundations/color">
+<div class="ds-layout">
+  <nav class="ds-nav" aria-label="Design system"></nav>
+  <main class="ds-main">
+    <h1>Color</h1>
+    <p class="ds-lede">
+      A dark workbench palette in the VS Code Dark Modern idiom: chrome on
+      the darkest layer, content one step lighter, overlays lighter still.
+      One blue accent carries all interaction; green, amber, and red are
+      reserved for status semantics. Each dark value re-expresses a role the
+      light implementation established — the mapping is recorded in
+      <code>tokens.css</code>.
+    </p>
+
+    <h2>Surface stack</h2>
+    <p class="ds-source">Derived from: <code>editor-toolbar</code> (#f9fafb), <code>title-bar</code> (#f3f4f6), panels (#ffffff), Monaco 'vs' (#fffffe), dialogs (#ffffff).</p>
+    <p>
+      Elevation on the dark theme reads through <em>surface lightening</em>:
+      the further a layer sits from the workbench frame, the lighter it is.
+    </p>
+    <div class="ds-swatch-grid">
+      <div class="ds-swatch">
+        <div class="ds-swatch__chip" style="background:#181818"></div>
+        <div class="ds-swatch__meta">
+          <code class="ds-swatch__token">--tds-surface-chrome</code>
+          <span class="ds-swatch__value">#181818</span>
+          <span class="ds-swatch__note">Title bar, activity rail, side panels</span>
+        </div>
+      </div>
+      <div class="ds-swatch">
+        <div class="ds-swatch__chip" style="background:#1f1f1f"></div>
+        <div class="ds-swatch__meta">
+          <code class="ds-swatch__token">--tds-surface-editor</code>
+          <span class="ds-swatch__value">#1f1f1f</span>
+          <span class="ds-swatch__note">Editor and preview content plane</span>
+        </div>
+      </div>
+      <div class="ds-swatch">
+        <div class="ds-swatch__chip" style="background:#202020"></div>
+        <div class="ds-swatch__meta">
+          <code class="ds-swatch__token">--tds-surface-raised</code>
+          <span class="ds-swatch__value">#202020</span>
+          <span class="ds-swatch__note">Menus, pop-outs, tooltips</span>
+        </div>
+      </div>
+      <div class="ds-swatch">
+        <div class="ds-swatch__chip" style="background:#242424"></div>
+        <div class="ds-swatch__meta">
+          <code class="ds-swatch__token">--tds-surface-overlay</code>
+          <span class="ds-swatch__value">#242424</span>
+          <span class="ds-swatch__note">Modal dialog panels</span>
+        </div>
+      </div>
+      <div class="ds-swatch">
+        <div class="ds-swatch__chip" style="background:#2a2a2a"></div>
+        <div class="ds-swatch__meta">
+          <code class="ds-swatch__token">--tds-surface-field</code>
+          <span class="ds-swatch__value">#2a2a2a</span>
+          <span class="ds-swatch__note">Inputs and selects on overlays</span>
+        </div>
+      </div>
+      <div class="ds-swatch">
+        <div class="ds-swatch__chip" style="background:#2b2b2b"></div>
+        <div class="ds-swatch__meta">
+          <code class="ds-swatch__token">--tds-border</code>
+          <span class="ds-swatch__value">#2b2b2b</span>
+          <span class="ds-swatch__note">Structural hairlines (was #e5e7eb)</span>
+        </div>
+      </div>
+      <div class="ds-swatch">
+        <div class="ds-swatch__chip" style="background:#3c3c3c"></div>
+        <div class="ds-swatch__meta">
+          <code class="ds-swatch__token">--tds-border-strong</code>
+          <span class="ds-swatch__value">#3c3c3c</span>
+          <span class="ds-swatch__note">Control borders (was #d1d5db)</span>
+        </div>
+      </div>
+    </div>
+
+    <h2>Ink ramp</h2>
+    <p class="ds-source">Derived from: light #111827 / #374151–#4b5563 / #6b7280 / #9ca3af (styles.scss and component SCSS throughout).</p>
+    <div class="ds-swatch-grid">
+      <div class="ds-swatch">
+        <div class="ds-swatch__chip" style="background:#cccccc"></div>
+        <div class="ds-swatch__meta">
+          <code class="ds-swatch__token">--tds-ink</code>
+          <span class="ds-swatch__value">#cccccc</span>
+          <span class="ds-swatch__note">Primary text, tree rows, dialog copy</span>
+        </div>
+      </div>
+      <div class="ds-swatch">
+        <div class="ds-swatch__chip" style="background:#a6a6a6"></div>
+        <div class="ds-swatch__meta">
+          <code class="ds-swatch__token">--tds-ink-secondary</code>
+          <span class="ds-swatch__value">#a6a6a6</span>
+          <span class="ds-swatch__note">Resting icons, labels, chrome text</span>
+        </div>
+      </div>
+      <div class="ds-swatch">
+        <div class="ds-swatch__chip" style="background:#9d9d9d"></div>
+        <div class="ds-swatch__meta">
+          <code class="ds-swatch__token">--tds-ink-muted</code>
+          <span class="ds-swatch__value">#9d9d9d</span>
+          <span class="ds-swatch__note">Hints, placeholders, empty states, panel headers</span>
+        </div>
+      </div>
+      <div class="ds-swatch">
+        <div class="ds-swatch__chip" style="background:#6e6e6e"></div>
+        <div class="ds-swatch__meta">
+          <code class="ds-swatch__token">--tds-ink-disabled</code>
+          <span class="ds-swatch__value">#6e6e6e</span>
+          <span class="ds-swatch__note">Disabled only — contrast-exempt by design</span>
+        </div>
+      </div>
+    </div>
+
+    <h2>Interaction — Trellis blue</h2>
+    <p class="ds-source">Derived from: #3b82f6 (rail active, focus rings, dividers), #2563eb/#1d4ed8 (primary buttons), #93c5fd (soft outlines), rgba(59,130,246,…) tints.</p>
+    <p>
+      The single accent family. It marks what is <em>active</em> (rail item,
+      open document), what is <em>focused</em> (2px ring, −2px offset), what
+      is <em>primary</em> (confirm buttons), and where a drag will
+      <em>drop</em>. If something is blue, it responds.
+    </p>
+    <div class="ds-swatch-grid">
+      <div class="ds-swatch">
+        <div class="ds-swatch__chip" style="background:#4d9fff"></div>
+        <div class="ds-swatch__meta">
+          <code class="ds-swatch__token">--tds-accent</code>
+          <span class="ds-swatch__value">#4d9fff</span>
+          <span class="ds-swatch__note">Active icons, links, active-row names, focus ring</span>
+        </div>
+      </div>
+      <div class="ds-swatch">
+        <div class="ds-swatch__chip" style="background:#2a6cc9"></div>
+        <div class="ds-swatch__meta">
+          <code class="ds-swatch__token">--tds-accent-strong</code>
+          <span class="ds-swatch__value">#2a6cc9</span>
+          <span class="ds-swatch__note">Primary button fill (white ink, 5.1:1)</span>
+        </div>
+      </div>
+      <div class="ds-swatch">
+        <div class="ds-swatch__chip" style="background:#2970d6"></div>
+        <div class="ds-swatch__meta">
+          <code class="ds-swatch__token">--tds-accent-hover</code>
+          <span class="ds-swatch__value">#2970d6</span>
+          <span class="ds-swatch__note">Primary button hover</span>
+        </div>
+      </div>
+      <div class="ds-swatch">
+        <div class="ds-swatch__chip" style="background:#7ab8ff"></div>
+        <div class="ds-swatch__meta">
+          <code class="ds-swatch__token">--tds-accent-soft</code>
+          <span class="ds-swatch__value">#7ab8ff</span>
+          <span class="ds-swatch__note">Dashed move-to-root hints</span>
+        </div>
+      </div>
+    </div>
+    <table class="ds-table">
+      <thead><tr><th>Tint token</th><th>Value</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td><code>--tds-accent-tint-06</code></td><td><code>rgba(77,159,255,.09)</code></td><td>Move-to-root zone wash</td></tr>
+        <tr><td><code>--tds-accent-tint-12</code></td><td><code>rgba(77,159,255,.16)</code></td><td>Drop-target row fill</td></tr>
+        <tr><td><code>--tds-accent-tint-15</code></td><td><code>rgba(77,159,255,.2)</code></td><td>Active document row</td></tr>
+        <tr><td><code>--tds-accent-tint-20</code></td><td><code>rgba(77,159,255,.26)</code></td><td>Active row, hovered</td></tr>
+        <tr><td><code>--tds-hover-wash</code></td><td><code>rgba(255,255,255,.06)</code></td><td>Neutral row/menu hover</td></tr>
+        <tr><td><code>--tds-hover-wash-strong</code></td><td><code>rgba(255,255,255,.09)</code></td><td>Icon-button hover, chrome hover</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Status</h2>
+    <p class="ds-source">Derived from: <code>connection-status</code> (#22c55e / #ef4444 / #eab308 / #9ca3af), <code>error-banner</code> (#fef2f2 / #fecaca / #991b1b), danger actions (#b91c1c).</p>
+    <p>
+      Status hues are reserved for connection state and operation outcomes.
+      They are never used decoratively — a green anywhere in Trellis means
+      "connected/succeeded", red means "failed", amber means "in between".
+    </p>
+    <div class="ds-swatch-grid">
+      <div class="ds-swatch">
+        <div class="ds-swatch__chip" style="background:#3fb950"></div>
+        <div class="ds-swatch__meta">
+          <code class="ds-swatch__token">--tds-status-ok</code>
+          <span class="ds-swatch__value">#3fb950</span>
+          <span class="ds-swatch__note">Connected dot</span>
+        </div>
+      </div>
+      <div class="ds-swatch">
+        <div class="ds-swatch__chip" style="background:#f85149"></div>
+        <div class="ds-swatch__meta">
+          <code class="ds-swatch__token">--tds-status-error</code>
+          <span class="ds-swatch__value">#f85149</span>
+          <span class="ds-swatch__note">Disconnected dot, invalid borders</span>
+        </div>
+      </div>
+      <div class="ds-swatch">
+        <div class="ds-swatch__chip" style="background:#ff7b72"></div>
+        <div class="ds-swatch__meta">
+          <code class="ds-swatch__token">--tds-status-error-ink</code>
+          <span class="ds-swatch__value">#ff7b72</span>
+          <span class="ds-swatch__note">Error text, danger row actions</span>
+        </div>
+      </div>
+      <div class="ds-swatch">
+        <div class="ds-swatch__chip" style="background:#3a1d1d"></div>
+        <div class="ds-swatch__meta">
+          <code class="ds-swatch__token">--tds-status-error-surface</code>
+          <span class="ds-swatch__value">#3a1d1d</span>
+          <span class="ds-swatch__note">Error banner fill (border #6e2b28)</span>
+        </div>
+      </div>
+      <div class="ds-swatch">
+        <div class="ds-swatch__chip" style="background:#d29922"></div>
+        <div class="ds-swatch__meta">
+          <code class="ds-swatch__token">--tds-status-warn</code>
+          <span class="ds-swatch__value">#d29922</span>
+          <span class="ds-swatch__note">Reconnecting dot</span>
+        </div>
+      </div>
+      <div class="ds-swatch">
+        <div class="ds-swatch__chip" style="background:#8b949e"></div>
+        <div class="ds-swatch__meta">
+          <code class="ds-swatch__token">--tds-status-unknown</code>
+          <span class="ds-swatch__value">#8b949e</span>
+          <span class="ds-swatch__note">Idle / unknown dot</span>
+        </div>
+      </div>
+      <div class="ds-swatch">
+        <div class="ds-swatch__chip" style="background:#c42b1c"></div>
+        <div class="ds-swatch__meta">
+          <code class="ds-swatch__token">--tds-window-close</code>
+          <span class="ds-swatch__value">#c42b1c</span>
+          <span class="ds-swatch__note">Window-close hover — Windows convention, kept verbatim; not a palette member</span>
+        </div>
+      </div>
+    </div>
+
+    <h2>Editor &amp; badge colors</h2>
+    <p class="ds-source">Derived from: Monaco 'vs' surface (mapped to 'vs-dark'), document/template kind badge (#eef2ff / #4338ca).</p>
+    <table class="ds-table">
+      <thead><tr><th>Token</th><th>Value</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td><span class="ds-chip" style="background:#6e7681"></span><code>--tds-editor-gutter-ink</code></td><td><code>#6e7681</code></td><td>Line numbers (was #237893 on 'vs')</td></tr>
+        <tr><td><span class="ds-chip" style="background:#aeafad"></span><code>--tds-editor-cursor</code></td><td><code>#aeafad</code></td><td>Caret (was #000000)</td></tr>
+        <tr><td><span class="ds-chip" style="background:#264f78"></span><code>--tds-editor-selection</code></td><td><code>#264f78</code></td><td>Selection fill</td></tr>
+        <tr><td><span class="ds-chip" style="background:#2b3a55"></span><code>--tds-badge-surface</code></td><td><code>#2b3a55</code></td><td>Kind badge fill</td></tr>
+        <tr><td><span class="ds-chip" style="background:#9db8ff"></span><code>--tds-badge-ink</code></td><td><code>#9db8ff</code></td><td>Kind badge text (5.8:1 on its fill)</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Contrast</h2>
+    <p>
+      Text tokens hold ≥ 4.5:1 (WCAG AA, normal text) on every surface they
+      may occupy. Disabled ink is intentionally exempt. Ratios below are
+      computed, not estimated.
+    </p>
+    <table class="ds-table">
+      <thead><tr><th>Foreground</th><th>Background</th><th>Ratio</th><th>Verdict</th></tr></thead>
+      <tbody>
+        <tr><td><code>--tds-ink</code> #cccccc</td><td><code>surface-editor</code> #1f1f1f</td><td>10.26</td><td>AAA</td></tr>
+        <tr><td><code>--tds-ink</code> #cccccc</td><td><code>surface-chrome</code> #181818</td><td>11.06</td><td>AAA</td></tr>
+        <tr><td><code>--tds-ink</code> #cccccc</td><td><code>surface-overlay</code> #242424</td><td>9.67</td><td>AAA</td></tr>
+        <tr><td><code>--tds-ink</code> #cccccc</td><td><code>surface-field</code> #2a2a2a</td><td>8.94</td><td>AAA</td></tr>
+        <tr><td><code>--tds-ink-secondary</code> #a6a6a6</td><td><code>surface-editor</code> #1f1f1f</td><td>6.77</td><td>AA</td></tr>
+        <tr><td><code>--tds-ink-secondary</code> #a6a6a6</td><td><code>surface-chrome</code> #181818</td><td>7.29</td><td>AAA</td></tr>
+        <tr><td><code>--tds-ink-muted</code> #9d9d9d</td><td><code>surface-editor</code> #1f1f1f</td><td>6.08</td><td>AA</td></tr>
+        <tr><td><code>--tds-ink-muted</code> #9d9d9d</td><td><code>surface-chrome</code> #181818</td><td>6.55</td><td>AA</td></tr>
+        <tr><td><code>--tds-accent</code> #4d9fff</td><td><code>surface-editor</code> #1f1f1f</td><td>6.06</td><td>AA</td></tr>
+        <tr><td><code>--tds-accent</code> #4d9fff</td><td><code>surface-chrome</code> #181818</td><td>6.53</td><td>AA</td></tr>
+        <tr><td>#ffffff</td><td><code>accent-strong</code> #2a6cc9</td><td>5.14</td><td>AA</td></tr>
+        <tr><td>#ffffff</td><td><code>accent-hover</code> #2970d6</td><td>4.79</td><td>AA</td></tr>
+        <tr><td><code>--tds-status-ok</code> #3fb950</td><td><code>surface-chrome</code> #181818</td><td>6.99</td><td>AA (non-text dot: ≥3:1 required)</td></tr>
+        <tr><td><code>--tds-status-error-ink</code> #ff7b72</td><td><code>error-surface</code> #3a1d1d</td><td>6.06</td><td>AA</td></tr>
+        <tr><td><code>--tds-status-error-ink</code> #ff7b72</td><td><code>surface-chrome</code> #181818</td><td>7.05</td><td>AAA</td></tr>
+        <tr><td><code>--tds-status-warn</code> #d29922</td><td><code>surface-chrome</code> #181818</td><td>7.03</td><td>AAA</td></tr>
+        <tr><td><code>--tds-badge-ink</code> #9db8ff</td><td><code>badge-surface</code> #2b3a55</td><td>5.84</td><td>AA</td></tr>
+        <tr><td><code>--tds-editor-gutter-ink</code> #6e7681</td><td><code>surface-editor</code> #1f1f1f</td><td>3.59</td><td>Non-text convention (Monaco parity)</td></tr>
+        <tr><td><code>--tds-ink-disabled</code> #6e6e6e</td><td><code>surface-editor</code> #1f1f1f</td><td>3.23</td><td>Exempt (disabled)</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Usage</h2>
+    <div class="ds-guidance">
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Consume colors exclusively through tokens; the light→dark migration
+        was possible because roles, not values, are referenced.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Keep rendered PlantUML diagrams on their white plate
+        (<code>.tds-preview__svg</code>) — exports must stay legible outside
+        the app.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--dont">
+        <span class="ds-guidance__title">Don't</span>
+        Use status green/amber/red for anything but connection and outcome
+        semantics — no decorative status color.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--dont">
+        <span class="ds-guidance__title">Don't</span>
+        Introduce a second accent. If it isn't interactive, it isn't blue.
+      </div>
+    </div>
+
+    <footer class="ds-footer">
+      Trellis Design System — Foundations / Color.
+    </footer>
+  </main>
+</div>
+<script src="../assets/docs.js"></script>
+</body>
+</html>

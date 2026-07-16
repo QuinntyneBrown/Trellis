@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en" class="ds">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spacing &amp; layout — Trellis Design System</title>
+<link rel="stylesheet" href="../assets/tokens.css">
+<link rel="stylesheet" href="../assets/components.css">
+<link rel="stylesheet" href="../assets/docs.css">
+</head>
+<body class="ds tds-root" data-page="foundations/spacing">
+<div class="ds-layout">
+  <nav class="ds-nav" aria-label="Design system"></nav>
+  <main class="ds-main">
+    <h1>Spacing &amp; layout</h1>
+    <p class="ds-lede">
+      A 4px-base spacing scale for everything inside panels and dialogs,
+      plus a small set of fixed chrome metrics that define the workbench
+      frame itself. Density is a feature: rows are 4.8px-padded, panels are
+      narrow, nothing floats in whitespace.
+    </p>
+
+    <h2>Spacing scale</h2>
+    <p class="ds-source">Values appear verbatim in the component SCSS (rem-denominated, 16px root).</p>
+    <table class="ds-table">
+      <thead><tr><th>Token</th><th>Value</th><th>px</th><th>Canonical use</th></tr></thead>
+      <tbody>
+        <tr><td><code>--tds-space-1</code></td><td>0.15rem</td><td>2.4</td><td>Tree-row vertical padding</td></tr>
+        <tr><td><code>--tds-space-2</code></td><td>0.25rem</td><td>4</td><td>Row-action gaps, tooltip padding-y</td></tr>
+        <tr><td><code>--tds-space-3</code></td><td>0.35rem</td><td>5.6</td><td>Row icon gap, button padding-y</td></tr>
+        <tr><td><code>--tds-space-4</code></td><td>0.5rem</td><td>8</td><td>Rail gaps, panel header padding-y, dialog element gap</td></tr>
+        <tr><td><code>--tds-space-5</code></td><td>0.75rem</td><td>12</td><td>Panel header padding-x, banner padding-x</td></tr>
+        <tr><td><code>--tds-space-6</code></td><td>1rem</td><td>16</td><td>Empty-state padding, preview error margin</td></tr>
+        <tr><td><code>--tds-space-7</code></td><td>1.25rem</td><td>20</td><td>Dialog panel padding</td></tr>
+      </tbody>
+    </table>
+    <div class="ds-example">
+      <div class="ds-example__row" style="align-items:flex-end">
+        <div><div style="width:var(--tds-space-1);height:var(--tds-space-1);background:var(--tds-accent)"></div><span class="ds-example__label">1</span></div>
+        <div><div style="width:var(--tds-space-2);height:var(--tds-space-2);background:var(--tds-accent)"></div><span class="ds-example__label">2</span></div>
+        <div><div style="width:var(--tds-space-3);height:var(--tds-space-3);background:var(--tds-accent)"></div><span class="ds-example__label">3</span></div>
+        <div><div style="width:var(--tds-space-4);height:var(--tds-space-4);background:var(--tds-accent)"></div><span class="ds-example__label">4</span></div>
+        <div><div style="width:var(--tds-space-5);height:var(--tds-space-5);background:var(--tds-accent)"></div><span class="ds-example__label">5</span></div>
+        <div><div style="width:var(--tds-space-6);height:var(--tds-space-6);background:var(--tds-accent)"></div><span class="ds-example__label">6</span></div>
+        <div><div style="width:var(--tds-space-7);height:var(--tds-space-7);background:var(--tds-accent)"></div><span class="ds-example__label">7</span></div>
+      </div>
+    </div>
+
+    <h2>The workbench frame</h2>
+    <p class="ds-source">Derived from: <code>editor-page.component.scss</code>, <code>title-bar</code>, <code>editor-toolbar</code>, <code>resize-divider</code>.</p>
+    <p>
+      The frame is fixed-metric chrome; only the editor/preview ratio and
+      the side panel width are user-adjustable, both within hard bounds.
+    </p>
+    <table class="ds-table">
+      <thead><tr><th>Token</th><th>Value</th><th>What it fixes</th></tr></thead>
+      <tbody>
+        <tr><td><code>--tds-metric-titlebar-h</code></td><td>35px</td><td>Title bar height; the body is <code>calc(100vh − 35px)</code></td></tr>
+        <tr><td><code>--tds-metric-rail-w</code></td><td>48px</td><td>Activity rail width</td></tr>
+        <tr><td><code>--tds-metric-rail-button</code></td><td>40px</td><td>Rail button hit target (40×40)</td></tr>
+        <tr><td><code>--tds-metric-rail-icon</code></td><td>20px</td><td>Rail glyph box</td></tr>
+        <tr><td><code>--tds-metric-panel-min</code></td><td>170px</td><td>Side panel minimum width</td></tr>
+        <tr><td><code>--tds-metric-panel-default</code></td><td>260px</td><td>Side panel default width</td></tr>
+        <tr><td><code>--tds-metric-panel-max</code></td><td>500px</td><td>Side panel maximum width</td></tr>
+        <tr><td><code>--tds-metric-divider</code></td><td>1px</td><td>Visible resize seam</td></tr>
+        <tr><td><code>--tds-metric-divider-grab</code></td><td>9px</td><td>Invisible grab area centered on the seam</td></tr>
+        <tr><td><code>--tds-metric-tree-action</code></td><td>1.4rem</td><td>Row-action button (22.4×22.4)</td></tr>
+        <tr><td><code>--tds-metric-tree-action-icon</code></td><td>14px</td><td>Row-action glyph box</td></tr>
+        <tr><td><code>--tds-metric-command-center-h</code></td><td>24px</td><td>Command-center pill height (max-width 38rem)</td></tr>
+        <tr><td><code>--tds-metric-window-control-w</code></td><td>46px</td><td>Each window control button</td></tr>
+        <tr><td><code>--tds-metric-status-dot</code></td><td>0.65rem</td><td>Connection dot diameter</td></tr>
+      </tbody>
+    </table>
+    <p>
+      The editor pane's share of the space right of the side panel is a
+      ratio clamped to <strong>0.2–0.8</strong>, default <strong>0.5</strong>
+      (<code>editor-page</code>). The side panel clamps to
+      <strong>170–500px</strong>, default <strong>260px</strong>.
+    </p>
+
+    <h2>Frame diagram</h2>
+    <div class="ds-example ds-example--flush" aria-hidden="true">
+      <div style="display:flex;flex-direction:column;height:280px;font-size:.65rem;color:var(--tds-ink-muted)">
+        <div style="flex:0 0 24px;display:flex;align-items:center;justify-content:center;background:var(--tds-surface-chrome);border-bottom:1px solid var(--tds-border)">title bar — 35px</div>
+        <div style="display:flex;flex:1;min-height:0">
+          <div style="flex:0 0 34px;display:flex;align-items:center;justify-content:center;background:var(--tds-surface-chrome);border-right:1px solid var(--tds-border);writing-mode:vertical-rl">rail — 48px</div>
+          <div style="flex:0 0 120px;display:flex;align-items:center;justify-content:center;background:var(--tds-surface-chrome);border-right:1px solid var(--tds-border);text-align:center">side panel<br>170–500px</div>
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;background:var(--tds-surface-editor)">editor — ratio 0.2–0.8</div>
+          <div style="flex:0 0 1px;background:var(--tds-accent)"></div>
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;background:var(--tds-surface-editor)">preview — remainder</div>
+        </div>
+      </div>
+    </div>
+    <p class="ds-caption">
+      The workbench frame. The accent line marks the resize seam (1px
+      visible, 9px grab). Both panels stay mounted; only one side panel is
+      visible at a time.
+    </p>
+
+    <h2>Rules</h2>
+    <div class="ds-guidance">
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Keep 40×40 (rail) and 1.4rem (row action) hit targets even when the
+        glyph is smaller — the padding is the affordance.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--dont">
+        <span class="ds-guidance__title">Don't</span>
+        Introduce new fixed widths. New chrome adopts an existing metric or
+        makes the case for a new token here first.
+      </div>
+    </div>
+
+    <footer class="ds-footer">
+      Trellis Design System — Foundations / Spacing &amp; layout.
+    </footer>
+  </main>
+</div>
+<script src="../assets/docs.js"></script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" class="ds">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Menus — Trellis Design System</title>
+<link rel="stylesheet" href="../assets/tokens.css">
+<link rel="stylesheet" href="../assets/components.css">
+<link rel="stylesheet" href="../assets/docs.css">
+</head>
+<body class="ds tds-root" data-page="components/menus">
+<div class="ds-layout">
+  <nav class="ds-nav" aria-label="Design system"></nav>
+  <main class="ds-main">
+    <h1>Menus</h1>
+    <p class="ds-lede">
+      One raised-list idiom covers everything that floats from a trigger:
+      the title bar's app menus and the template picker's pop-out catalog.
+      A raised surface, strong hairline, soft shadow, and quiet hover rows.
+    </p>
+
+    <h2>Menu surface</h2>
+    <p class="ds-source">Derived from: <code>templates/template-picker/</code> pop-out panel (the app's raised-list reference); adopted by the title-bar menus — <code>.tds-menu</code>.</p>
+    <table class="ds-table">
+      <thead><tr><th>Property</th><th>Spec</th></tr></thead>
+      <tbody>
+        <tr><td>Surface</td><td><code>--tds-surface-raised</code> + <code>--tds-border-strong</code> + <code>--tds-shadow-raised</code></td></tr>
+        <tr><td>Size</td><td>min-width 14rem, max-height 20rem (scrolls), radius <code>--tds-radius-lg</code></td></tr>
+        <tr><td>Placement</td><td>Below its title-bar trigger; to the right (+0.5rem) of a rail trigger; z <code>--tds-z-popout</code></td></tr>
+        <tr><td>Item</td><td>0.8rem text, name medium-weight, optional uppercase hint right-aligned in muted 0.7rem</td></tr>
+        <tr><td>Hover / focus</td><td><code>--tds-hover-wash</code> fill / 2px accent ring −2px</td></tr>
+        <tr><td>Dismiss</td><td><span class="ds-kbd">Esc</span>, outside click, or item activation</td></tr>
+        <tr><td>ARIA</td><td><code>role="menu"</code>/<code>menuitem</code>; trigger carries <code>aria-expanded</code> + <code>aria-haspopup</code>; arrow keys traverse</td></tr>
+      </tbody>
+    </table>
+
+    <h2>App menu</h2>
+    <p class="ds-source">Trigger from <code>title-bar__menu</code>; content is the File menu's command set.</p>
+    <div class="ds-example ds-example--chrome">
+      <div style="position:relative;display:inline-block">
+        <button type="button" class="tds-title-bar__menu tds-title-bar__menu--open" aria-haspopup="menu" aria-expanded="true">File</button>
+        <div class="tds-menu" role="menu" style="position:absolute;top:100%;left:0;margin-top:2px;z-index:var(--tds-z-popout)">
+          <button type="button" class="tds-menu__item" role="menuitem">
+            <span class="tds-menu__item-name">New Diagram</span>
+            <span class="tds-menu__item-hint">Ctrl+N</span>
+          </button>
+          <button type="button" class="tds-menu__item" role="menuitem" style="background-color:var(--tds-hover-wash)">
+            <span class="tds-menu__item-name">Save</span>
+            <span class="tds-menu__item-hint">Ctrl+S</span>
+          </button>
+          <button type="button" class="tds-menu__item" role="menuitem">
+            <span class="tds-menu__item-name">Upload…</span>
+          </button>
+          <div class="tds-menu__separator" role="separator"></div>
+          <button type="button" class="tds-menu__item" role="menuitem">
+            <span class="tds-menu__item-name">Export Folder…</span>
+          </button>
+        </div>
+      </div>
+      <div style="height:11rem"></div>
+    </div>
+    <p class="ds-caption">Open File menu; the trigger keeps its hover fill while its menu is open. Second item shown hovered.</p>
+
+    <h2>Template picker pop-out</h2>
+    <p class="ds-source">Derived from: <code>template-picker__panel/__option</code> — the catalog flying out from the rail's Templates button.</p>
+    <div class="ds-example ds-example--chrome">
+      <div style="display:flex;align-items:flex-start;gap:.5rem">
+        <button type="button" class="tds-rail-button tds-rail-button--active" aria-pressed="true" aria-label="Templates">
+          <svg class="tds-rail-button__icon" aria-hidden="true"><use href="#tds-icon-rail-templates"/></svg>
+        </button>
+        <div class="tds-menu" role="menu" aria-label="Templates">
+          <button type="button" class="tds-menu__item" role="menuitem">
+            <span class="tds-menu__item-name">Sequence</span>
+            <span class="tds-menu__item-hint">UML</span>
+          </button>
+          <button type="button" class="tds-menu__item" role="menuitem">
+            <span class="tds-menu__item-name">Class</span>
+            <span class="tds-menu__item-hint">UML</span>
+          </button>
+          <button type="button" class="tds-menu__item" role="menuitem">
+            <span class="tds-menu__item-name">Component</span>
+            <span class="tds-menu__item-hint">UML</span>
+          </button>
+          <button type="button" class="tds-menu__item" role="menuitem">
+            <span class="tds-menu__item-name">Deployment</span>
+            <span class="tds-menu__item-hint">UML</span>
+          </button>
+          <button type="button" class="tds-menu__item" role="menuitem">
+            <span class="tds-menu__item-name">Mind Map</span>
+            <span class="tds-menu__item-hint">Sketch</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <p class="ds-caption">
+      Names and categories match the backend's static template catalog;
+      category renders as the uppercase hint.
+    </p>
+
+    <h2>Command center</h2>
+    <p class="ds-source">Derived from: <code>title-bar__command-center</code>. Documented with the title bar in <a href="toolbars.html">Toolbars &amp; chrome</a>; noted here because it is menu-adjacent: a pill-shaped trigger, not a menu itself.</p>
+    <div class="ds-example ds-example--chrome">
+      <button type="button" class="tds-title-bar__command-center" style="max-width:24rem">
+        <svg class="tds-title-bar__search-icon" aria-hidden="true"><use href="#tds-icon-chrome-search"/></svg>
+        <span class="tds-title-bar__title">sequence-checkout — Trellis</span>
+      </button>
+    </div>
+
+    <h2>Rules</h2>
+    <div class="ds-guidance">
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Right-align supplementary text (shortcuts, categories) as the
+        uppercase muted hint — one hint per item at most.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Return focus to the trigger when a menu dismisses.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--dont">
+        <span class="ds-guidance__title">Don't</span>
+        Nest submenus — Trellis menus are one level deep by design.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--dont">
+        <span class="ds-guidance__title">Don't</span>
+        Put icons in menu items; the raised list is a text idiom.
+      </div>
+    </div>
+
+    <footer class="ds-footer">
+      Trellis Design System — Components / Menus.
+    </footer>
+  </main>
+</div>
+<script src="../assets/docs.js"></script>
+</body>
+</html>

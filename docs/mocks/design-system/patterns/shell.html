@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" class="ds">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workbench shell — Trellis Design System</title>
+<link rel="stylesheet" href="../assets/tokens.css">
+<link rel="stylesheet" href="../assets/components.css">
+<link rel="stylesheet" href="../assets/docs.css">
+</head>
+<body class="ds tds-root" data-page="patterns/shell">
+<div class="ds-layout">
+  <nav class="ds-nav" aria-label="Design system"></nav>
+  <main class="ds-main">
+    <h1>Workbench shell</h1>
+    <p class="ds-lede">
+      The composition every Trellis screen lives in: title bar on top, then
+      a body of activity rail → optional side panel → editor pane → resize
+      seam → preview pane. The shell is fixed chrome; only the panel width
+      and the editor/preview ratio move.
+    </p>
+
+    <h2>Composed shell</h2>
+    <p class="ds-source">Derived from: <code>app.component</code> + <code>features/editor/editor-page/</code>; scaled-down live composition of the documented components.</p>
+    <div class="ds-example ds-example--flush">
+      <div style="display:flex;flex-direction:column;height:420px;min-width:640px">
+        <div class="tds-title-bar" style="flex:0 0 35px">
+          <div class="tds-title-bar__left">
+            <svg class="tds-title-bar__logo" aria-hidden="true"><use href="#tds-icon-chrome-logo"/></svg>
+            <nav class="tds-title-bar__menus" aria-label="Application menu">
+              <button type="button" class="tds-title-bar__menu">File</button>
+              <button type="button" class="tds-title-bar__menu">Edit</button>
+              <button type="button" class="tds-title-bar__menu">View</button>
+              <button type="button" class="tds-title-bar__menu">Help</button>
+            </nav>
+          </div>
+          <div class="tds-title-bar__center">
+            <button type="button" class="tds-title-bar__command-center">
+              <svg class="tds-title-bar__search-icon" aria-hidden="true"><use href="#tds-icon-chrome-search"/></svg>
+              <span class="tds-title-bar__title">sequence-checkout — Trellis</span>
+            </button>
+          </div>
+          <div class="tds-title-bar__right">
+            <div class="tds-title-bar__layout-controls">
+              <button type="button" class="tds-title-bar__layout-toggle tds-title-bar__layout-toggle--active" aria-label="Toggle Primary Side Bar" aria-pressed="true">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><rect class="tds-pane-fill" x="2" y="3.5" width="4" height="9.5"/><rect x="2" y="3.5" width="12" height="9.5" rx="1"/><path d="M6 3.5v9.5"/></svg>
+              </button>
+            </div>
+            <div class="tds-title-bar__window-controls">
+              <button type="button" class="tds-title-bar__window-control" aria-label="Minimize"><svg aria-hidden="true"><use href="#tds-icon-chrome-minimize"/></svg></button>
+              <button type="button" class="tds-title-bar__window-control" aria-label="Maximize"><svg aria-hidden="true"><use href="#tds-icon-chrome-maximize"/></svg></button>
+              <button type="button" class="tds-title-bar__window-control tds-title-bar__window-control--close" aria-label="Close"><svg aria-hidden="true"><use href="#tds-icon-chrome-close"/></svg></button>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex:1;min-height:0">
+          <div class="tds-rail" style="flex:0 0 48px">
+            <div class="tds-rail__group">
+              <button type="button" class="tds-rail-button" aria-label="New"><svg class="tds-rail-button__icon" aria-hidden="true"><use href="#tds-icon-rail-new"/></svg></button>
+              <button type="button" class="tds-rail-button" aria-label="Save"><svg class="tds-rail-button__icon" aria-hidden="true"><use href="#tds-icon-rail-save"/></svg></button>
+              <button type="button" class="tds-rail-button tds-rail-button--active" aria-pressed="true" aria-label="Documents"><svg class="tds-rail-button__icon" aria-hidden="true"><use href="#tds-icon-rail-documents"/></svg></button>
+            </div>
+            <div class="tds-rail__group tds-rail__group--bottom">
+              <span class="tds-status-dot tds-status-dot--connected" title="Connected"><span class="tds-sr-only" role="status">Connected</span></span>
+            </div>
+          </div>
+          <div style="flex:0 0 180px;position:relative">
+            <div class="tds-panel" style="border-left:none;border-right:1px solid var(--tds-border)">
+              <div class="tds-panel__header">
+                <span class="tds-panel__header-title">Documents</span>
+                <button type="button" class="tds-tree-action" title="New Folder" aria-label="New Folder"><svg class="tds-tree-action__icon" aria-hidden="true"><use href="#tds-icon-action-new-folder"/></svg></button>
+              </div>
+              <div class="tds-panel__content" role="tree" aria-label="Documents">
+                <div class="tds-tree-row" role="treeitem" aria-expanded="true" style="padding-left:.25rem">
+                  <span class="tds-tree-row__chevron tds-tree-row__chevron--expanded"></span>
+                  <span class="tds-tree-row__name">architecture</span>
+                </div>
+                <div class="tds-tree-row tds-tree-row--active" role="treeitem" aria-current="true" style="padding-left:1.25rem">
+                  <span class="tds-tree-row__chevron-spacer"></span>
+                  <span class="tds-tree-row__name">sequence-checkout</span>
+                </div>
+                <div class="tds-tree-row" role="treeitem" style="padding-left:.25rem">
+                  <span class="tds-tree-row__chevron-spacer"></span>
+                  <span class="tds-tree-row__name">notes</span>
+                  <span class="tds-badge">MD</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="flex:1 1 0;min-width:0">
+            <div class="tds-editor">
+              <div class="tds-editor__gutter">1
+2
+3
+4
+5
+6</div>
+              <div class="tds-editor__code">@startuml
+actor User
+participant "Web UI" as UI
+User -&gt; UI : checkout()
+UI --&gt; User : confirmation
+@enduml</div>
+            </div>
+          </div>
+          <div class="tds-divider" role="separator" aria-orientation="vertical" aria-valuenow="50" aria-valuemin="20" aria-valuemax="80"><div class="tds-divider__grab-area"></div></div>
+          <div style="flex:1 1 0;min-width:0">
+            <div class="tds-preview">
+              <div class="tds-preview__placeholder">Press <span class="ds-kbd">Ctrl</span>+<span class="ds-kbd">Enter</span> to render</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="ds-caption">
+      The full frame at reduced scale: 35px title bar; 48px rail with the
+      connection dot pinned low; a docked Documents panel; the dark editor;
+      the seam; the preview's placeholder state.
+    </p>
+
+    <h2>Layout contract</h2>
+    <p class="ds-source">Derived from: <code>editor-page.component.scss</code> + its resize logic.</p>
+    <table class="ds-table">
+      <thead><tr><th>Region</th><th>Sizing</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Title bar</td><td>Fixed 35px</td><td>Body height is <code>calc(100vh − 35px)</code></td></tr>
+        <tr><td>Activity rail</td><td>Fixed 48px</td><td>Always present</td></tr>
+        <tr><td>Side panel</td><td>170–500px, default 260px</td><td>One visible at a time; all stay mounted, stacked absolutely; width persists per session</td></tr>
+        <tr><td>Editor pane</td><td>Ratio 0.2–0.8 of remaining width, default 0.5</td><td>Adjusted at the seam; ratio persists</td></tr>
+        <tr><td>Preview pane</td><td>Remainder</td><td>Scrolls independently</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Shell behaviors</h2>
+    <ul>
+      <li><strong>Panel toggling.</strong> A rail button opens its panel or
+        closes it if already active; the title bar's primary-sidebar toggle
+        mirrors the same state with its filled band.</li>
+      <li><strong>Resizing.</strong> Dragging a seam resizes live with no
+        animation; during a drag the body carries
+        <code>cursor: col-resize</code> and suppresses text selection
+        (<code>body.is-resizing-panes</code>).</li>
+      <li><strong>Keyboard.</strong> <span class="ds-kbd">Ctrl</span>+<span class="ds-kbd">Enter</span>
+        renders; <span class="ds-kbd">Ctrl</span>+<span class="ds-kbd">S</span> saves
+        (opening the save dialog for untitled documents).</li>
+      <li><strong>State reporting.</strong> The command center always names
+        the open document ("Untitled diagram — Trellis" before first save);
+        the connection dot is the single connection indicator.</li>
+    </ul>
+
+    <h2>Rules</h2>
+    <div class="ds-guidance">
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Keep every screen inside this frame — new features land as panels,
+        dialogs, or preview content, not as new top-level layouts.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--dont">
+        <span class="ds-guidance__title">Don't</span>
+        Add horizontal toolbars between the title bar and the panes; the
+        rail and the title bar are the only chrome.
+      </div>
+    </div>
+
+    <footer class="ds-footer">
+      Trellis Design System — Patterns / Workbench shell.
+    </footer>
+  </main>
+</div>
+<script src="../assets/docs.js"></script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" class="ds">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagram preview — Trellis Design System</title>
+<link rel="stylesheet" href="../assets/tokens.css">
+<link rel="stylesheet" href="../assets/components.css">
+<link rel="stylesheet" href="../assets/docs.css">
+</head>
+<body class="ds tds-root" data-page="patterns/preview">
+<div class="ds-layout">
+  <nav class="ds-nav" aria-label="Design system"></nav>
+  <main class="ds-main">
+    <h1>Diagram preview</h1>
+    <p class="ds-lede">
+      The preview pane walks a four-state lifecycle: placeholder → rendering
+      → rendered → error. Renders are requested over the SignalR hub and
+      keyed by a render sequence number, so a stale response can never
+      overwrite a newer one.
+    </p>
+
+    <h2>Placeholder</h2>
+    <p class="ds-source">Derived from: <code>features/editor/diagram-preview/</code> — <code>.tds-preview__placeholder</code>.</p>
+    <div class="ds-example ds-example--flush">
+      <div class="tds-preview" style="height:140px">
+        <div class="tds-preview__placeholder">Press <span class="ds-kbd">Ctrl</span>+<span class="ds-kbd">Enter</span> to render the diagram</div>
+      </div>
+    </div>
+    <p class="ds-caption">Before the first render: one centered muted sentence, nothing else.</p>
+
+    <h2>Rendering</h2>
+    <p class="ds-source"><code>.tds-preview__spinner-overlay</code> — the previous render stays visible; the spinner pins to the top-right corner.</p>
+    <div class="ds-example ds-example--flush">
+      <div class="tds-preview" style="height:190px">
+        <svg class="tds-preview__svg" width="240" height="130" viewBox="0 0 240 130" role="img" aria-label="Previous render">
+          <rect x="18" y="12" width="66" height="24" fill="#E2E2F0" stroke="#181818"/>
+          <text x="51" y="28" text-anchor="middle" font-family="monospace" font-size="11" fill="#181818">User</text>
+          <rect x="156" y="12" width="66" height="24" fill="#E2E2F0" stroke="#181818"/>
+          <text x="189" y="28" text-anchor="middle" font-family="monospace" font-size="11" fill="#181818">Web UI</text>
+          <line x1="51" y1="36" x2="51" y2="118" stroke="#181818" stroke-dasharray="4 3"/>
+          <line x1="189" y1="36" x2="189" y2="118" stroke="#181818" stroke-dasharray="4 3"/>
+          <line x1="51" y1="66" x2="185" y2="66" stroke="#181818"/>
+          <polygon points="185,66 177,62 177,70" fill="#181818"/>
+          <text x="118" y="60" text-anchor="middle" font-family="monospace" font-size="10" fill="#181818">checkout()</text>
+        </svg>
+        <div class="tds-preview__spinner-overlay">
+          <span class="tds-spinner"><span class="tds-spinner__circle"></span></span>
+        </div>
+      </div>
+    </div>
+    <p class="ds-caption">A re-render in flight over the previous result — content is never blanked while waiting.</p>
+
+    <h2>Rendered</h2>
+    <p class="ds-source"><code>.tds-preview__svg</code> — the PlantUML SVG, centered on a white plate.</p>
+    <div class="ds-example ds-example--flush">
+      <div class="tds-preview" style="height:200px">
+        <svg class="tds-preview__svg" width="260" height="150" viewBox="0 0 260 150" role="img" aria-label="Rendered sequence diagram">
+          <rect x="20" y="14" width="70" height="26" fill="#E2E2F0" stroke="#181818"/>
+          <text x="55" y="31" text-anchor="middle" font-family="monospace" font-size="11" fill="#181818">User</text>
+          <rect x="170" y="14" width="70" height="26" fill="#E2E2F0" stroke="#181818"/>
+          <text x="205" y="31" text-anchor="middle" font-family="monospace" font-size="11" fill="#181818">Web UI</text>
+          <line x1="55" y1="40" x2="55" y2="136" stroke="#181818" stroke-dasharray="4 3"/>
+          <line x1="205" y1="40" x2="205" y2="136" stroke="#181818" stroke-dasharray="4 3"/>
+          <line x1="55" y1="72" x2="201" y2="72" stroke="#181818"/>
+          <polygon points="201,72 193,68 193,76" fill="#181818"/>
+          <text x="130" y="66" text-anchor="middle" font-family="monospace" font-size="10" fill="#181818">checkout()</text>
+          <line x1="205" y1="106" x2="59" y2="106" stroke="#181818" stroke-dasharray="5 3"/>
+          <polygon points="59,106 67,102 67,110" fill="#181818"/>
+          <text x="130" y="100" text-anchor="middle" font-family="monospace" font-size="10" fill="#181818">confirmation</text>
+        </svg>
+      </div>
+    </div>
+    <p class="ds-caption">
+      The artwork keeps PlantUML's own light styling (#E2E2F0 shapes,
+      #181818 lines) on a white plate with a soft shadow — exports must stay
+      legible outside the app, so diagrams are never re-themed dark.
+    </p>
+
+    <h2>Error</h2>
+    <p class="ds-source"><code>.tds-preview__error</code> — the friendly message built from PlantUML's stderr (<code>PlantUmlRenderer.BuildFriendlyErrorMessage</code>), pre-wrap preserved.</p>
+    <div class="ds-example ds-example--flush">
+      <div class="tds-preview" style="height:150px">
+        <div class="tds-preview__error" role="alert">Rendering failed (line 4):
+Syntax error: participant "Orders API as API
+Expected a closing quote.</div>
+      </div>
+    </div>
+
+    <h2>Lifecycle contract</h2>
+    <table class="ds-table">
+      <thead><tr><th>State</th><th>Enter on</th><th>Shows</th></tr></thead>
+      <tbody>
+        <tr><td>Placeholder</td><td>Load, before any render</td><td>Centered muted hint</td></tr>
+        <tr><td>Rendering</td><td>Render requested</td><td>Previous content + corner spinner overlay</td></tr>
+        <tr><td>Rendered</td><td>Hub replies <code>isSuccess: true</code> with the newest sequence number</td><td>SVG on its white plate, centered, pane scrolls when larger</td></tr>
+        <tr><td>Error</td><td>Hub replies <code>isSuccess: false</code></td><td>Error banner treatment with the friendly stderr message; previous SVG is replaced</td></tr>
+      </tbody>
+    </table>
+    <p>
+      Responses carrying a stale <code>data-render-seq</code> are discarded
+      — the newest request wins, regardless of arrival order.
+    </p>
+
+    <h2>Rules</h2>
+    <div class="ds-guidance">
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Keep the last good render visible during re-renders; flashing to
+        blank makes iteration feel slower than it is.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--dont">
+        <span class="ds-guidance__title">Don't</span>
+        Re-color the rendered SVG to match the dark theme — the white plate
+        is the contract with exported artwork.
+      </div>
+    </div>
+
+    <footer class="ds-footer">
+      Trellis Design System — Patterns / Diagram preview.
+    </footer>
+  </main>
+</div>
+<script src="../assets/docs.js"></script>
+</body>
+</html>

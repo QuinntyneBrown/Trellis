@@ -1,0 +1,980 @@
+/*
+ * Trellis design system — reference component styles (dark).
+ *
+ * The reference implementation of every reusable Trellis element, expressed
+ * as `.tds-*` classes consuming the tokens in tokens.css. Each block is
+ * annotated with the Angular source it is derived from (paths relative to
+ * frontend/src/app). Structure, metrics, and state behavior are carried
+ * over verbatim from the implementation; only colors move to dark tokens.
+ *
+ * `.ds-*` classes (docs.css) are documentation-site chrome and are NOT part
+ * of the product design system.
+ */
+
+/* == Base ================================================================ */
+/* from styles.scss */
+
+.tds-root {
+  font-family: var(--tds-font-ui);
+  color: var(--tds-ink);
+  background-color: var(--tds-surface-editor);
+  box-sizing: border-box;
+}
+
+.tds-root *,
+.tds-root *::before,
+.tds-root *::after {
+  box-sizing: inherit;
+}
+
+/* == Buttons / rail button =============================================== */
+/* from shared/components/rail-button/ — 40×40 icon button in the 48px
+ * activity rail; hover/focus tooltip flyout; active accent edge bar. */
+
+.tds-rail-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: var(--tds-metric-rail-button);
+  height: var(--tds-metric-rail-button);
+  padding: 0;
+  border: none;
+  border-radius: var(--tds-radius-lg);
+  background-color: transparent;
+  color: var(--tds-ink-secondary);
+  cursor: pointer;
+}
+
+.tds-rail-button:hover,
+.tds-rail-button--active {
+  background-color: var(--tds-hover-wash-strong);
+}
+
+.tds-rail-button:focus-visible {
+  background-color: var(--tds-hover-wash-strong);
+  outline: 2px solid var(--tds-focus-ring);
+  outline-offset: -2px;
+}
+
+.tds-rail-button--active {
+  color: var(--tds-accent);
+}
+
+.tds-rail-button--active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  border-radius: var(--tds-radius-lg) 0 0 var(--tds-radius-lg);
+  background-color: var(--tds-accent);
+}
+
+.tds-rail-button__icon {
+  width: var(--tds-metric-rail-icon);
+  height: var(--tds-metric-rail-icon);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tds-rail-button__tooltip {
+  position: absolute;
+  left: calc(100% + 0.5rem);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: var(--tds-z-tooltip);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--tds-radius-md);
+  background-color: var(--tds-surface-raised);
+  border: 1px solid var(--tds-border-strong);
+  color: var(--tds-ink);
+  font-size: var(--tds-text-tooltip);
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--tds-motion-tooltip), visibility var(--tds-motion-tooltip);
+  pointer-events: none;
+}
+
+.tds-rail-button:hover .tds-rail-button__tooltip,
+.tds-rail-button:focus-visible .tds-rail-button__tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* == Buttons / tree action button ======================================== */
+/* from shared/components/tree-action-button/ — compact 1.4rem icon-only
+ * row action; label feeds both title tooltip and aria-label. */
+
+.tds-tree-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: var(--tds-metric-tree-action);
+  height: var(--tds-metric-tree-action);
+  padding: 0;
+  border: none;
+  border-radius: var(--tds-radius-md);
+  background-color: transparent;
+  color: var(--tds-ink-secondary);
+  cursor: pointer;
+}
+
+.tds-tree-action:hover {
+  background-color: var(--tds-hover-wash-strong);
+}
+
+.tds-tree-action:focus-visible {
+  background-color: var(--tds-hover-wash-strong);
+  outline: 2px solid var(--tds-focus-ring);
+  outline-offset: -2px;
+}
+
+.tds-tree-action--danger {
+  color: var(--tds-status-error-ink);
+}
+
+.tds-tree-action--danger:hover {
+  background-color: var(--tds-status-error-surface);
+}
+
+.tds-tree-action__icon {
+  width: var(--tds-metric-tree-action-icon);
+  height: var(--tds-metric-tree-action-icon);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* == Buttons / dialog & panel buttons ==================================== */
+/* from save-dialog / move-document-dialog / new-document-dialog /
+ * export-folder-dialog .{block}__button, and explorer-panel's
+ * open-folder/reconnect buttons. */
+
+.tds-button {
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--tds-radius-md);
+  border: 1px solid var(--tds-border-strong);
+  background-color: var(--tds-surface-overlay);
+  color: var(--tds-ink);
+  cursor: pointer;
+  font-family: var(--tds-font-ui);
+  font-size: var(--tds-text-body);
+}
+
+.tds-button:hover {
+  background-color: var(--tds-hover-wash);
+}
+
+.tds-button:focus-visible {
+  outline: 2px solid var(--tds-focus-ring);
+  outline-offset: -2px;
+}
+
+.tds-button--primary {
+  background-color: var(--tds-accent-strong);
+  border-color: var(--tds-accent-strong);
+  color: #ffffff;
+}
+
+.tds-button--primary:hover {
+  background-color: var(--tds-accent-hover);
+  border-color: var(--tds-accent-hover);
+}
+
+.tds-button--panel {
+  /* explorer-panel__open-folder / __reconnect: quiet chrome-surface button */
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--tds-radius-lg);
+  background-color: var(--tds-surface-raised);
+  font-size: var(--tds-text-body);
+}
+
+.tds-button:disabled {
+  color: var(--tds-ink-disabled);
+  cursor: default;
+  background-color: var(--tds-surface-overlay);
+}
+
+/* == Form controls ======================================================== */
+/* from save-dialog__input/__select, move-document-dialog__select. */
+
+.tds-field-label {
+  font-size: var(--tds-text-sm);
+  color: var(--tds-ink-secondary);
+}
+
+.tds-input,
+.tds-select {
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--tds-radius-md);
+  border: 1px solid var(--tds-border-strong);
+  background-color: var(--tds-surface-field);
+  color: var(--tds-ink);
+  font-family: var(--tds-font-ui);
+  font-size: var(--tds-text-md);
+}
+
+.tds-input::placeholder {
+  color: var(--tds-ink-muted);
+}
+
+.tds-input:focus-visible,
+.tds-select:focus-visible {
+  outline: 2px solid var(--tds-focus-ring);
+  outline-offset: -1px;
+  border-color: var(--tds-focus-ring);
+}
+
+.tds-input--invalid {
+  border-color: var(--tds-status-error);
+}
+
+.tds-input:disabled,
+.tds-select:disabled {
+  color: var(--tds-ink-disabled);
+  background-color: var(--tds-surface-overlay);
+}
+
+/* == Dialogs ============================================================== */
+/* from features/editor/save-dialog/ (mirrored by move-document-dialog,
+ * new-document-dialog, export-folder-dialog): fixed full-viewport wrapper,
+ * scrim, centered raised panel, right-aligned action row. */
+
+.tds-dialog {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--tds-z-dialog);
+}
+
+.tds-dialog__backdrop {
+  position: absolute;
+  inset: 0;
+  background-color: var(--tds-scrim);
+}
+
+.tds-dialog__panel {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--tds-space-4);
+  min-width: 20rem;
+  padding: var(--tds-space-7);
+  border-radius: var(--tds-radius-xl);
+  background-color: var(--tds-surface-overlay);
+  border: 1px solid var(--tds-border-strong);
+  box-shadow: var(--tds-shadow-overlay);
+  color: var(--tds-ink);
+}
+
+.tds-dialog__title {
+  margin: 0 0 var(--tds-space-2);
+  font-size: var(--tds-text-lg);
+  font-weight: var(--tds-weight-semibold);
+}
+
+.tds-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--tds-space-4);
+  margin-top: var(--tds-space-5);
+}
+
+/* == Tree rows ============================================================ */
+/* from shared/styles/_tree-row.scss — the one tree-row style source shared
+ * by explorer file-tree-node and documents document-tree-node. */
+
+.tds-tree-row {
+  display: flex;
+  align-items: center;
+  gap: var(--tds-space-3);
+  padding: var(--tds-space-1) var(--tds-space-4) var(--tds-space-1) 0;
+  font-size: var(--tds-text-body);
+  color: var(--tds-ink);
+  cursor: pointer;
+  user-select: none;
+}
+
+.tds-tree-row:hover {
+  background-color: var(--tds-hover-wash);
+}
+
+.tds-tree-row__chevron,
+.tds-tree-row__chevron-spacer {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+}
+
+.tds-tree-row__chevron::before {
+  content: '';
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0.3rem 0 0.3rem 0.4rem;
+  border-color: transparent transparent transparent var(--tds-ink-muted);
+}
+
+.tds-tree-row__chevron {
+  transition: transform var(--tds-motion-twisty);
+}
+
+.tds-tree-row__chevron--expanded {
+  transform: rotate(90deg);
+}
+
+.tds-tree-row__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 1 auto;
+}
+
+.tds-tree-row__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--tds-space-2);
+  flex: 0 0 auto;
+}
+
+/* from documents/document-tree-node/ — active document (VS Code
+ * active-file idiom): steady accent tint plus emphasized name. */
+.tds-tree-row--active {
+  background-color: var(--tds-accent-tint-15);
+}
+
+.tds-tree-row--active .tds-tree-row__name {
+  color: var(--tds-accent);
+  font-weight: var(--tds-weight-semibold);
+}
+
+.tds-tree-row--active:hover {
+  background-color: var(--tds-accent-tint-20);
+}
+
+/* Folder row hovered by a document drag. */
+.tds-tree-row--drop-target {
+  background-color: var(--tds-accent-tint-12);
+  outline: 1px dashed var(--tds-accent);
+  outline-offset: -1px;
+}
+
+/* from explorer/file-tree-node/ — inline row spinner while a directory
+ * loads. */
+.tds-tree-row__spinner {
+  flex: 0 0 auto;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  border: 0.1rem solid rgba(255, 255, 255, 0.15);
+  border-top-color: var(--tds-accent);
+  animation: tds-spin var(--tds-motion-spin) linear infinite;
+}
+
+/* == Kind badge =========================================================== */
+/* from documents/document-tree-node/ + templates-panel__kind-badge — the
+ * MD/PUML chip. */
+
+.tds-badge {
+  flex: 0 0 auto;
+  padding: 0 var(--tds-space-2);
+  border-radius: var(--tds-radius-sm);
+  background-color: var(--tds-badge-surface);
+  color: var(--tds-badge-ink);
+  font-size: var(--tds-text-xxs);
+  font-weight: var(--tds-weight-bold);
+  letter-spacing: var(--tds-tracking-badge);
+  line-height: 1.5;
+}
+
+/* == Panels =============================================================== */
+/* from documents-panel / explorer-panel / templates-panel — the docked
+ * side panel: chrome surface, hairline seam toward the rail, uppercase
+ * header, scrolling content, empty state. */
+
+.tds-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  background-color: var(--tds-surface-chrome);
+  border-left: 1px solid var(--tds-border);
+  color: var(--tds-ink);
+}
+
+.tds-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tds-space-4);
+  padding: var(--tds-space-4) var(--tds-space-5);
+  border-bottom: 1px solid var(--tds-border);
+}
+
+.tds-panel__header-title {
+  font-size: var(--tds-text-xs);
+  font-weight: var(--tds-weight-semibold);
+  letter-spacing: var(--tds-tracking-caps);
+  text-transform: uppercase;
+  color: var(--tds-ink-muted);
+}
+
+.tds-panel__content {
+  padding: var(--tds-space-2) 0;
+  flex: 1;
+  min-height: 4rem;
+}
+
+/* Tree container hovered by a drag over non-folder space (move-to-root). */
+.tds-panel__content--drop-target {
+  background-color: var(--tds-accent-tint-06);
+  outline: 1px dashed var(--tds-accent-soft);
+  outline-offset: -1px;
+}
+
+.tds-panel__empty {
+  padding: var(--tds-space-6);
+  color: var(--tds-ink-muted);
+  font-size: var(--tds-text-body);
+}
+
+/* == Flat panel rows ====================================================== */
+/* from templates/templates-panel/ — tree-row idiom without chevron/indent. */
+
+.tds-panel-row {
+  display: flex;
+  align-items: center;
+  gap: var(--tds-space-3);
+  padding: var(--tds-space-1) var(--tds-space-4) var(--tds-space-1) var(--tds-space-5);
+  font-size: var(--tds-text-body);
+  color: var(--tds-ink);
+  cursor: pointer;
+  user-select: none;
+}
+
+.tds-panel-row:hover {
+  background-color: var(--tds-hover-wash);
+}
+
+.tds-panel-row__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 1 auto;
+}
+
+/* == Resize divider ======================================================= */
+/* from editor/resize-divider/ + pixel-resize-divider/ — 1px visible seam
+ * with a 9px invisible grab area; accent on hover/drag. */
+
+.tds-divider {
+  position: relative;
+  z-index: var(--tds-z-divider);
+  flex: 0 0 auto;
+  width: var(--tds-metric-divider);
+  background-color: var(--tds-border);
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.tds-divider:hover,
+.tds-divider--active {
+  background-color: var(--tds-accent);
+}
+
+.tds-divider__grab-area {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: var(--tds-metric-divider-grab);
+  height: 100%;
+  cursor: col-resize;
+}
+
+/* == Activity rail ======================================================== */
+/* from editor/editor-toolbar/ — 48px vertical rail; bottom group pinned by
+ * margin-top auto (hosts the connection dot). */
+
+.tds-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: var(--tds-metric-rail-w);
+  height: 100%;
+  gap: var(--tds-space-4);
+  padding: var(--tds-space-4) 0;
+  background-color: var(--tds-surface-chrome);
+  border-right: 1px solid var(--tds-border);
+}
+
+.tds-rail__group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--tds-space-4);
+}
+
+.tds-rail__group--bottom {
+  margin-top: auto;
+}
+
+/* == Title bar ============================================================ */
+/* from editor/title-bar/ — VS Code-style top chrome: app menu, command
+ * center pill, layout toggles, Windows-convention window controls. */
+
+.tds-title-bar {
+  display: flex;
+  align-items: center;
+  height: var(--tds-metric-titlebar-h);
+  background-color: var(--tds-surface-chrome);
+  border-bottom: 1px solid var(--tds-border);
+  color: var(--tds-ink-secondary);
+  font-size: var(--tds-text-chrome);
+  user-select: none;
+}
+
+.tds-title-bar__left {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1 1 0;
+  min-width: 0;
+  padding-left: 8px;
+}
+
+.tds-title-bar__logo {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  margin-right: 4px;
+  fill: none;
+  stroke: var(--tds-accent);
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tds-title-bar__menus {
+  display: flex;
+}
+
+.tds-title-bar__menu {
+  border: none;
+  background-color: transparent;
+  padding: 3px 8px;
+  border-radius: var(--tds-radius-chrome);
+  font-family: inherit;
+  font-size: var(--tds-text-chrome);
+  color: var(--tds-ink);
+  cursor: pointer;
+}
+
+.tds-title-bar__menu:hover,
+.tds-title-bar__menu--open {
+  background-color: var(--tds-hover-wash-strong);
+}
+
+.tds-title-bar__center {
+  display: flex;
+  justify-content: center;
+  flex: 1.5 1 0;
+  min-width: 0;
+}
+
+.tds-title-bar__command-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  max-width: 38rem;
+  height: var(--tds-metric-command-center-h);
+  padding: 0 10px;
+  min-width: 0;
+  border: 1px solid var(--tds-border-strong);
+  border-radius: var(--tds-radius-pill);
+  background-color: var(--tds-surface-raised);
+  color: var(--tds-ink-muted);
+  font-family: inherit;
+  font-size: var(--tds-text-chrome-sm);
+  cursor: pointer;
+}
+
+.tds-title-bar__command-center:hover {
+  background-color: var(--tds-surface-overlay);
+  color: var(--tds-ink);
+}
+
+.tds-title-bar__search-icon {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.tds-title-bar__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tds-title-bar__right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+}
+
+.tds-title-bar__layout-controls {
+  display: flex;
+  gap: 2px;
+  margin-right: 8px;
+}
+
+.tds-title-bar__layout-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 24px;
+  border: none;
+  border-radius: var(--tds-radius-chrome);
+  background-color: transparent;
+  color: var(--tds-ink-secondary);
+  cursor: pointer;
+}
+
+.tds-title-bar__layout-toggle:hover {
+  background-color: var(--tds-hover-wash-strong);
+}
+
+.tds-title-bar__layout-toggle svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+}
+
+/* The pane the toggle controls is visible: band filled (VS Code idiom). */
+.tds-title-bar__layout-toggle--active svg .tds-pane-fill {
+  fill: currentColor;
+  fill-opacity: 0.35;
+}
+
+.tds-title-bar__window-controls {
+  display: flex;
+  height: 100%;
+}
+
+.tds-title-bar__window-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tds-metric-window-control-w);
+  height: 100%;
+  border: none;
+  background-color: transparent;
+  color: var(--tds-ink);
+  cursor: default;
+}
+
+.tds-title-bar__window-control svg {
+  width: 11px;
+  height: 11px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+}
+
+.tds-title-bar__window-control:hover {
+  background-color: var(--tds-hover-wash-strong);
+}
+
+/* Windows convention: close is the one destructive-red hover. */
+.tds-title-bar__window-control--close:hover {
+  background-color: var(--tds-window-close);
+  color: #ffffff;
+}
+
+/* == Menus / dropdown ===================================================== */
+/* Derived from the template-picker pop-out panel (templates/
+ * template-picker/) — the raised-list idiom the title-bar menus adopt. */
+
+.tds-menu {
+  display: flex;
+  flex-direction: column;
+  min-width: 14rem;
+  max-height: 20rem;
+  overflow-y: auto;
+  padding: 4px;
+  background-color: var(--tds-surface-raised);
+  border: 1px solid var(--tds-border-strong);
+  border-radius: var(--tds-radius-lg);
+  box-shadow: var(--tds-shadow-raised);
+}
+
+.tds-menu__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tds-space-4);
+  padding: var(--tds-space-4) var(--tds-space-5);
+  border: none;
+  border-radius: var(--tds-radius-md);
+  background: none;
+  color: var(--tds-ink);
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--tds-font-ui);
+  font-size: var(--tds-text-sm);
+}
+
+.tds-menu__item:hover {
+  background-color: var(--tds-hover-wash);
+}
+
+.tds-menu__item:focus-visible {
+  outline: 2px solid var(--tds-focus-ring);
+  outline-offset: -2px;
+}
+
+.tds-menu__item-name {
+  font-weight: var(--tds-weight-medium);
+}
+
+.tds-menu__item-hint {
+  color: var(--tds-ink-muted);
+  font-size: var(--tds-text-xs);
+  text-transform: uppercase;
+}
+
+.tds-menu__separator {
+  height: 1px;
+  margin: 4px 0;
+  background-color: var(--tds-border);
+}
+
+/* == Indicators / connection status ======================================= */
+/* from shared/components/connection-status/ — 0.65rem dot; sr-only status
+ * text keeps the accessibility contract. */
+
+.tds-status-dot {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tds-metric-status-dot);
+  height: var(--tds-metric-status-dot);
+}
+
+.tds-status-dot::before {
+  content: '';
+  display: block;
+  width: var(--tds-metric-status-dot);
+  height: var(--tds-metric-status-dot);
+  border-radius: 50%;
+  background-color: var(--tds-status-unknown);
+}
+
+.tds-status-dot--connected::before {
+  background-color: var(--tds-status-ok);
+}
+
+.tds-status-dot--disconnected::before {
+  background-color: var(--tds-status-error);
+}
+
+.tds-status-dot--reconnecting::before {
+  background-color: var(--tds-status-warn);
+}
+
+.tds-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* == Indicators / loading spinner ========================================= */
+/* from shared/components/loading-spinner/. */
+
+.tds-spinner {
+  display: flex;
+  align-items: center;
+  gap: var(--tds-space-4);
+}
+
+.tds-spinner__circle {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  border: 0.15rem solid rgba(255, 255, 255, 0.15);
+  border-top-color: var(--tds-accent);
+  animation: tds-spin var(--tds-motion-spin) linear infinite;
+}
+
+.tds-spinner__label {
+  font-size: var(--tds-text-tooltip);
+  color: var(--tds-ink-muted);
+}
+
+@keyframes tds-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* == Indicators / error banner & toast ==================================== */
+/* from shared/components/error-banner/ (+ editor-page's fixed
+ * disk-save-error anchor). */
+
+.tds-error-banner {
+  display: flex;
+  align-items: center;
+  padding: var(--tds-space-4) var(--tds-space-5);
+  border-radius: var(--tds-radius-md);
+  background-color: var(--tds-status-error-surface);
+  border: 1px solid var(--tds-status-error-border);
+  color: var(--tds-status-error-ink);
+  font-size: var(--tds-text-body);
+}
+
+.tds-error-banner__message {
+  white-space: pre-wrap;
+}
+
+.tds-toast-anchor {
+  position: fixed;
+  top: var(--tds-space-5);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--tds-z-toast);
+  max-width: min(32rem, calc(100vw - 2rem));
+}
+
+/* == Editor surface (Monaco, vs-dark) ===================================== */
+/* from editor/monaco-editor/ — the app hosts monaco-editor; these classes
+ * document the dark surface conventions (theme vs-dark, minimap off,
+ * plaintext). */
+
+.tds-editor {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background-color: var(--tds-surface-editor);
+  font-family: var(--tds-font-mono);
+  font-size: var(--tds-text-code);
+  line-height: var(--tds-line-code);
+  color: var(--tds-ink);
+  cursor: text;
+}
+
+.tds-editor__gutter {
+  flex: 0 0 64px;
+  padding-right: 26px;
+  text-align: right;
+  color: var(--tds-editor-gutter-ink);
+  user-select: none;
+  white-space: pre;
+}
+
+.tds-editor__code {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: pre;
+  overflow: hidden;
+}
+
+.tds-editor__cursor {
+  display: inline-block;
+  width: 2px;
+  height: 18px;
+  margin-bottom: -3px;
+  background-color: var(--tds-editor-cursor);
+}
+
+.tds-editor__selection {
+  background-color: var(--tds-editor-selection);
+}
+
+.tds-editor__line--active {
+  background-color: var(--tds-editor-line-highlight);
+}
+
+/* == Diagram preview ====================================================== */
+/* from editor/diagram-preview/ — placeholder / error / SVG / spinner
+ * states. The rendered PlantUML SVG sits on a white plate: diagram exports
+ * must stay legible outside the app, so the artwork keeps its own light
+ * background rather than inheriting the dark surface. */
+
+.tds-preview {
+  position: relative;
+  display: flex;
+  height: 100%;
+  width: 100%;
+  overflow: auto;
+  background-color: var(--tds-surface-editor);
+}
+
+.tds-preview__placeholder {
+  color: var(--tds-ink-muted);
+  font-size: var(--tds-text-md);
+  text-align: center;
+  padding: var(--tds-space-6);
+  margin: auto;
+}
+
+.tds-preview__error {
+  margin: var(--tds-space-6);
+  padding: var(--tds-space-5) var(--tds-space-6);
+  border-radius: var(--tds-radius-md);
+  background-color: var(--tds-status-error-surface);
+  border: 1px solid var(--tds-status-error-border);
+  color: var(--tds-status-error-ink);
+  white-space: pre-wrap;
+  font-size: var(--tds-text-body);
+}
+
+.tds-preview__svg {
+  margin: auto;
+  background-color: #ffffff;
+  border-radius: var(--tds-radius-md);
+  box-shadow: var(--tds-shadow-raised);
+}
+
+.tds-preview__spinner-overlay {
+  position: absolute;
+  top: var(--tds-space-4);
+  right: var(--tds-space-4);
+}

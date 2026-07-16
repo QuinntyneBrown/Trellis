@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" class="ds">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Indicators — Trellis Design System</title>
+<link rel="stylesheet" href="../assets/tokens.css">
+<link rel="stylesheet" href="../assets/components.css">
+<link rel="stylesheet" href="../assets/docs.css">
+</head>
+<body class="ds tds-root" data-page="components/indicators">
+<div class="ds-layout">
+  <nav class="ds-nav" aria-label="Design system"></nav>
+  <main class="ds-main">
+    <h1>Indicators</h1>
+    <p class="ds-lede">
+      Everything that reports state without asking for input: the
+      connection dot, spinners at three sizes, the error banner and its
+      toast placement, and the kind badge.
+    </p>
+
+    <h2>Connection status dot</h2>
+    <p class="ds-source">Derived from: <code>shared/components/connection-status/</code> — <code>.tds-status-dot</code>. Lives at the bottom of the activity rail; reports the SignalR hub connection.</p>
+    <div class="ds-example ds-example--chrome">
+      <div class="ds-example__row" style="gap:2.5rem">
+        <div style="text-align:center">
+          <span class="tds-status-dot tds-status-dot--connected" title="Connected"><span class="tds-sr-only" role="status">Connected</span></span>
+          <span class="ds-example__label">connected</span>
+        </div>
+        <div style="text-align:center">
+          <span class="tds-status-dot tds-status-dot--reconnecting" title="Reconnecting"><span class="tds-sr-only" role="status">Reconnecting</span></span>
+          <span class="ds-example__label">reconnecting</span>
+        </div>
+        <div style="text-align:center">
+          <span class="tds-status-dot tds-status-dot--disconnected" title="Disconnected"><span class="tds-sr-only" role="status">Disconnected</span></span>
+          <span class="ds-example__label">disconnected</span>
+        </div>
+        <div style="text-align:center">
+          <span class="tds-status-dot" title="Unknown"><span class="tds-sr-only" role="status">Unknown</span></span>
+          <span class="ds-example__label">unknown / idle</span>
+        </div>
+      </div>
+    </div>
+    <table class="ds-table">
+      <thead><tr><th>Property</th><th>Spec</th></tr></thead>
+      <tbody>
+        <tr><td>Dot</td><td>0.65rem circle; ok / warn / error / unknown status fills</td></tr>
+        <tr><td>Accessibility</td><td>Visually hidden status text (<code>.tds-sr-only</code>) carries the state for the accessibility tree and E2E contract; <code>title</code> gives the pointer tooltip</td></tr>
+        <tr><td>Semantics</td><td>Status colors are reserved for this dot, banners, and outcome reporting — never decoration</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Spinners</h2>
+    <p class="ds-source">Derived from: <code>shared/components/loading-spinner/</code> and <code>file-tree-node__spinner</code> — <code>.tds-spinner</code>, <code>.tds-tree-row__spinner</code>.</p>
+    <div class="ds-example">
+      <div class="ds-example__row" style="gap:2.5rem">
+        <div style="text-align:center">
+          <span class="tds-spinner" style="justify-content:center">
+            <span class="tds-spinner__circle"></span>
+            <span class="tds-spinner__label">Rendering diagram…</span>
+          </span>
+          <span class="ds-example__label">labeled (panels, loading states)</span>
+        </div>
+        <div style="text-align:center">
+          <span class="tds-spinner"><span class="tds-spinner__circle"></span></span>
+          <span class="ds-example__label">bare (preview overlay)</span>
+        </div>
+        <div style="text-align:center">
+          <span class="tds-tree-row__spinner" role="progressbar" aria-label="Loading" style="display:inline-block"></span>
+          <span class="ds-example__label">in-row (0.75rem, tree loading)</span>
+        </div>
+      </div>
+    </div>
+    <table class="ds-table">
+      <thead><tr><th>Property</th><th>Spec</th></tr></thead>
+      <tbody>
+        <tr><td>Circle</td><td>1.25rem (0.75rem in-row); 0.15rem track at 15% white, accent top arc</td></tr>
+        <tr><td>Motion</td><td><code>--tds-motion-spin</code>: 0.7s/rev, linear, infinite</td></tr>
+        <tr><td>Label</td><td>0.75rem muted, right of the circle; omit only where space forbids (overlay, row)</td></tr>
+        <tr><td>ARIA</td><td><code>role="progressbar"</code> (indeterminate) or the label as live text</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Error banner</h2>
+    <p class="ds-source">Derived from: <code>shared/components/error-banner/</code> — <code>.tds-error-banner</code>. Inline in panels; fixed top-center as the disk-save toast (<code>.tds-toast-anchor</code>).</p>
+    <div class="ds-example">
+      <div class="ds-example__col" style="max-width:32rem">
+        <div class="tds-error-banner" role="alert">
+          <span class="tds-error-banner__message">Could not access the folder. Its permission may have been revoked.</span>
+        </div>
+        <span class="ds-example__label">inline (Explorer panel error)</span>
+        <div class="tds-toast-anchor tds-toast-anchor--specimen">
+          <div class="tds-error-banner" role="alert">
+            <span class="tds-error-banner__message">Failed to save to disk: the file handle is no longer writable.</span>
+          </div>
+        </div>
+        <span class="ds-example__label">as the fixed toast (top-center, z 20)</span>
+      </div>
+    </div>
+    <table class="ds-table">
+      <thead><tr><th>Property</th><th>Spec</th></tr></thead>
+      <tbody>
+        <tr><td>Surface</td><td><code>--tds-status-error-surface</code> + <code>--tds-status-error-border</code>, error ink</td></tr>
+        <tr><td>Text</td><td>0.85rem, <code>white-space: pre-wrap</code> — backend messages keep their line breaks</td></tr>
+        <tr><td>Toast placement</td><td>Fixed, top 0.75rem, centered, max-width min(32rem, 100vw − 2rem), <code>--tds-z-toast</code></td></tr>
+        <tr><td>ARIA</td><td><code>role="alert"</code> — announced on appearance</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Kind badge</h2>
+    <p class="ds-source">Derived from: the documents tree's kind badge / <code>templates-panel__kind-badge</code> — <code>.tds-badge</code>.</p>
+    <div class="ds-example ds-example--chrome">
+      <div class="ds-example__row">
+        <span class="tds-badge">PUML</span>
+        <span class="tds-badge">MD</span>
+      </div>
+    </div>
+    <p class="ds-caption">
+      0.6rem bold uppercase chip on the badge surface. It states a document
+      kind — it is informational, never interactive, and never a status
+      color.
+    </p>
+
+    <h2>Rules</h2>
+    <div class="ds-guidance">
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Show backend error text verbatim in banners (pre-wrap preserves its
+        formatting) — the message is the diagnostic.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Keep the sr-only status text in sync with the dot; the dot alone is
+        invisible to assistive tech.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--dont">
+        <span class="ds-guidance__title">Don't</span>
+        Auto-dismiss error toasts on a timer — save failures stay until
+        acknowledged or resolved.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--dont">
+        <span class="ds-guidance__title">Don't</span>
+        Introduce success toasts; success is shown by the result itself
+        (the rendered diagram, the updated tree).
+      </div>
+    </div>
+
+    <footer class="ds-footer">
+      Trellis Design System — Components / Indicators.
+    </footer>
+  </main>
+</div>
+<script src="../assets/docs.js"></script>
+</body>
+</html>

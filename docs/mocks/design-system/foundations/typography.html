@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" class="ds">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typography — Trellis Design System</title>
+<link rel="stylesheet" href="../assets/tokens.css">
+<link rel="stylesheet" href="../assets/components.css">
+<link rel="stylesheet" href="../assets/docs.css">
+</head>
+<body class="ds tds-root" data-page="foundations/typography">
+<div class="ds-layout">
+  <nav class="ds-nav" aria-label="Design system"></nav>
+  <main class="ds-main">
+    <h1>Typography</h1>
+    <p class="ds-lede">
+      Two stacks, no webfonts. The UI face is the platform's system font;
+      code and diagram source render in the platform's terminal face. Sizes
+      are small and dense — this is a workbench, not a marketing page.
+    </p>
+
+    <h2>Stacks</h2>
+    <p class="ds-source">Derived from: <code>styles.scss</code> (UI stack), <code>monaco-editor</code> surface (mono stack).</p>
+    <table class="ds-table">
+      <thead><tr><th>Token</th><th>Stack</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>--tds-font-ui</code></td>
+          <td><code>-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif</code></td>
+          <td>All chrome, panels, dialogs, labels</td>
+        </tr>
+        <tr>
+          <td><code>--tds-font-mono</code></td>
+          <td><code>Consolas, 'Cascadia Mono', 'Courier New', monospace</code></td>
+          <td>Editor content, diagram source, identifiers, timestamps</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="ds-example">
+      <div style="font-family:var(--tds-font-ui);font-size:1.1rem">The quick brown fox jumps over the lazy dog — UI stack</div>
+      <div style="font-family:var(--tds-font-mono);font-size:1rem;margin-top:.6rem">@startuml … @enduml — mono stack 0123456789</div>
+    </div>
+
+    <h2>Type scale</h2>
+    <p class="ds-source">Sizes copied verbatim from component SCSS; px sizes are chrome-fixed (they do not scale with root font size).</p>
+    <table class="ds-table">
+      <thead><tr><th>Token</th><th>Size</th><th>Weight</th><th>Used by</th><th>Specimen</th></tr></thead>
+      <tbody>
+        <tr><td><code>--tds-text-lg</code></td><td>1rem</td><td>600</td><td>Dialog titles</td>
+          <td><span style="font-size:var(--tds-text-lg);font-weight:600">Save diagram</span></td></tr>
+        <tr><td><code>--tds-text-md</code></td><td>0.9rem</td><td>400</td><td>Inputs, preview placeholder</td>
+          <td><span style="font-size:var(--tds-text-md)">sequence-checkout.puml</span></td></tr>
+        <tr><td><code>--tds-text-body</code></td><td>0.85rem</td><td>400</td><td>Tree rows, buttons, banners</td>
+          <td><span style="font-size:var(--tds-text-body)">deployment-topology.puml</span></td></tr>
+        <tr><td><code>--tds-text-sm</code></td><td>0.8rem</td><td>400</td><td>Dialog labels, menu items</td>
+          <td><span style="font-size:var(--tds-text-sm)">Destination folder</span></td></tr>
+        <tr><td><code>--tds-text-tooltip</code></td><td>0.75rem</td><td>400</td><td>Rail tooltips, spinner labels</td>
+          <td><span style="font-size:var(--tds-text-tooltip)">Templates</span></td></tr>
+        <tr><td><code>--tds-text-xs</code></td><td>0.7rem</td><td>600, caps</td><td>Panel headers, menu hints</td>
+          <td><span style="font-size:var(--tds-text-xs);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--tds-ink-muted)">Documents</span></td></tr>
+        <tr><td><code>--tds-text-xxs</code></td><td>0.6rem</td><td>700</td><td>Kind badges</td>
+          <td><span class="tds-badge">PUML</span></td></tr>
+        <tr><td><code>--tds-text-chrome</code></td><td>13px</td><td>400</td><td>Title-bar menus</td>
+          <td><span style="font-size:13px">File&nbsp;&nbsp;Edit&nbsp;&nbsp;View</span></td></tr>
+        <tr><td><code>--tds-text-chrome-sm</code></td><td>12px</td><td>400</td><td>Command center</td>
+          <td><span style="font-size:12px;color:var(--tds-ink-muted)">Untitled diagram — Trellis</span></td></tr>
+        <tr><td><code>--tds-text-code</code></td><td>14px / 19px</td><td>400</td><td>Monaco surface</td>
+          <td><span style="font-family:var(--tds-font-mono);font-size:14px;line-height:19px">actor User</span></td></tr>
+      </tbody>
+    </table>
+
+    <h2>Weights &amp; tracking</h2>
+    <table class="ds-table">
+      <thead><tr><th>Token</th><th>Value</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td><code>--tds-weight-regular</code></td><td>400</td><td>Body, rows, controls</td></tr>
+        <tr><td><code>--tds-weight-medium</code></td><td>500</td><td>Menu item names</td></tr>
+        <tr><td><code>--tds-weight-semibold</code></td><td>600</td><td>Dialog titles, panel headers, the active document's name</td></tr>
+        <tr><td><code>--tds-weight-bold</code></td><td>700</td><td>Kind badges only</td></tr>
+        <tr><td><code>--tds-tracking-caps</code></td><td>0.06em</td><td>Uppercase panel headers</td></tr>
+        <tr><td><code>--tds-tracking-badge</code></td><td>0.04em</td><td>Kind badges</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Rules</h2>
+    <div class="ds-guidance">
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Render timestamps, file names in tooltips, and identifiers exactly as
+        stored — the app shows raw ISO-8601 strings, no date formatting.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Reserve uppercase + tracked type for the panel-header role
+        (<code>.tds-panel__header-title</code>).
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--dont">
+        <span class="ds-guidance__title">Don't</span>
+        Load webfonts. The system renders identically offline and over
+        <code>file://</code>; platform faces are the contract.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--dont">
+        <span class="ds-guidance__title">Don't</span>
+        Use semibold for emphasis in running text — weight is a state signal
+        (active document) and a hierarchy signal (titles), nothing else.
+      </div>
+    </div>
+
+    <h2>Single-line truncation</h2>
+    <p>
+      Names in rows and the command-center title never wrap:
+      <code>overflow: hidden; text-overflow: ellipsis; white-space: nowrap</code>
+      with the full value available via a native <code>title</code> tooltip.
+      This is the one universal text-overflow policy.
+    </p>
+    <div class="ds-example ds-example--chrome" style="max-width:16rem">
+      <div class="tds-tree-row" style="padding-left:.5rem">
+        <span class="tds-tree-row__chevron-spacer"></span>
+        <span class="tds-tree-row__name" title="extremely-long-deployment-diagram-name-2024-revision.puml">extremely-long-deployment-diagram-name-2024-revision.puml</span>
+      </div>
+    </div>
+    <p class="ds-caption">A tree row truncating; hover holds the full name in the native tooltip.</p>
+
+    <footer class="ds-footer">
+      Trellis Design System — Foundations / Typography.
+    </footer>
+  </main>
+</div>
+<script src="../assets/docs.js"></script>
+</body>
+</html>

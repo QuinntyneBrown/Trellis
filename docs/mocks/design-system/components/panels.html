@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" class="ds">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panels — Trellis Design System</title>
+<link rel="stylesheet" href="../assets/tokens.css">
+<link rel="stylesheet" href="../assets/components.css">
+<link rel="stylesheet" href="../assets/docs.css">
+</head>
+<body class="ds tds-root" data-page="components/panels">
+<div class="ds-layout">
+  <nav class="ds-nav" aria-label="Design system"></nav>
+  <main class="ds-main">
+    <h1>Panels</h1>
+    <p class="ds-lede">
+      The docked side panel is one component worn three ways — Documents
+      (virtual-folder tree), Explorer (disk tree), and Templates (flat
+      catalog). Same chrome surface, same uppercase header, same empty-state
+      voice; only the content differs.
+    </p>
+
+    <h2>Anatomy</h2>
+    <p class="ds-source">Derived from: <code>documents-panel</code> / <code>explorer-panel</code> / <code>templates-panel</code> — <code>.tds-panel</code>.</p>
+    <table class="ds-table">
+      <thead><tr><th>Part</th><th>Spec</th></tr></thead>
+      <tbody>
+        <tr><td><code>.tds-panel</code></td><td>Fills its 170–500px slot; chrome surface; 1px seam on the rail side; column flex so content stretches</td></tr>
+        <tr><td><code>__header</code></td><td>0.5rem 0.75rem padding, bottom hairline, title + actions justified apart</td></tr>
+        <tr><td><code>__header-title</code></td><td>0.7rem semibold uppercase, 0.06em tracking, muted ink</td></tr>
+        <tr><td><code>__content</code></td><td>0.25rem vertical padding, flex:1 with 4rem min-height — the leftover space doubles as the move-to-root drop zone</td></tr>
+        <tr><td><code>__empty</code></td><td>1rem padding, 0.85rem muted copy</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Documents panel</h2>
+    <div class="ds-example ds-example--flush" style="max-width:260px">
+      <div class="tds-panel" style="height:15rem;border-left:none">
+        <div class="tds-panel__header">
+          <span class="tds-panel__header-title">Documents</span>
+          <button type="button" class="tds-tree-action" title="New Folder" aria-label="New Folder">
+            <svg class="tds-tree-action__icon" aria-hidden="true"><use href="#tds-icon-action-new-folder"/></svg>
+          </button>
+        </div>
+        <div class="tds-panel__content" role="tree" aria-label="Documents">
+          <div class="tds-tree-row" role="treeitem" aria-expanded="true" style="padding-left:.25rem">
+            <span class="tds-tree-row__chevron tds-tree-row__chevron--expanded"></span>
+            <span class="tds-tree-row__name">architecture</span>
+          </div>
+          <div class="tds-tree-row tds-tree-row--active" role="treeitem" aria-current="true" style="padding-left:1.25rem">
+            <span class="tds-tree-row__chevron-spacer"></span>
+            <span class="tds-tree-row__name">sequence-checkout</span>
+            <span class="tds-badge">PUML</span>
+          </div>
+          <div class="tds-tree-row" role="treeitem" style="padding-left:.25rem">
+            <span class="tds-tree-row__chevron-spacer"></span>
+            <span class="tds-tree-row__name">notes</span>
+            <span class="tds-badge">MD</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="ds-caption">Header hosts the panel-level New Folder action; the tree fills the rest.</p>
+
+    <h2>Templates panel</h2>
+    <p class="ds-source">Rows follow the tree-row idiom minus chevrons/indent — <code>.tds-panel-row</code>.</p>
+    <div class="ds-example ds-example--flush" style="max-width:260px">
+      <div class="tds-panel" style="height:13rem;border-left:none">
+        <div class="tds-panel__header">
+          <span class="tds-panel__header-title">Templates</span>
+        </div>
+        <div class="tds-panel__content">
+          <div class="tds-panel-row">
+            <span class="tds-panel-row__name">Sequence</span>
+            <span class="tds-badge">PUML</span>
+            <span class="tds-tree-row__actions">
+              <button type="button" class="tds-tree-action" title="Open" aria-label="Open"><svg class="tds-tree-action__icon" aria-hidden="true"><use href="#tds-icon-action-open"/></svg></button>
+            </span>
+          </div>
+          <div class="tds-panel-row" style="background-color:var(--tds-hover-wash)">
+            <span class="tds-panel-row__name">Class</span>
+            <span class="tds-badge">PUML</span>
+            <span class="tds-tree-row__actions">
+              <button type="button" class="tds-tree-action" title="Open" aria-label="Open"><svg class="tds-tree-action__icon" aria-hidden="true"><use href="#tds-icon-action-open"/></svg></button>
+            </span>
+          </div>
+          <div class="tds-panel-row">
+            <span class="tds-panel-row__name">Deployment</span>
+            <span class="tds-badge">PUML</span>
+            <span class="tds-tree-row__actions">
+              <button type="button" class="tds-tree-action" title="Open" aria-label="Open"><svg class="tds-tree-action__icon" aria-hidden="true"><use href="#tds-icon-action-open"/></svg></button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="ds-caption">Flat catalog rows (second row shown in hover state).</p>
+
+    <h2>Empty &amp; call-to-action states</h2>
+    <p class="ds-source">Derived from: <code>documents-panel__empty</code>, <code>explorer-panel__open-folder</code>.</p>
+    <div class="ds-example ds-example--flush" style="max-width:260px">
+      <div class="tds-panel" style="height:8rem;border-left:none">
+        <div class="tds-panel__header"><span class="tds-panel__header-title">Documents</span></div>
+        <p class="tds-panel__empty">No documents yet. Save a diagram to see it here.</p>
+      </div>
+    </div>
+    <div class="ds-example ds-example--flush" style="max-width:260px">
+      <div class="tds-panel" style="height:8rem;border-left:none">
+        <div class="tds-panel__header"><span class="tds-panel__header-title">Explorer</span></div>
+        <button type="button" class="tds-button tds-button--panel" style="margin:.75rem">Open Folder</button>
+      </div>
+    </div>
+    <p class="ds-caption">
+      Empty states are one quiet sentence; call-to-action states are one
+      panel button. Full flows in
+      <a href="../patterns/feedback.html">Feedback &amp; empty states</a>.
+    </p>
+
+    <h2>Resize divider</h2>
+    <p class="ds-source">Derived from: <code>resize-divider</code> / <code>pixel-resize-divider</code> — <code>.tds-divider</code>.</p>
+    <p>
+      Panes are separated by a 1px seam with an invisible 9px grab area
+      centered on it. The seam takes the accent color on hover and during a
+      drag, and the document body gets <code>cursor: col-resize</code> with
+      text selection suppressed while dragging. ARIA:
+      <code>role="separator"</code>, <code>aria-orientation="vertical"</code>,
+      with <code>aria-valuenow/min/max</code> reflecting the pane size.
+    </p>
+    <div class="ds-example ds-example--flush">
+      <div style="display:flex;height:6rem">
+        <div style="flex:1;background:var(--tds-surface-chrome)"></div>
+        <div class="tds-divider"><div class="tds-divider__grab-area"></div></div>
+        <div style="flex:1;background:var(--tds-surface-editor)"></div>
+        <div class="tds-divider tds-divider--active"><div class="tds-divider__grab-area"></div></div>
+        <div style="flex:1;background:var(--tds-surface-editor)"></div>
+      </div>
+    </div>
+    <p class="ds-caption">Left seam resting; right seam in its hover/drag accent state.</p>
+
+    <h2>Rules</h2>
+    <div class="ds-guidance">
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Keep both side panels mounted and stacked; visibility toggles
+        <code>display</code>, never re-creates state.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Put panel-scoped actions in the header as tree-action buttons — not
+        as text buttons, not floating in content.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--dont">
+        <span class="ds-guidance__title">Don't</span>
+        Let a panel exceed its 170–500px slot or gain internal horizontal
+        scrolling; names truncate instead.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--dont">
+        <span class="ds-guidance__title">Don't</span>
+        Invent a fourth panel chrome — new tools wear the same header,
+        surface, and empty-state voice.
+      </div>
+    </div>
+
+    <footer class="ds-footer">
+      Trellis Design System — Components / Panels.
+    </footer>
+  </main>
+</div>
+<script src="../assets/docs.js"></script>
+</body>
+</html>

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en" class="ds">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Buttons — Trellis Design System</title>
+<link rel="stylesheet" href="../assets/tokens.css">
+<link rel="stylesheet" href="../assets/components.css">
+<link rel="stylesheet" href="../assets/docs.css">
+</head>
+<body class="ds tds-root" data-page="components/buttons">
+<div class="ds-layout">
+  <nav class="ds-nav" aria-label="Design system"></nav>
+  <main class="ds-main">
+    <h1>Buttons</h1>
+    <p class="ds-lede">
+      Three button families, each owned by a context: 40×40 icon buttons in
+      the activity rail, compact 1.4rem icon actions inside tree rows and
+      panel headers, and text buttons in dialogs and panels. All share the
+      same focus contract: a 2px accent ring at −2px offset.
+    </p>
+
+    <h2>Rail button</h2>
+    <p class="ds-source">Derived from: <code>shared/components/rail-button/</code> — <code>.tds-rail-button</code>.</p>
+    <p>
+      The activity rail's icon button: 40×40 hit target, 20px glyph,
+      hover/focus-revealed tooltip flying out to the right, and — when its
+      panel or mode is active — the accent color plus a 3px accent edge bar
+      hugging the rail's left edge.
+    </p>
+    <div class="ds-example ds-example--chrome">
+      <div class="ds-example__row" style="gap:2rem">
+        <div style="text-align:center">
+          <button type="button" class="tds-rail-button" aria-label="Documents">
+            <svg class="tds-rail-button__icon" aria-hidden="true"><use href="#tds-icon-rail-documents"/></svg>
+            <span class="tds-rail-button__tooltip" role="tooltip">Documents</span>
+          </button>
+          <span class="ds-example__label">resting</span>
+        </div>
+        <div style="text-align:center">
+          <button type="button" class="tds-rail-button" style="background-color:var(--tds-hover-wash-strong)" aria-label="Documents (hover)">
+            <svg class="tds-rail-button__icon" aria-hidden="true"><use href="#tds-icon-rail-documents"/></svg>
+            <span class="tds-rail-button__tooltip" role="tooltip" style="opacity:1;visibility:visible">Documents</span>
+          </button>
+          <span class="ds-example__label">hover (tooltip shown)</span>
+        </div>
+        <div style="text-align:center">
+          <button type="button" class="tds-rail-button tds-rail-button--active" aria-pressed="true" aria-label="Documents (active)">
+            <svg class="tds-rail-button__icon" aria-hidden="true"><use href="#tds-icon-rail-documents"/></svg>
+            <span class="tds-rail-button__tooltip" role="tooltip">Documents</span>
+          </button>
+          <span class="ds-example__label">active (accent + edge bar)</span>
+        </div>
+        <div style="text-align:center">
+          <button type="button" class="tds-rail-button" style="background-color:var(--tds-hover-wash-strong);outline:2px solid var(--tds-focus-ring);outline-offset:-2px" aria-label="Documents (focused)">
+            <svg class="tds-rail-button__icon" aria-hidden="true"><use href="#tds-icon-rail-documents"/></svg>
+          </button>
+          <span class="ds-example__label">:focus-visible</span>
+        </div>
+      </div>
+    </div>
+    <table class="ds-table">
+      <thead><tr><th>Property</th><th>Spec</th></tr></thead>
+      <tbody>
+        <tr><td>Hit target / glyph</td><td>40×40px / 20px, stroke 1.75</td></tr>
+        <tr><td>Radius</td><td><code>--tds-radius-lg</code> (0.35rem)</td></tr>
+        <tr><td>Resting / active ink</td><td><code>--tds-ink-secondary</code> / <code>--tds-accent</code></td></tr>
+        <tr><td>Hover/active fill</td><td><code>--tds-hover-wash-strong</code></td></tr>
+        <tr><td>Active edge bar</td><td>3px, full height, accent, left-rounded</td></tr>
+        <tr><td>Tooltip</td><td>Raised surface, 0.75rem text, +0.5rem right, fades 0.12s</td></tr>
+        <tr><td>ARIA</td><td><code>aria-label</code> required; toggles carry <code>aria-pressed</code></td></tr>
+      </tbody>
+    </table>
+
+    <h2>Tree action button</h2>
+    <p class="ds-source">Derived from: <code>shared/components/tree-action-button/</code> — <code>.tds-tree-action</code>.</p>
+    <p>
+      The dense icon action used inside tree rows, panel rows, and panel
+      headers. Always visible (not hover-revealed). Its <code>label</code>
+      feeds both the native <code>title</code> tooltip and
+      <code>aria-label</code>. Destructive actions take the danger variant.
+    </p>
+    <div class="ds-example ds-example--chrome">
+      <div class="ds-example__row" style="gap:2rem">
+        <div style="text-align:center">
+          <button type="button" class="tds-tree-action" title="Rename" aria-label="Rename">
+            <svg class="tds-tree-action__icon" aria-hidden="true"><use href="#tds-icon-action-rename"/></svg>
+          </button>
+          <span class="ds-example__label">resting</span>
+        </div>
+        <div style="text-align:center">
+          <button type="button" class="tds-tree-action" style="background-color:var(--tds-hover-wash-strong)" title="Rename" aria-label="Rename (hover)">
+            <svg class="tds-tree-action__icon" aria-hidden="true"><use href="#tds-icon-action-rename"/></svg>
+          </button>
+          <span class="ds-example__label">hover</span>
+        </div>
+        <div style="text-align:center">
+          <button type="button" class="tds-tree-action" style="background-color:var(--tds-hover-wash-strong);outline:2px solid var(--tds-focus-ring);outline-offset:-2px" title="Rename" aria-label="Rename (focused)">
+            <svg class="tds-tree-action__icon" aria-hidden="true"><use href="#tds-icon-action-rename"/></svg>
+          </button>
+          <span class="ds-example__label">:focus-visible</span>
+        </div>
+        <div style="text-align:center">
+          <button type="button" class="tds-tree-action tds-tree-action--danger" title="Delete" aria-label="Delete">
+            <svg class="tds-tree-action__icon" aria-hidden="true"><use href="#tds-icon-action-delete"/></svg>
+          </button>
+          <span class="ds-example__label">danger</span>
+        </div>
+        <div style="text-align:center">
+          <button type="button" class="tds-tree-action tds-tree-action--danger" style="background-color:var(--tds-status-error-surface)" title="Delete" aria-label="Delete (hover)">
+            <svg class="tds-tree-action__icon" aria-hidden="true"><use href="#tds-icon-action-delete"/></svg>
+          </button>
+          <span class="ds-example__label">danger hover</span>
+        </div>
+      </div>
+    </div>
+    <table class="ds-table">
+      <thead><tr><th>Property</th><th>Spec</th></tr></thead>
+      <tbody>
+        <tr><td>Hit target / glyph</td><td>1.4rem square / 14px, stroke 1.75</td></tr>
+        <tr><td>Radius</td><td><code>--tds-radius-md</code> (0.25rem)</td></tr>
+        <tr><td>Danger ink / hover fill</td><td><code>--tds-status-error-ink</code> / <code>--tds-status-error-surface</code></td></tr>
+        <tr><td>Tooltip</td><td>Native <code>title</code> only — no custom flyout at this density</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Text buttons</h2>
+    <p class="ds-source">Derived from: <code>save-dialog__button(--confirm/--cancel)</code> and siblings; <code>explorer-panel__open-folder/__reconnect</code>.</p>
+    <p>
+      Dialog actions and panel calls-to-action. Exactly one primary button
+      per dialog; everything else is secondary. The panel variant is the
+      quiet chrome-surface button the Explorer uses for
+      "Open Folder" / "Reconnect".
+    </p>
+    <div class="ds-example ds-example--overlay">
+      <div class="ds-example__row">
+        <div style="text-align:center">
+          <button type="button" class="tds-button tds-button--primary">Save</button>
+          <span class="ds-example__label">primary</span>
+        </div>
+        <div style="text-align:center">
+          <button type="button" class="tds-button tds-button--primary" style="background-color:var(--tds-accent-hover);border-color:var(--tds-accent-hover)">Save</button>
+          <span class="ds-example__label">primary hover</span>
+        </div>
+        <div style="text-align:center">
+          <button type="button" class="tds-button">Cancel</button>
+          <span class="ds-example__label">secondary</span>
+        </div>
+        <div style="text-align:center">
+          <button type="button" class="tds-button" style="outline:2px solid var(--tds-focus-ring);outline-offset:-2px">Cancel</button>
+          <span class="ds-example__label">:focus-visible</span>
+        </div>
+        <div style="text-align:center">
+          <button type="button" class="tds-button" disabled>Save</button>
+          <span class="ds-example__label">disabled</span>
+        </div>
+        <div style="text-align:center">
+          <button type="button" class="tds-button tds-button--panel">Open Folder</button>
+          <span class="ds-example__label">panel variant</span>
+        </div>
+      </div>
+    </div>
+    <table class="ds-table">
+      <thead><tr><th>Property</th><th>Spec</th></tr></thead>
+      <tbody>
+        <tr><td>Padding</td><td>0.35rem 0.85rem (panel variant: 0.4rem 0.75rem)</td></tr>
+        <tr><td>Type</td><td><code>--tds-text-body</code> (0.85rem), UI stack</td></tr>
+        <tr><td>Primary fill / hover</td><td><code>--tds-accent-strong</code> / <code>--tds-accent-hover</code>, white ink</td></tr>
+        <tr><td>Secondary</td><td>Overlay surface, <code>--tds-border-strong</code>, hover wash</td></tr>
+        <tr><td>Order</td><td>Actions right-aligned; primary is last (rightmost)</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Choosing a button</h2>
+    <div class="ds-guidance">
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Use the danger variant for every destructive row action — delete is
+        red before it is clicked, not after.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Keep one primary action per dialog; a dialog with two blue buttons
+        has no primary action.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--dont">
+        <span class="ds-guidance__title">Don't</span>
+        Put text buttons in the rail or icon-only buttons in dialog action
+        rows — the families don't cross contexts.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--dont">
+        <span class="ds-guidance__title">Don't</span>
+        Ship an icon button without <code>aria-label</code> (and
+        <code>title</code> for row actions).
+      </div>
+    </div>
+
+    <footer class="ds-footer">
+      Trellis Design System — Components / Buttons.
+    </footer>
+  </main>
+</div>
+<script src="../assets/docs.js"></script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en" class="ds">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Motion — Trellis Design System</title>
+<link rel="stylesheet" href="../assets/tokens.css">
+<link rel="stylesheet" href="../assets/components.css">
+<link rel="stylesheet" href="../assets/docs.css">
+</head>
+<body class="ds tds-root" data-page="foundations/motion">
+<div class="ds-layout">
+  <nav class="ds-nav" aria-label="Design system"></nav>
+  <main class="ds-main">
+    <h1>Motion</h1>
+    <p class="ds-lede">
+      Motion in Trellis is scarce and purely informative: a tooltip fading
+      in, a twisty rotating, a spinner while work is in flight. Hover fills,
+      pane resizing, and dialogs are <em>instant</em> — the workbench never
+      animates layout.
+    </p>
+
+    <h2>Tokens</h2>
+    <p class="ds-source">Derived from: <code>rail-button</code> (tooltip 0.12s ease), <code>_tree-row.scss</code> (chevron 0.1s ease), <code>loading-spinner</code> / <code>file-tree-node</code> (0.7s linear infinite).</p>
+    <table class="ds-table">
+      <thead><tr><th>Token</th><th>Value</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td><code>--tds-motion-tooltip</code></td><td>0.12s ease</td><td>Rail tooltip opacity/visibility</td></tr>
+        <tr><td><code>--tds-motion-twisty</code></td><td>0.1s ease</td><td>Tree chevron rotation (0° → 90°)</td></tr>
+        <tr><td><code>--tds-motion-spin</code></td><td>0.7s linear, infinite</td><td>All spinners (page, overlay, in-row)</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Specimens</h2>
+    <div class="ds-example ds-example--chrome">
+      <div class="ds-example__row" style="gap:2.5rem">
+        <div style="text-align:center">
+          <button type="button" class="tds-rail-button" aria-label="Templates">
+            <svg class="tds-rail-button__icon" aria-hidden="true"><use href="#tds-icon-rail-templates"/></svg>
+            <span class="tds-rail-button__tooltip" role="tooltip">Templates</span>
+          </button>
+          <span class="ds-example__label">hover: tooltip fades in over 0.12s</span>
+        </div>
+        <div style="text-align:center">
+          <span class="tds-tree-row__chevron" style="display:inline-flex"></span>
+          <span class="tds-tree-row__chevron tds-tree-row__chevron--expanded" style="display:inline-flex"></span>
+          <span class="ds-example__label">twisty: collapsed / expanded (0.1s)</span>
+        </div>
+        <div style="text-align:center">
+          <span class="tds-spinner" style="justify-content:center">
+            <span class="tds-spinner__circle"></span>
+            <span class="tds-spinner__label">Rendering diagram…</span>
+          </span>
+          <span class="ds-example__label">spinner: 0.7s/rev, linear</span>
+        </div>
+      </div>
+    </div>
+
+    <h2>What never animates</h2>
+    <table class="ds-table">
+      <thead><tr><th>Interaction</th><th>Behavior</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>Hover fills (rows, buttons, menus)</td><td>Instant</td><td>Feedback must track the pointer exactly</td></tr>
+        <tr><td>Dialog open/close</td><td>Instant</td><td>Modals are questions, not scenes</td></tr>
+        <tr><td>Side panel show/hide &amp; resize</td><td>Instant, live</td><td>Panes track the drag 1:1; both panels stay mounted</td></tr>
+        <tr><td>Focus rings</td><td>Instant</td><td>Keyboard position is never in doubt</td></tr>
+        <tr><td>Active accent bar (rail)</td><td>Instant</td><td>Mode changes are discrete</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Progress</h2>
+    <p>
+      In-flight work always shows the spinner, sized to context: the shared
+      <code>.tds-spinner</code> with a label in panels, the small overlay
+      spinner pinned to the preview's top-right corner during re-renders
+      (<code>.tds-preview__spinner-overlay</code>), and the 0.75rem in-row
+      spinner while a tree directory loads. Spinners appear immediately —
+      there is no artificial delay — and are removed the moment the result
+      (or its error) lands.
+    </p>
+
+    <h2>Reduced motion</h2>
+    <p>
+      The only continuous animation is the spinner; tooltip and twisty
+      transitions are ≤ 120ms. Implementations should disable the twisty
+      rotation and tooltip fade under
+      <code>prefers-reduced-motion: reduce</code>; spinners may keep
+      rotating — they carry state, and their removal would lose meaning.
+    </p>
+
+    <div class="ds-guidance">
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Use the three motion tokens as-is; new transitions require a new
+        token and a documented reason.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--dont">
+        <span class="ds-guidance__title">Don't</span>
+        Animate layout (widths, heights, positions) anywhere in the
+        workbench.
+      </div>
+    </div>
+
+    <footer class="ds-footer">
+      Trellis Design System — Foundations / Motion.
+    </footer>
+  </main>
+</div>
+<script src="../assets/docs.js"></script>
+</body>
+</html>

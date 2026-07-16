@@ -1,0 +1,212 @@
+/*
+ * Trellis design system — design tokens (dark).
+ *
+ * The authoritative token sheet for the Trellis visual language. Every
+ * reference component in components.css consumes these custom properties;
+ * nothing downstream hardcodes a color, size, or duration.
+ *
+ * Provenance: the semantic roles are derived from the current Angular
+ * implementation (frontend/src/app/**, light theme); the dark values are
+ * the VS Code Dark Modern-inspired re-expression of those roles. Where a
+ * token replaces a hardcoded light value, the source file and value are
+ * noted so the mapping is auditable, e.g.:
+ *
+ *   light #f9fafb (editor-toolbar bg)  ->  --tds-surface-rail  #181818
+ *   light #ffffff (panel bg)           ->  --tds-surface-panel #181818
+ *   light #111827 (ink)                ->  --tds-ink           #cccccc
+ *   light #3b82f6/#2563eb (accent)     ->  --tds-accent        #4d9fff family
+ *
+ * The accent stays Trellis blue — the same interaction family the app uses
+ * today (#3b82f6 rail active, #2563eb primary buttons) — lightened for
+ * ≥4.5:1 contrast as text/ink on the dark surfaces.
+ */
+
+:root {
+  /* == Color / surfaces ==================================================
+   * The workbench surface stack, darkest chrome to raised overlays.
+   * VS Code Dark Modern idiom: activity bar & side bars sit on #181818,
+   * the editor/content on #1f1f1f, menus/dialogs raise to #202020+. */
+
+  /* Title bar, activity rail, side panels.
+   * Was: #f3f4f6 (title-bar), #f9fafb (editor-toolbar), #ffffff (panels). */
+  --tds-surface-chrome: #181818;
+
+  /* Editor and preview content plane. Was: #fffffe (Monaco 'vs'), #ffffff. */
+  --tds-surface-editor: #1f1f1f;
+
+  /* Raised surfaces: menus, the template pop-out, tooltips' host layer. */
+  --tds-surface-raised: #202020;
+
+  /* Overlay surfaces: modal dialog panels. Was: #ffffff dialog panels. */
+  --tds-surface-overlay: #242424;
+
+  /* Inset fields on overlay surfaces: inputs, selects. Was: #ffffff. */
+  --tds-surface-field: #2a2a2a;
+
+  /* Modal scrim. Was: rgba(0, 0, 0, 0.4). Slightly heavier on dark. */
+  --tds-scrim: rgba(0, 0, 0, 0.5);
+
+  /* Hairlines. Was: #e5e7eb (structural), #d1d5db (controls). */
+  --tds-border: #2b2b2b;
+  --tds-border-strong: #3c3c3c;
+
+  /* == Color / ink =======================================================
+   * Was (light): #111827 primary, #374151/#4b5563 secondary, #6b7280
+   * muted, #9ca3af disabled. */
+  --tds-ink: #cccccc;          /* primary text            — 9.9:1 on #1f1f1f */
+  --tds-ink-secondary: #a6a6a6; /* menus, labels, controls — 6.5:1 */
+  --tds-ink-muted: #9d9d9d;    /* hints, placeholders     — 5.8:1 */
+  --tds-ink-disabled: #6e6e6e; /* disabled only (contrast-exempt) */
+  --tds-ink-inverse: #1f1f1f;  /* ink on accent fills */
+
+  /* == Color / interaction (Trellis blue) ================================
+   * Was: #3b82f6 (active/focus), #2563eb (primary btn), #1d4ed8 (hover),
+   * #93c5fd (soft outline). Lightened for dark-surface contrast. */
+  --tds-accent: #4d9fff;        /* active icons, links, active-row names — 6.1:1 on #1f1f1f */
+  --tds-accent-strong: #2a6cc9; /* primary button fill — white ink 5.1:1 */
+  --tds-accent-hover: #2970d6;  /* primary button hover fill — white ink 4.8:1 */
+  --tds-accent-soft: #7ab8ff;   /* dashed drop hints, subtle outlines */
+  --tds-focus-ring: #4d9fff;    /* 2px focus outline, offset -2px */
+
+  /* Translucent accent fills (was rgba(59,130,246, .06–.2)): */
+  --tds-accent-tint-06: rgba(77, 159, 255, 0.09);
+  --tds-accent-tint-12: rgba(77, 159, 255, 0.16);
+  --tds-accent-tint-15: rgba(77, 159, 255, 0.2);
+  --tds-accent-tint-20: rgba(77, 159, 255, 0.26);
+
+  /* Neutral hover washes (was rgba(17,24,39, .06/.08) on light): */
+  --tds-hover-wash: rgba(255, 255, 255, 0.06);
+  --tds-hover-wash-strong: rgba(255, 255, 255, 0.09);
+
+  /* == Color / status =====================================================
+   * Semantics from connection-status + error-banner, re-tuned for dark.
+   * Status hues are reserved for connection & operation outcome semantics;
+   * they are never decorative. */
+
+  /* ok — was #22c55e */
+  --tds-status-ok: #3fb950;
+  --tds-status-ok-ink: #56d364;
+
+  /* error — was #ef4444 dot; #fef2f2/#fecaca/#991b1b banner; #b91c1c
+   * danger ink; #c42b1c window-close hover (kept verbatim: Windows chrome
+   * convention, not a palette member). */
+  --tds-status-error: #f85149;
+  --tds-status-error-ink: #ff7b72;      /* 5.5:1 on error-surface */
+  --tds-status-error-surface: #3a1d1d;
+  --tds-status-error-border: #6e2b28;
+
+  /* warn / reconnecting — was #eab308 */
+  --tds-status-warn: #d29922;
+  --tds-status-warn-ink: #e3b341;
+
+  /* unknown / idle — was #9ca3af */
+  --tds-status-unknown: #8b949e;
+
+  /* Window-control close hover, Windows convention (unchanged). */
+  --tds-window-close: #c42b1c;
+
+  /* == Color / editor (Monaco) ===========================================
+   * The app instantiates Monaco with theme 'vs' today; the design system
+   * documents the 'vs-dark' mapping of the same surface. */
+  --tds-editor-gutter-ink: #6e7681;    /* was #237893 ('vs' line numbers) */
+  --tds-editor-gutter-active: #cccccc;
+  --tds-editor-cursor: #aeafad;        /* was #000000 */
+  --tds-editor-selection: #264f78;
+  --tds-editor-line-highlight: rgba(255, 255, 255, 0.04);
+
+  /* == Color / badge ======================================================
+   * Kind badge / category chip. Was: #eef2ff bg, #4338ca ink. */
+  --tds-badge-surface: #2b3a55;
+  --tds-badge-ink: #9db8ff;
+
+  /* == Typography =========================================================
+   * Stacks match frontend/src/styles.scss and the Monaco surface. */
+  --tds-font-ui:
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+  --tds-font-mono: Consolas, 'Cascadia Mono', 'Courier New', monospace;
+
+  /* Type scale — sizes in rem are copied from component SCSS; px sizes
+   * (13px title bar, 12px command center, 14px Monaco) are chrome-fixed. */
+  --tds-text-xxs: 0.6rem;    /* kind-badge */
+  --tds-text-xs: 0.7rem;     /* panel header titles, option categories */
+  --tds-text-tooltip: 0.75rem;
+  --tds-text-sm: 0.8rem;     /* dialog labels, picker options */
+  --tds-text-body: 0.85rem;  /* tree rows, buttons, banners */
+  --tds-text-md: 0.9rem;     /* inputs, preview placeholder */
+  --tds-text-lg: 1rem;       /* dialog titles */
+  --tds-text-chrome: 13px;   /* title-bar menus */
+  --tds-text-chrome-sm: 12px;/* command center */
+  --tds-text-code: 14px;     /* Monaco */
+  --tds-line-code: 19px;     /* Monaco */
+
+  --tds-weight-regular: 400;
+  --tds-weight-medium: 500;
+  --tds-weight-semibold: 600;
+  --tds-weight-bold: 700;
+
+  --tds-tracking-caps: 0.06em; /* uppercase panel headers */
+  --tds-tracking-badge: 0.04em;
+
+  /* == Spacing =============================================================
+   * 4px-base scale; values appear verbatim in the component SCSS. */
+  --tds-space-1: 0.15rem;  /* tree-row vertical padding */
+  --tds-space-2: 0.25rem;  /* icon-action gaps */
+  --tds-space-3: 0.35rem;  /* row icon gap, button padding-y */
+  --tds-space-4: 0.5rem;   /* rail gaps, panel header padding-y */
+  --tds-space-5: 0.75rem;  /* panel header padding-x, banner padding-x */
+  --tds-space-6: 1rem;     /* empty-state padding */
+  --tds-space-7: 1.25rem;  /* dialog panel padding */
+
+  /* == Fixed chrome metrics ===============================================
+   * The workbench frame (editor-page.component.scss + title-bar + rail). */
+  --tds-metric-titlebar-h: 35px;
+  --tds-metric-rail-w: 48px;
+  --tds-metric-rail-button: 40px;
+  --tds-metric-rail-icon: 20px;
+  --tds-metric-tree-action: 1.4rem;
+  --tds-metric-tree-action-icon: 14px;
+  --tds-metric-panel-min: 170px;
+  --tds-metric-panel-default: 260px;
+  --tds-metric-panel-max: 500px;
+  --tds-metric-divider: 1px;
+  --tds-metric-divider-grab: 9px;
+  --tds-metric-window-control-w: 46px;
+  --tds-metric-command-center-h: 24px;
+  --tds-metric-status-dot: 0.65rem;
+
+  /* == Shape ==============================================================*/
+  --tds-radius-sm: 0.2rem;   /* kind badge */
+  --tds-radius-md: 0.25rem;  /* buttons, inputs, banners, tooltips */
+  --tds-radius-lg: 0.35rem;  /* rail buttons, pop-out panels */
+  --tds-radius-xl: 0.5rem;   /* dialog panels */
+  --tds-radius-chrome: 5px;  /* title-bar menu/toggle */
+  --tds-radius-pill: 6px;    /* command-center pill */
+
+  /* == Elevation ==========================================================
+   * On dark themes elevation reads primarily through surface lightening
+   * and hairlines; shadows are retained at higher opacity for overlays. */
+  --tds-shadow-raised: 0 4px 12px rgba(0, 0, 0, 0.45);  /* was .12 */
+  --tds-shadow-overlay: 0 8px 24px rgba(0, 0, 0, 0.6);  /* was .2 */
+
+  /* == Motion =============================================================
+   * Durations/easings copied verbatim from the component SCSS. */
+  --tds-motion-tooltip: 0.12s ease;   /* rail tooltip opacity/visibility */
+  --tds-motion-twisty: 0.1s ease;     /* tree chevron rotate */
+  --tds-motion-spin: 0.7s;            /* spinners, linear infinite */
+
+  /* == Z-index ============================================================
+   * The stacking contract across the workbench. */
+  --tds-z-divider: 1;
+  --tds-z-tooltip: 5;
+  --tds-z-popout: 10;
+  --tds-z-toast: 20;
+  --tds-z-dialog: 100;
+
+  color-scheme: dark;
+}

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en" class="ds">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Editor surface — Trellis Design System</title>
+<link rel="stylesheet" href="../assets/tokens.css">
+<link rel="stylesheet" href="../assets/components.css">
+<link rel="stylesheet" href="../assets/docs.css">
+</head>
+<body class="ds tds-root" data-page="patterns/editor">
+<div class="ds-layout">
+  <nav class="ds-nav" aria-label="Design system"></nav>
+  <main class="ds-main">
+    <h1>Editor surface</h1>
+    <p class="ds-lede">
+      The editing pane hosts Monaco. The app configures it minimally —
+      plaintext language, minimap off, no scroll beyond the last line — and
+      the design system pins the theme to <code>vs-dark</code> so the
+      surface sits flush with the workbench. These classes document the
+      surface contract; Monaco draws the real thing at runtime.
+    </p>
+
+    <h2>Surface</h2>
+    <p class="ds-source">Derived from: <code>features/editor/monaco-editor/</code> (host wrapper) + Monaco's vs-dark surface — <code>.tds-editor</code>.</p>
+    <div class="ds-example ds-example--flush">
+      <div class="tds-editor" style="height:210px">
+        <div class="tds-editor__gutter">1
+2
+3
+4
+5
+6
+7
+8</div>
+        <div class="tds-editor__code">@startuml
+actor User
+participant "Web UI" as UI
+participant "Orders API" as API
+User -&gt; UI : checkout()
+UI -&gt; API : POST /orders
+API --&gt; UI : 201 Created
+@enduml<span class="tds-editor__cursor"></span></div>
+      </div>
+    </div>
+    <p class="ds-caption">The dark editor surface with the caret at the end of the document.</p>
+
+    <h2>Contract</h2>
+    <table class="ds-table">
+      <thead><tr><th>Property</th><th>Spec</th></tr></thead>
+      <tbody>
+        <tr><td>Host</td><td><code>monaco-editor-wrapper__surface</code> fills its pane 100%/100%; the pane never scrolls the editor — Monaco scrolls itself</td></tr>
+        <tr><td>Theme</td><td><code>vs-dark</code>; background aligns with <code>--tds-surface-editor</code> #1f1f1f</td></tr>
+        <tr><td>Language</td><td><code>plaintext</code> — PlantUML source is edited without a grammar today; a future grammar must not change the surface metrics</td></tr>
+        <tr><td>Type</td><td>Mono stack, 14px / 19px line height</td></tr>
+        <tr><td>Gutter</td><td>64px, right-aligned numbers, 26px right padding; <code>--tds-editor-gutter-ink</code>, active line's number in <code>--tds-editor-gutter-active</code></td></tr>
+        <tr><td>Caret / selection</td><td><code>--tds-editor-cursor</code> 2px bar / <code>--tds-editor-selection</code> fill</td></tr>
+        <tr><td>Options</td><td>Minimap off; <code>scrollBeyondLastLine: false</code></td></tr>
+      </tbody>
+    </table>
+
+    <h2>Selection &amp; active line</h2>
+    <div class="ds-example ds-example--flush">
+      <div class="tds-editor" style="height:96px">
+        <div class="tds-editor__gutter">1
+2
+3</div>
+        <div class="tds-editor__code">@startuml
+<span class="tds-editor__line--active" style="display:inline-block;width:100%"><span class="tds-editor__selection">actor User</span><span class="tds-editor__cursor"></span></span>
+@enduml</div>
+      </div>
+    </div>
+    <p class="ds-caption">Line 2 selected: selection fill, active-line wash, caret after the selection.</p>
+
+    <h2>Editing behaviors</h2>
+    <ul>
+      <li><span class="ds-kbd">Ctrl</span>+<span class="ds-kbd">Enter</span> —
+        render the current source to the preview pane.</li>
+      <li><span class="ds-kbd">Ctrl</span>+<span class="ds-kbd">S</span> —
+        save; untitled documents get the save dialog, disk files write
+        through their file handle (failures raise the disk-save toast).</li>
+      <li>Loading a template or document <em>replaces</em> the buffer; the
+        app confirms via native dialogs when unsaved changes would be
+        lost.</li>
+    </ul>
+
+    <h2>Rules</h2>
+    <div class="ds-guidance">
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Keep the editor's background exactly on the content surface — a
+        seam, not a color change, separates it from the preview.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--dont">
+        <span class="ds-guidance__title">Don't</span>
+        Re-style Monaco internals beyond the theme; the surface contract
+        (metrics, gutter, caret) is the integration point.
+      </div>
+    </div>
+
+    <footer class="ds-footer">
+      Trellis Design System — Patterns / Editor surface.
+    </footer>
+  </main>
+</div>
+<script src="../assets/docs.js"></script>
+</body>
+</html>

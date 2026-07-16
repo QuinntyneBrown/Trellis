@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en" class="ds">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Toolbars &amp; chrome — Trellis Design System</title>
+<link rel="stylesheet" href="../assets/tokens.css">
+<link rel="stylesheet" href="../assets/components.css">
+<link rel="stylesheet" href="../assets/docs.css">
+</head>
+<body class="ds tds-root" data-page="components/toolbars">
+<div class="ds-layout">
+  <nav class="ds-nav" aria-label="Design system"></nav>
+  <main class="ds-main">
+    <h1>Toolbars &amp; chrome</h1>
+    <p class="ds-lede">
+      Two pieces of fixed chrome frame every Trellis screen: the 35px title
+      bar across the top (VS Code-style: menus, command center, layout
+      toggles, window controls) and the 48px vertical activity rail on the
+      left.
+    </p>
+
+    <h2>Title bar</h2>
+    <p class="ds-source">Derived from: <code>features/editor/title-bar/</code> — <code>.tds-title-bar</code>.</p>
+    <div class="ds-example ds-example--flush">
+      <div class="tds-title-bar">
+        <div class="tds-title-bar__left">
+          <svg class="tds-title-bar__logo" aria-hidden="true"><use href="#tds-icon-chrome-logo"/></svg>
+          <nav class="tds-title-bar__menus" aria-label="Application menu">
+            <button type="button" class="tds-title-bar__menu">File</button>
+            <button type="button" class="tds-title-bar__menu">Edit</button>
+            <button type="button" class="tds-title-bar__menu">View</button>
+            <button type="button" class="tds-title-bar__menu">Help</button>
+          </nav>
+        </div>
+        <div class="tds-title-bar__center">
+          <button type="button" class="tds-title-bar__command-center">
+            <svg class="tds-title-bar__search-icon" aria-hidden="true"><use href="#tds-icon-chrome-search"/></svg>
+            <span class="tds-title-bar__title">sequence-checkout — Trellis</span>
+          </button>
+        </div>
+        <div class="tds-title-bar__right">
+          <div class="tds-title-bar__layout-controls">
+            <button type="button" class="tds-title-bar__layout-toggle tds-title-bar__layout-toggle--active" title="Toggle Primary Side Bar" aria-label="Toggle Primary Side Bar" aria-pressed="true">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <rect class="tds-pane-fill" x="2" y="3.5" width="4" height="9.5"/>
+                <rect x="2" y="3.5" width="12" height="9.5" rx="1"/>
+                <path d="M6 3.5v9.5"/>
+              </svg>
+            </button>
+            <button type="button" class="tds-title-bar__layout-toggle" title="Toggle Panel" aria-label="Toggle Panel" aria-pressed="false">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <rect class="tds-pane-fill" x="2" y="9.5" width="12" height="3.5"/>
+                <rect x="2" y="3.5" width="12" height="9.5" rx="1"/>
+                <path d="M2 9.5h12"/>
+              </svg>
+            </button>
+            <button type="button" class="tds-title-bar__layout-toggle" title="Toggle Secondary Side Bar" aria-label="Toggle Secondary Side Bar" aria-pressed="false">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <rect class="tds-pane-fill" x="10" y="3.5" width="4" height="9.5"/>
+                <rect x="2" y="3.5" width="12" height="9.5" rx="1"/>
+                <path d="M10 3.5v9.5"/>
+              </svg>
+            </button>
+          </div>
+          <div class="tds-title-bar__window-controls">
+            <button type="button" class="tds-title-bar__window-control" aria-label="Minimize">
+              <svg aria-hidden="true"><use href="#tds-icon-chrome-minimize"/></svg>
+            </button>
+            <button type="button" class="tds-title-bar__window-control" aria-label="Maximize">
+              <svg aria-hidden="true"><use href="#tds-icon-chrome-maximize"/></svg>
+            </button>
+            <button type="button" class="tds-title-bar__window-control tds-title-bar__window-control--close" aria-label="Close">
+              <svg aria-hidden="true"><use href="#tds-icon-chrome-close"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="ds-caption">
+      Left: accent logo + app menus. Center: the command-center pill holding
+      the open document's name. Right: layout toggles (primary-sidebar
+      toggle shown active with its filled band) and window controls.
+    </p>
+    <table class="ds-table">
+      <thead><tr><th>Part</th><th>Spec</th></tr></thead>
+      <tbody>
+        <tr><td>Bar</td><td>35px, chrome surface, bottom hairline, 13px text, three flex regions (1 / 1.5 / 1)</td></tr>
+        <tr><td>Logo</td><td>18px trellis-lattice glyph in accent</td></tr>
+        <tr><td>Menu buttons</td><td>3px 8px padding, 5px radius, hover wash; stay filled while their menu is open</td></tr>
+        <tr><td>Command center</td><td>24px pill, max-width 38rem, raised surface + strong border, 12px muted text; hover lightens to overlay + primary ink; title is "«document» — Trellis"</td></tr>
+        <tr><td>Layout toggles</td><td>26×24, 14px pane glyphs (stroke 1.2); active pane band fills at 35% via <code>.tds-pane-fill</code>; <code>aria-pressed</code></td></tr>
+        <tr><td>Window controls</td><td>46px wide, full height, 11px glyphs (stroke 1); close hovers <code>--tds-window-close</code> #c42b1c with white ink — the Windows convention, always last</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Activity rail</h2>
+    <p class="ds-source">Derived from: <code>features/editor/editor-toolbar/</code> — <code>.tds-rail</code>. Buttons documented in <a href="buttons.html">Buttons</a>; connection dot in <a href="indicators.html">Indicators</a>.</p>
+    <div class="ds-example ds-example--flush" style="max-width:120px">
+      <div class="tds-rail" style="height:22rem;border-right:none">
+        <div class="tds-rail__group">
+          <button type="button" class="tds-rail-button" aria-label="Explorer">
+            <svg class="tds-rail-button__icon" aria-hidden="true"><use href="#tds-icon-rail-explorer"/></svg>
+            <span class="tds-rail-button__tooltip" role="tooltip">Explorer</span>
+          </button>
+          <button type="button" class="tds-rail-button" aria-label="New">
+            <svg class="tds-rail-button__icon" aria-hidden="true"><use href="#tds-icon-rail-new"/></svg>
+            <span class="tds-rail-button__tooltip" role="tooltip">New</span>
+          </button>
+          <button type="button" class="tds-rail-button" aria-label="Save">
+            <svg class="tds-rail-button__icon" aria-hidden="true"><use href="#tds-icon-rail-save"/></svg>
+            <span class="tds-rail-button__tooltip" role="tooltip">Save</span>
+          </button>
+          <button type="button" class="tds-rail-button" aria-label="Upload">
+            <svg class="tds-rail-button__icon" aria-hidden="true"><use href="#tds-icon-rail-upload"/></svg>
+            <span class="tds-rail-button__tooltip" role="tooltip">Upload</span>
+          </button>
+          <button type="button" class="tds-rail-button" aria-label="Templates">
+            <svg class="tds-rail-button__icon" aria-hidden="true"><use href="#tds-icon-rail-templates"/></svg>
+            <span class="tds-rail-button__tooltip" role="tooltip">Templates</span>
+          </button>
+          <button type="button" class="tds-rail-button tds-rail-button--active" aria-pressed="true" aria-label="Documents">
+            <svg class="tds-rail-button__icon" aria-hidden="true"><use href="#tds-icon-rail-documents"/></svg>
+            <span class="tds-rail-button__tooltip" role="tooltip">Documents</span>
+          </button>
+        </div>
+        <div class="tds-rail__group tds-rail__group--bottom">
+          <span class="tds-status-dot tds-status-dot--connected" title="Connected">
+            <span class="tds-sr-only" role="status">Connected</span>
+          </span>
+        </div>
+      </div>
+    </div>
+    <p class="ds-caption">
+      Canonical order: Explorer (only in browsers with the File System
+      Access API), New, Save, Upload, Templates, Documents. The connection
+      dot pins to the bottom via the bottom group's <code>margin-top:
+      auto</code>. Documents is shown active.
+    </p>
+    <table class="ds-table">
+      <thead><tr><th>Part</th><th>Spec</th></tr></thead>
+      <tbody>
+        <tr><td>Rail</td><td>48px wide, chrome surface, right hairline, 0.5rem gaps and vertical padding</td></tr>
+        <tr><td>Groups</td><td>Top: actions in canonical order. Bottom: status, pinned by <code>margin-top: auto</code></td></tr>
+        <tr><td>Feature gating</td><td>Buttons for unavailable capabilities are removed, not disabled (Explorer without FS Access API)</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Rules</h2>
+    <div class="ds-guidance">
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Keep the close button rightmost with its red hover — users aim for
+        it from muscle memory.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Reflect pane visibility in the layout toggles' filled bands; the
+        toggle is the layout's single source of truth in the chrome.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--dont">
+        <span class="ds-guidance__title">Don't</span>
+        Add text, badges, or notification dots to the rail — it is icons
+        plus one status dot, nothing else.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--dont">
+        <span class="ds-guidance__title">Don't</span>
+        Reorder rail actions per screen; the canonical order is fixed.
+      </div>
+    </div>
+
+    <footer class="ds-footer">
+      Trellis Design System — Components / Toolbars &amp; chrome.
+    </footer>
+  </main>
+</div>
+<script src="../assets/docs.js"></script>
+</body>
+</html>

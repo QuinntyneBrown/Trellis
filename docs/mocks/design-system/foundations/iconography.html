@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" class="ds">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Iconography — Trellis Design System</title>
+<link rel="stylesheet" href="../assets/tokens.css">
+<link rel="stylesheet" href="../assets/components.css">
+<link rel="stylesheet" href="../assets/docs.css">
+</head>
+<body class="ds tds-root" data-page="foundations/iconography">
+<div class="ds-layout">
+  <nav class="ds-nav" aria-label="Design system"></nav>
+  <main class="ds-main">
+    <h1>Iconography</h1>
+    <p class="ds-lede">
+      Hand-authored outline glyphs on a shared 24×24 viewBox —
+      <code>fill: none; stroke: currentColor</code>, 1.75 stroke width,
+      round caps and joins (a Heroicons/Feather-like style). There is no
+      icon-library dependency anywhere in Trellis.
+    </p>
+
+    <h2>Conventions</h2>
+    <ul>
+      <li><strong>One color.</strong> Icons inherit <code>currentColor</code>
+        from their button; state is expressed by the button's color, never
+        by multi-tone artwork.</li>
+      <li><strong>Two closed sets.</strong> The rail set and the row-action
+        set are independently owned by their consuming components
+        (<code>rail-icons.ts</code>, <code>tree-action-icons.ts</code>) and
+        deliberately not merged — the 40px rail button and the dense 1.4rem
+        row action have different size and tooltip mechanics. Shared
+        drawings (page-with-plus) are <em>copied, not imported</em>.</li>
+      <li><strong>Rendered sizes:</strong> 20px in the rail, 14px in row
+        actions, 18px for the title-bar logo.</li>
+      <li><strong>Visually distinct neighbors.</strong> Glyphs that sit a
+        few pixels apart in the rail (new / documents / explorer) use very
+        different silhouettes so they never blur together.</li>
+    </ul>
+
+    <h2>Rail set</h2>
+    <p class="ds-source">Derived from: <code>shared/components/rail-button/rail-icons.ts</code>.</p>
+    <div class="ds-icon-grid">
+      <div class="ds-icon-cell"><svg><use href="#tds-icon-rail-new"/></svg><span class="ds-icon-cell__name">new</span></div>
+      <div class="ds-icon-cell"><svg><use href="#tds-icon-rail-save"/></svg><span class="ds-icon-cell__name">save</span></div>
+      <div class="ds-icon-cell"><svg><use href="#tds-icon-rail-upload"/></svg><span class="ds-icon-cell__name">upload</span></div>
+      <div class="ds-icon-cell"><svg><use href="#tds-icon-rail-templates"/></svg><span class="ds-icon-cell__name">templates</span></div>
+      <div class="ds-icon-cell"><svg><use href="#tds-icon-rail-documents"/></svg><span class="ds-icon-cell__name">documents</span></div>
+      <div class="ds-icon-cell"><svg><use href="#tds-icon-rail-explorer"/></svg><span class="ds-icon-cell__name">explorer</span></div>
+    </div>
+    <table class="ds-table">
+      <thead><tr><th>Glyph</th><th>Metaphor</th></tr></thead>
+      <tbody>
+        <tr><td><code>new</code></td><td>Page with a folded corner and a "+" badge — create a document</td></tr>
+        <tr><td><code>save</code></td><td>Floppy disk with label slots</td></tr>
+        <tr><td><code>upload</code></td><td>Arrow dropping into a tray</td></tr>
+        <tr><td><code>templates</code></td><td>2×2 grid of tiles — the catalog</td></tr>
+        <tr><td><code>documents</code></td><td>Folder — the virtual-folder tree</td></tr>
+        <tr><td><code>explorer</code></td><td>Two offset pages — the VS Code Explorer metaphor for disk files</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Row-action set</h2>
+    <p class="ds-source">Derived from: <code>shared/components/tree-action-button/tree-action-icons.ts</code>.</p>
+    <div class="ds-icon-grid">
+      <div class="ds-icon-cell"><svg><use href="#tds-icon-action-open"/></svg><span class="ds-icon-cell__name">open</span></div>
+      <div class="ds-icon-cell"><svg><use href="#tds-icon-action-rename"/></svg><span class="ds-icon-cell__name">rename</span></div>
+      <div class="ds-icon-cell"><svg><use href="#tds-icon-action-delete"/></svg><span class="ds-icon-cell__name">delete</span></div>
+      <div class="ds-icon-cell"><svg><use href="#tds-icon-action-new-file"/></svg><span class="ds-icon-cell__name">new-file</span></div>
+      <div class="ds-icon-cell"><svg><use href="#tds-icon-action-new-folder"/></svg><span class="ds-icon-cell__name">new-folder</span></div>
+      <div class="ds-icon-cell"><svg><use href="#tds-icon-action-move"/></svg><span class="ds-icon-cell__name">move</span></div>
+      <div class="ds-icon-cell"><svg><use href="#tds-icon-action-update"/></svg><span class="ds-icon-cell__name">update</span></div>
+      <div class="ds-icon-cell"><svg><use href="#tds-icon-action-scope"/></svg><span class="ds-icon-cell__name">scope</span></div>
+      <div class="ds-icon-cell"><svg><use href="#tds-icon-action-up"/></svg><span class="ds-icon-cell__name">up</span></div>
+      <div class="ds-icon-cell"><svg><use href="#tds-icon-action-clear"/></svg><span class="ds-icon-cell__name">clear</span></div>
+      <div class="ds-icon-cell"><svg><use href="#tds-icon-action-export"/></svg><span class="ds-icon-cell__name">export</span></div>
+      <div class="ds-icon-cell"><svg><use href="#tds-icon-action-no-export"/></svg><span class="ds-icon-cell__name">no-export</span></div>
+      <div class="ds-icon-cell"><svg><use href="#tds-icon-action-copy"/></svg><span class="ds-icon-cell__name">copy</span></div>
+      <div class="ds-icon-cell"><svg><use href="#tds-icon-action-check"/></svg><span class="ds-icon-cell__name">check</span></div>
+    </div>
+    <table class="ds-table">
+      <thead><tr><th>Glyph</th><th>Metaphor</th></tr></thead>
+      <tbody>
+        <tr><td><code>open</code></td><td>Arrow escaping a box — open in the editor</td></tr>
+        <tr><td><code>rename</code></td><td>Pencil</td></tr>
+        <tr><td><code>delete</code></td><td>Trash can — always paired with the danger color</td></tr>
+        <tr><td><code>new-file</code> / <code>new-folder</code></td><td>Page / folder with a plus</td></tr>
+        <tr><td><code>move</code></td><td>Folder with a rightward arrow — "Move to Folder…"</td></tr>
+        <tr><td><code>update</code></td><td>Arrow entering a box — update from the editor (inverse of open)</td></tr>
+        <tr><td><code>scope</code> / <code>up</code> / <code>clear</code></td><td>Crosshair / up arrow / X — tree scoping controls</td></tr>
+        <tr><td><code>export</code> / <code>no-export</code></td><td>Arrow into a tray; struck through when excluded from exports</td></tr>
+        <tr><td><code>copy</code> / <code>check</code></td><td>Overlapping pages; checkmark is the transient "copied!" state</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Chrome glyphs</h2>
+    <p class="ds-source">Derived from: <code>title-bar.component.html</code> (16×16 except the 24×24 logo).</p>
+    <div class="ds-icon-grid">
+      <div class="ds-icon-cell"><svg style="stroke:var(--tds-accent)"><use href="#tds-icon-chrome-logo"/></svg><span class="ds-icon-cell__name">logo (trellis grid)</span></div>
+      <div class="ds-icon-cell"><svg style="stroke-width:1.5"><use href="#tds-icon-chrome-search"/></svg><span class="ds-icon-cell__name">search</span></div>
+      <div class="ds-icon-cell"><svg style="stroke-width:1"><use href="#tds-icon-chrome-minimize"/></svg><span class="ds-icon-cell__name">minimize</span></div>
+      <div class="ds-icon-cell"><svg style="stroke-width:1"><use href="#tds-icon-chrome-maximize"/></svg><span class="ds-icon-cell__name">maximize</span></div>
+      <div class="ds-icon-cell"><svg style="stroke-width:1"><use href="#tds-icon-chrome-close"/></svg><span class="ds-icon-cell__name">close</span></div>
+    </div>
+    <p>
+      The logo is a trellis lattice (crossed horizontals and verticals)
+      drawn in the accent color. Window-control glyphs use a 1px stroke at
+      11px — Windows chrome convention.
+    </p>
+
+    <h2>Drawing new icons</h2>
+    <div class="ds-guidance">
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Author on the 24×24 grid with 1.75 stroke, round caps/joins, 2px
+        internal margins; test at 14px before accepting.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--do">
+        <span class="ds-guidance__title">Do</span>
+        Add the glyph to the owning component's closed union — the icon name
+        is part of that component's API.
+      </div>
+      <div class="ds-guidance__item ds-guidance__item--dont">
+        <span class="ds-guidance__title">Don't</span>
+        Import an icon library, use filled shapes, or encode state in the
+        artwork (a struck-through variant like <code>no-export</code> is a
+        separate glyph, not a style).
+      </div>
+    </div>
+
+    <footer class="ds-footer">
+      Trellis Design System — Foundations / Iconography.
+    </footer>
+  </main>
+</div>
+<script src="../assets/docs.js"></script>
+</body>
+</html>
