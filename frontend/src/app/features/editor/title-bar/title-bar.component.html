@@ -1,43 +1,8 @@
 <div class="title-bar" data-testid="title-bar" role="banner">
-  <div class="title-bar__left">
-    <svg class="title-bar__logo" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4 8h16M4 16h16M8 4v16M16 4v16" />
-    </svg>
-    <nav class="title-bar__menus" aria-label="Application menu">
-      <div class="title-bar__menu-anchor">
-        <button
-          type="button"
-          class="title-bar__menu"
-          data-testid="title-bar-menu-file"
-          aria-haspopup="menu"
-          [attr.aria-expanded]="openMenu() === 'file'"
-          (click)="onFileMenuClicked()"
-        >
-          File
-        </button>
-
-        @if (openMenu() === 'file') {
-          <div class="title-bar__menu-dropdown" role="menu" aria-label="File menu">
-            <button type="button" class="title-bar__menu-item" role="menuitem" data-testid="title-bar-menu-item-new" (click)="onNewClicked()">
-              <span class="title-bar__menu-item-label">New</span>
-              <span class="title-bar__menu-item-shortcut">Alt+N</span>
-            </button>
-            <button type="button" class="title-bar__menu-item" role="menuitem" data-testid="title-bar-menu-item-save" (click)="onSaveClicked()">
-              <span class="title-bar__menu-item-label">Save</span>
-              <span class="title-bar__menu-item-shortcut">Ctrl+S</span>
-            </button>
-            <button type="button" class="title-bar__menu-item" role="menuitem" data-testid="title-bar-menu-item-upload" (click)="onUploadClicked()">
-              <span class="title-bar__menu-item-label">Upload</span>
-              <span class="title-bar__menu-item-shortcut">Ctrl+U</span>
-            </button>
-          </div>
-        }
-      </div>
-      <button type="button" class="title-bar__menu">Edit</button>
-      <button type="button" class="title-bar__menu">View</button>
-      <button type="button" class="title-bar__menu">Help</button>
-    </nav>
-  </div>
+  <!-- Empty spacer: the app menus live behind the rail's hamburger
+       (vscode.dev-style), but the region keeps its flex share so the
+       command center stays centered. -->
+  <div class="title-bar__left"></div>
 
   <div class="title-bar__center">
     <button type="button" class="title-bar__command-center" data-testid="title-bar-command-center" aria-label="Search documents">

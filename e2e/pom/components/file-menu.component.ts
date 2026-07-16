@@ -2,27 +2,33 @@ import { Locator, Page, expect } from '@playwright/test';
 import { byTestId } from '../base.page';
 
 /**
- * Component object for the title bar's File menu (D-012): trigger at
- * [data-testid="title-bar-menu-file"], dropdown items at
- * [data-testid="title-bar-menu-item-new" | "-save" | "-upload"]. The menu
- * closes after every item click.
+ * Component object for the application (hamburger) menu at the top of the
+ * activity rail, vscode.dev-style: hamburger trigger at
+ * [data-testid="rail-hamburger"], File entry at
+ * [data-testid="rail-menu-file"] whose submenu carries the commands at
+ * [data-testid="rail-menu-item-new" | "-save" | "-upload"]. The whole menu
+ * closes after every command click.
  */
 export class FileMenuComponent {
-  readonly trigger: Locator;
+  readonly hamburger: Locator;
+  readonly fileEntry: Locator;
   readonly newItem: Locator;
   readonly saveItem: Locator;
   readonly uploadItem: Locator;
 
   constructor(page: Page) {
-    this.trigger = byTestId(page, 'title-bar-menu-file');
-    this.newItem = byTestId(page, 'title-bar-menu-item-new');
-    this.saveItem = byTestId(page, 'title-bar-menu-item-save');
-    this.uploadItem = byTestId(page, 'title-bar-menu-item-upload');
+    this.hamburger = byTestId(page, 'rail-hamburger');
+    this.fileEntry = byTestId(page, 'rail-menu-file');
+    this.newItem = byTestId(page, 'rail-menu-item-new');
+    this.saveItem = byTestId(page, 'rail-menu-item-save');
+    this.uploadItem = byTestId(page, 'rail-menu-item-upload');
   }
 
-  /** Opens the File menu. */
+  /** Opens the hamburger menu and expands the File submenu. */
   async open(): Promise<void> {
-    await this.trigger.click();
+    await this.hamburger.click();
+    await expect(this.fileEntry).toBeVisible();
+    await this.fileEntry.click();
     await expect(this.saveItem).toBeVisible();
   }
 

@@ -6,6 +6,73 @@
   aria-orientation="vertical"
 >
   <div class="editor-toolbar__group">
+    <div class="editor-toolbar__menu-anchor">
+      <app-rail-button
+        icon="menu"
+        label="Application Menu"
+        testId="rail-hamburger"
+        [menuExpanded]="menuOpen()"
+        (clicked)="onHamburgerClicked()"
+      ></app-rail-button>
+
+      @if (menuOpen()) {
+        <div class="editor-toolbar__menu" role="menu" aria-label="Application menu">
+          <div class="editor-toolbar__submenu-anchor">
+            <button
+              type="button"
+              class="editor-toolbar__menu-entry"
+              role="menuitem"
+              data-testid="rail-menu-file"
+              aria-haspopup="menu"
+              [attr.aria-expanded]="openSubmenu() === 'file'"
+              (click)="onFileEntryClicked()"
+              (mouseenter)="onFileEntryHovered()"
+            >
+              <span class="editor-toolbar__menu-entry-label">File</span>
+              <svg class="editor-toolbar__menu-entry-chevron" viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M6 4l4 4-4 4" />
+              </svg>
+            </button>
+
+            @if (openSubmenu() === 'file') {
+              <div class="editor-toolbar__submenu" role="menu" aria-label="File menu">
+                <button type="button" class="editor-toolbar__menu-item" role="menuitem" data-testid="rail-menu-item-new" (click)="onNewClicked()">
+                  <span class="editor-toolbar__menu-item-label">New</span>
+                  <span class="editor-toolbar__menu-item-shortcut">Alt+N</span>
+                </button>
+                <button type="button" class="editor-toolbar__menu-item" role="menuitem" data-testid="rail-menu-item-save" (click)="onSaveClicked()">
+                  <span class="editor-toolbar__menu-item-label">Save</span>
+                  <span class="editor-toolbar__menu-item-shortcut">Ctrl+S</span>
+                </button>
+                <button type="button" class="editor-toolbar__menu-item" role="menuitem" data-testid="rail-menu-item-upload" (click)="onUploadClicked()">
+                  <span class="editor-toolbar__menu-item-label">Upload</span>
+                  <span class="editor-toolbar__menu-item-shortcut">Ctrl+U</span>
+                </button>
+              </div>
+            }
+          </div>
+
+          <!-- Inert placeholders, as they were in the old title-bar menu row:
+               chevroned like vscode.dev's entries but with no submenu yet. -->
+          @for (entry of ['Edit', 'View', 'Help']; track entry) {
+            <button
+              type="button"
+              class="editor-toolbar__menu-entry"
+              role="menuitem"
+              aria-haspopup="menu"
+              aria-expanded="false"
+              (mouseenter)="onInertEntryHovered()"
+            >
+              <span class="editor-toolbar__menu-entry-label">{{ entry }}</span>
+              <svg class="editor-toolbar__menu-entry-chevron" viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M6 4l4 4-4 4" />
+              </svg>
+            </button>
+          }
+        </div>
+      }
+    </div>
+
     @if (explorerSupported) {
       <app-rail-button
         icon="explorer"

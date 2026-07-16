@@ -48,7 +48,10 @@
 }
 
 .tds-rail-button:hover,
-.tds-rail-button--active {
+.tds-rail-button--active,
+/* Menu-trigger rail buttons (the hamburger) stay filled while their menu
+ * is open. */
+.tds-rail-button[aria-expanded='true'] {
   background-color: var(--tds-hover-wash-strong);
 }
 
@@ -537,8 +540,10 @@
 }
 
 /* == Title bar ============================================================ */
-/* from editor/title-bar/ — VS Code-style top chrome: app menu, command
- * center pill, layout toggles, Windows-convention window controls. */
+/* from editor/title-bar/ — VS Code-style top chrome: command center pill,
+ * layout toggles, Windows-convention window controls. The app menus live
+ * behind the rail's hamburger (vscode.dev-style); the left region is an
+ * empty spacer that keeps the command center centered. */
 
 .tds-title-bar {
   display: flex;
@@ -552,44 +557,8 @@
 }
 
 .tds-title-bar__left {
-  display: flex;
-  align-items: center;
-  gap: 4px;
   flex: 1 1 0;
   min-width: 0;
-  padding-left: 8px;
-}
-
-.tds-title-bar__logo {
-  width: 18px;
-  height: 18px;
-  flex: 0 0 auto;
-  margin-right: 4px;
-  fill: none;
-  stroke: var(--tds-accent);
-  stroke-width: 1.75;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.tds-title-bar__menus {
-  display: flex;
-}
-
-.tds-title-bar__menu {
-  border: none;
-  background-color: transparent;
-  padding: 3px 8px;
-  border-radius: var(--tds-radius-chrome);
-  font-family: inherit;
-  font-size: var(--tds-text-chrome);
-  color: var(--tds-ink);
-  cursor: pointer;
-}
-
-.tds-title-bar__menu:hover,
-.tds-title-bar__menu--open {
-  background-color: var(--tds-hover-wash-strong);
 }
 
 .tds-title-bar__center {
@@ -723,7 +692,7 @@
 
 /* == Menus / dropdown ===================================================== */
 /* Derived from the template-picker pop-out panel (templates/
- * template-picker/) — the raised-list idiom the title-bar menus adopt. */
+ * template-picker/) — the raised-list idiom the rail's application menu adopts. */
 
 .tds-menu {
   display: flex;
@@ -771,6 +740,23 @@
   color: var(--tds-ink-muted);
   font-size: var(--tds-text-xs);
   text-transform: uppercase;
+}
+
+/* Submenu chevron on a top-level app-menu entry (File ▸ / Edit ▸ / …) —
+ * the vscode.dev hamburger-menu idiom. */
+.tds-menu__item-chevron {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: var(--tds-ink-muted);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tds-menu__item--open {
+  background-color: var(--tds-hover-wash);
 }
 
 .tds-menu__separator {

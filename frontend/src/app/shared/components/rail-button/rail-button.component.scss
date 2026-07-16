@@ -22,7 +22,10 @@
   cursor: pointer;
 
   &:hover,
-  &.rail-button--active {
+  &.rail-button--active,
+  // Menu-trigger buttons stay filled while their menu is open, the same
+  // idiom the old title-bar menu buttons used.
+  &[aria-expanded='true'] {
     background-color: var(--tds-hover-wash-strong);
   }
 

@@ -3,9 +3,9 @@ import { byTestId } from '../base.page';
 
 /**
  * Component object for the activity rail at [data-testid="editor-toolbar"]:
- * the Explorer/Templates/Documents panel toggles and the connection status
- * indicator. The New/Save/Upload actions live in the title bar's File menu
- * (see FileMenuComponent) since D-012.
+ * the application (hamburger) menu trigger, the Explorer/Templates/Documents
+ * panel toggles and the connection status indicator. The New/Save/Upload
+ * actions live in the hamburger's File submenu (see FileMenuComponent).
  */
 export class EditorToolbarComponent {
   readonly root: Locator;
