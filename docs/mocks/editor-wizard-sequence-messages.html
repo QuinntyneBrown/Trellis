@@ -3,9 +3,10 @@
   Trellis mock — Diagram Wizard, step 3 (sequence track): six messages
   added (route: /editor).
 
-  PROPOSED FEATURE — mirrors the current app shell (post-hamburger rail),
-  unlike the older light mocks; see editor-wizard-choose-type.html for the shared
-  chrome notes and the wizard's one-way (wizard -> diagram) model.
+  Mocks the shipped Diagram Wizard (features/wizard/wizard-panel/) on the
+  current app shell (post-hamburger rail); see editor-wizard-choose-type.html
+  for the shared chrome notes and the wizard's one-way (wizard -> diagram)
+  model.
 
   Dark theme: these pages link assets/mock-dark.css, hand-compiled from
   the current component SCSS and the dark tokens in
@@ -21,9 +22,11 @@
   HTML comment ends, so writing one in this comment would truncate it.)
   Each Add Message appended its line and auto-rendered, so after four
   participant renders and six message renders data-render-seq="10". The editor now
-  holds the exact equivalent of the seeded "Sequence Diagram" starter, and
-  the preview facsimile is the same one editor-rendered.html shows for that
-  content. The footer's primary action is Finish (this is the last build
+  holds a document structurally equivalent to the seeded "Sequence Diagram"
+  starter -- same participants, messages and order, but the wizard derives
+  each alias from the participant's name rather than reusing the starter's
+  hand-picked ones, so it is not byte-identical (the aliases shown here are
+  illustrative). The footer's primary action is Finish (this is the last build
   step); Add Message is disabled until a message is typed (the form cleared
   after the sixth add).
 -->
@@ -426,8 +429,8 @@ Web --&gt; Customer : Order confirmation
               <div class="diagram-preview" data-testid="preview-pane" data-render-seq="10">
                 <div class="diagram-preview__svg">
                   <!-- facsimile of the PlantUML render of the finished sequence
-                       diagram (same content and facsimile as
-                       editor-rendered.html). -->
+                       diagram, structurally equivalent to the seeded
+                       "Sequence Diagram" starter. -->
                   <svg xmlns="http://www.w3.org/2000/svg" width="640" height="400" viewBox="0 0 640 400"
                        font-family="sans-serif" font-size="13">
                     <!-- lifelines -->

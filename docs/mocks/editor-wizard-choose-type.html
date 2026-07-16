@@ -2,20 +2,19 @@
 <!--
   Trellis mock — Diagram Wizard, step 1: choose a diagram type (route: /editor).
 
-  PROPOSED FEATURE — the Diagram Wizard does not exist in the app yet; this
-  page (and its editor-wizard-*.html siblings) is a forward-looking design
-  mock. Unlike the older light mocks, these pages mirror the CURRENT app
-  shell: the title bar's left region is an empty spacer and a copy-contents
-  button sits beside the command center; the rail leads with the
-  application-menu hamburger (which owns New/Save/Upload) and ends with the
-  Explain This toggle. The proposed wizard rail icon (a magic wand) comes
-  last and is active while the panel is open.
+  This page (and its editor-wizard-*.html siblings) mocks the shipped
+  Diagram Wizard, which lives at
+  frontend/src/app/features/wizard/wizard-panel/. These pages mirror the
+  current app shell: the title bar's left region is an empty spacer and a
+  copy-contents button sits beside the command center; the rail leads with
+  the application-menu hamburger (which owns New/Save/Upload) and ends with
+  the Explain This toggle, then the wizard rail icon (a magic wand), which
+  is active while the panel is open.
 
   Dark theme: these pages link assets/mock-dark.css, hand-compiled from the
   current component SCSS and the dark tokens in
   frontend/src/styles/tokens.scss (the VS Code Dark Modern set that
-  docs/mocks/design-system publishes). The older editor-*.html mocks still
-  link the light assets/mock.css and document a theme the app has retired.
+  docs/mocks/design-system publishes).
 
   State shown: the wizard rail icon was clicked; the wizard panel is docked
   in the side-panel slot at the default 260px. Step 1 offers the two tracks
@@ -108,7 +107,7 @@
       <div class="editor-page" data-testid="editor-page">
 
         <!-- Current rail: hamburger (application menu, closed here), then the
-             panel toggles. The proposed Diagram Wizard toggle is active. -->
+             panel toggles. The Diagram Wizard toggle is active. -->
         <app-editor-toolbar>
           <div class="editor-toolbar" data-testid="editor-toolbar" role="toolbar" aria-label="Editor actions" aria-orientation="vertical">
             <div class="editor-toolbar__group">
@@ -162,7 +161,7 @@
                 </button>
               </app-rail-button>
 
-              <!-- Proposed: 'wizard' entry in rail-icons.ts — a magic wand
+              <!-- The 'wizard' entry in rail-icons.ts — a magic wand
                    flanked by two plus-shaped sparkles. -->
               <app-rail-button>
                 <button type="button" class="rail-button rail-button--active" data-testid="wizard-panel-toggle" aria-label="Diagram Wizard">
@@ -235,8 +234,8 @@
               </aside>
             </app-explain-panel>
 
-            <!-- PROPOSED component (features/wizard/wizard-panel/): the
-                 Diagram Wizard side panel, step 1 of the flow. -->
+            <!-- features/wizard/wizard-panel/: the Diagram Wizard side
+                 panel, step 1 of the flow. -->
             <app-wizard-panel>
               <aside class="wizard-panel" data-testid="wizard-panel">
                 <div class="wizard-panel__header">

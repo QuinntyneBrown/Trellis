@@ -3,14 +3,13 @@
   SCSS under frontend/src/app/, which consumes the dark design tokens in
   frontend/src/styles/tokens.scss.
 
-  WHY A SECOND STYLESHEET: assets/mock.css was hand-compiled from an older,
-  LIGHT-theme revision of the app and still documents it — the fourteen
-  editor-*.html pages predate the dark theme, the hamburger rail, and the
-  single resize-divider component. The app has since adopted the VS Code
-  Dark Modern-inspired token set that docs/mocks/design-system publishes, so
-  the nine editor-wizard-*.html pages — which mirror the app as it is today —
-  link this sheet instead. When the older pages are re-cut against the
-  current shell they should move here too, and mock.css can retire.
+  This is the mocks' only stylesheet, linked by all nine
+  editor-wizard-*.html pages. A light sheet used to sit beside it, serving
+  fourteen editor-*.html pages compiled from an older revision; the app has
+  since adopted the VS Code Dark Modern-inspired token set that
+  docs/mocks/design-system publishes, and those pages predated the dark
+  theme, the hamburger rail, and the single resize-divider component, so
+  both they and that sheet were deleted rather than left to mislead.
 
   Every block is annotated with the SCSS file it was compiled from, and
   var(--tds-*) references are preserved exactly as the components write them
@@ -19,9 +18,8 @@
   hover and the PlantUML plate, #d4d4d4 Monaco ink — are literals in the
   real source too, and are called out where they appear).
 
-  Two blocks are NOT compiled from anything and say so: the .mock-monaco
-  facsimile (mock-only — the real surface is a runtime Monaco instance) and
-  wizard-panel (PROPOSED — the feature is not implemented yet).
+  One block is NOT compiled from anything and says so: the .mock-monaco
+  facsimile (mock-only — the real surface is a runtime Monaco instance).
 */
 
 /* == design tokens ======================================================= */
@@ -288,7 +286,7 @@ app-title-bar {
    with only the active one ever actually visible. NOTE (verbatim from the
    source): app-explain-panel is NOT in this list even though editor-page
    renders it in the same slot -- it sizes itself from its own :host rule
-   instead. The proposed app-wizard-panel follows the explain panel. */
+   instead. app-wizard-panel follows the explain panel. */
 .editor-page__side-panel app-explorer-panel,
 .editor-page__side-panel app-documents-panel,
 .editor-page__side-panel app-templates-panel {
@@ -958,8 +956,8 @@ app-explorer-panel {
 /* == explain-panel.component.scss ======================================== */
 /* The "Explain This" side panel: chrome mirrors the other side panels, but
    the body is a simple form column (pickers, URL field, confirm button)
-   rather than a row list. This is the idiom the proposed wizard panel at
-   the end of this file follows. */
+   rather than a row list. This is the idiom the wizard panel at the end of
+   this file follows. */
 
 app-explain-panel {
   display: block;
@@ -1284,8 +1282,7 @@ app-monaco-editor {
  * 'markdown', theme 'vs-dark', minimap disabled) inside
  * .monaco-editor-wrapper__surface at runtime. These classes approximate
  * that rendered surface for the static mocks, using the Monaco vs-dark
- * palette. Metrics are unchanged from the light facsimile in mock.css;
- * only the colors differ. */
+ * palette at Monaco's own metrics (Consolas 14px/19px). */
 
 .mock-monaco {
   display: flex;
@@ -1541,8 +1538,8 @@ app-monaco-editor {
 /* VS Code-sash-style draggable seam. ONE component now serves both the
    editor/preview ratio split and the pixel-width side-panel edge: both
    render `class="resize-divider"` and differ only by data-testid
-   ("resize-divider" vs "pixel-resize-divider"). The old
-   .pixel-resize-divider class family in mock.css no longer exists. */
+   ("resize-divider" vs "pixel-resize-divider"). The app's old
+   .pixel-resize-divider class family no longer exists. */
 
 /* `<app-resize-divider>` itself must not generate its own box: `.resize-divider`
    below is the *actual* flex child of `.editor-page__body`, so all sizing,
@@ -1616,13 +1613,12 @@ app-resize-divider {
   }
 }
 
-/* == wizard-panel.component.scss (PROPOSED) ==============================
-   Diagram Wizard -- design styles for a feature that is NOT implemented
-   yet: there is no frontend/src/app/features/wizard/ today, so unlike every
-   other block in this file nothing above was compiled from source. It is
-   hand-authored in the idiom the real panels use: the side-panel chrome and
-   the Explain panel's form column, consuming the same tokens, so that if
-   the feature is built the SCSS can be written straight from here.
+/* == wizard-panel.component.scss ==========================================
+   Diagram Wizard -- compiled from
+   frontend/src/app/features/wizard/wizard-panel/wizard-panel.component.scss
+   like every other block in this file. The panel follows the idiom the real
+   panels use: the side-panel chrome and the Explain panel's form column,
+   consuming the same tokens.
 
    One deliberate departure from the Explain panel: that panel scrolls as a
    whole (`.explain-panel { overflow-y: auto }`), whereas the wizard clips
