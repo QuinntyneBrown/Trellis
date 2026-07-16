@@ -299,6 +299,84 @@
   color: var(--tds-ink-muted);
 }
 
+// The sequence step list's rows on top of the plain added-item chrome:
+// selectable, draggable, with a drop-indicator line in the row gap. The
+// transparent borders hold the row height steady while an indicator flips on.
+.wizard-panel__step-row {
+  user-select: none;
+  cursor: grab;
+  border-top: 2px solid transparent;
+  border-bottom: 2px solid transparent;
+}
+
+.wizard-panel__step-row--selected {
+  background-color: var(--tds-accent-tint-12);
+  box-shadow: inset 0 0 0 1px var(--tds-accent);
+
+  &:hover {
+    background-color: var(--tds-accent-tint-12);
+  }
+}
+
+.wizard-panel__step-row--dragging {
+  opacity: 0.5;
+}
+
+.wizard-panel__step-row--drop-before {
+  border-top-color: var(--tds-accent);
+}
+
+.wizard-panel__step-row--drop-after {
+  border-bottom-color: var(--tds-accent);
+}
+
+.wizard-panel__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--tds-ink);
+  cursor: pointer;
+
+  input {
+    accent-color: var(--tds-accent);
+  }
+}
+
+// A text input with its live color preview tucked into the right edge.
+.wizard-panel__color-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .wizard-panel__input {
+    flex: 1 1 auto;
+    width: 100%;
+    padding-right: 1.8rem;
+  }
+
+  .wizard-panel__color-swatch {
+    position: absolute;
+    right: 0.5rem;
+  }
+}
+
+.wizard-panel__color-swatch {
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--tds-border-strong);
+  border-radius: 0.2rem;
+}
+
+// The compact per-row select (a participant row's box assignment).
+.wizard-panel__row-select {
+  flex: 0 0 auto;
+  max-width: 6rem;
+  padding: 0.15rem 0.25rem;
+  font-size: 0.7rem;
+}
+
 .wizard-panel__empty {
   margin: 0;
   font-size: 0.8rem;

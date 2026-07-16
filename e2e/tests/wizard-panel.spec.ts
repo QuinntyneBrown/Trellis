@@ -162,6 +162,7 @@ test.describe('Diagram Wizard', () => {
       label: 'Order confirmation',
     });
 
+    // The automatic-lifelines default marks the call and its reply (++/--).
     await expect
       .poll(async () => normalizeEol(await editorPage.editor.getValue()))
       .toBe(
@@ -169,15 +170,102 @@ test.describe('Diagram Wizard', () => {
           "' my own notes",
           '',
           '@startuml',
+          '!pragma teoz true',
+          'skinparam defaultFontSize 10',
+          '',
           'actor Customer',
           'participant "Web App" as webApp',
           '',
-          'Customer -> webApp : Place order',
-          'webApp --> Customer : Order confirmation',
+          'Customer -> webApp ++ : Place order',
+          'webApp --> Customer -- : Order confirmation',
           '@enduml',
         ].join('\n'),
       );
 
+    await expect(editorPage.preview.root.locator('.diagram-preview__svg svg')).toBeVisible({ timeout: 60_000 });
+    expect(await editorPage.preview.isErrorVisible()).toBe(false);
+  });
+
+  test('builds a feature-rich sequence: title, boxes, groups, replies and lifelines', async ({ page }) => {
+    const editorPage = new EditorPage(page);
+    await editorPage.goto();
+    await editorPage.waitForAppReady();
+    await editorPage.wizardPanel.open();
+
+    await editorPage.wizardPanel.choose('sequence');
+    await editorPage.wizardPanel.next();
+
+    // Title, a colored participant, and a nested pair of boxes.
+    await editorPage.wizardPanel.setTitle('Checkout');
+    await editorPage.wizardPanel.addParticipant({ kind: 'actor', name: 'Customer', color: 'EEE' });
+    await editorPage.wizardPanel.addBox({ name: 'Shop', color: 'LightBlue' });
+    await editorPage.wizardPanel.addBox({ name: 'Backend', parent: 'Shop' });
+    await editorPage.wizardPanel.addParticipant({ name: 'Web App', box: 'Shop' });
+    await editorPage.wizardPanel.addParticipant({ name: 'API', box: 'Backend' });
+    await editorPage.wizardPanel.next();
+
+    // Two calls, then their replies generated from the selection.
+    await editorPage.wizardPanel.addMessage({ from: 'Customer', to: 'webApp', label: 'Place order' });
+    await editorPage.wizardPanel.addMessage({ from: 'webApp', to: 'API', label: 'POST /orders' });
+    const rows = editorPage.wizardPanel.stepRows;
+    await editorPage.wizardPanel.selectStep(rows.nth(0));
+    await editorPage.wizardPanel.selectStep(rows.nth(1), ['ControlOrMeta']);
+    await editorPage.wizardPanel.openStepContextMenu(rows.nth(1));
+    await editorPage.wizardPanel.chooseStepCommand('reverse-replies');
+    await expect(rows).toHaveCount(4);
+
+    // A section, then an alt with a branch per fulfilment outcome; the alt is
+    // never closed -- the generator closes it. Inserted blocks chain after the
+    // selected row, so the cursor is moved by clicking where needed.
+    await editorPage.wizardPanel.selectStep(rows.nth(3));
+    await editorPage.wizardPanel.insertBlock({ kind: 'divider', label: 'Fulfilment' });
+    await editorPage.wizardPanel.insertBlock({ kind: 'alt', label: 'in stock' });
+    await editorPage.wizardPanel.addMessage({ from: 'webApp', to: 'Customer', arrow: '->>', label: 'Dispatch notice' });
+    await editorPage.wizardPanel.selectStep(rows.nth(6));
+    await editorPage.wizardPanel.insertBlock({ kind: 'else', label: 'backorder' });
+    await editorPage.wizardPanel.addMessage({ from: 'webApp', to: 'Customer', arrow: '->>', label: 'Backorder ETA' });
+    await editorPage.wizardPanel.selectStep(rows.nth(8));
+    await editorPage.wizardPanel.insertBlock({ kind: 'activate', participant: 'Customer' });
+    await editorPage.wizardPanel.insertBlock({ kind: 'deactivate', participant: 'Customer' });
+
+    // Drag the section divider up above the replies.
+    await editorPage.wizardPanel.dragStepTo(rows.nth(4), rows.nth(2), 'above');
+
+    await expect
+      .poll(async () => normalizeEol(await editorPage.editor.getValue()))
+      .toBe(
+        [
+          '@startuml',
+          '!pragma teoz true',
+          'skinparam defaultFontSize 10',
+          'title Checkout',
+          '',
+          'actor Customer #EEE',
+          'box "Shop" #LightBlue',
+          '  participant "Web App" as webApp',
+          '  box "Backend"',
+          '    participant API',
+          '  end box',
+          'end box',
+          '',
+          'Customer -> webApp ++ : Place order',
+          'webApp -> API ++ : POST /orders',
+          '== Fulfilment ==',
+          'API --> webApp --',
+          'webApp --> Customer --',
+          'alt in stock',
+          '  webApp ->> Customer : Dispatch notice',
+          'else backorder',
+          '  webApp ->> Customer : Backorder ETA',
+          '  activate Customer',
+          '  deactivate Customer',
+          'end',
+          '@enduml',
+        ].join('\n'),
+      );
+
+    // The whole teoz feature set renders: nested boxes, activation marks,
+    // the section and the auto-closed alt.
     await expect(editorPage.preview.root.locator('.diagram-preview__svg svg')).toBeVisible({ timeout: 60_000 });
     expect(await editorPage.preview.isErrorVisible()).toBe(false);
   });
@@ -202,6 +290,6 @@ test.describe('Diagram Wizard', () => {
 
     await expect
       .poll(async () => normalizeEol(await editorPage.editor.getValue()))
-      .toBe('@startuml\nactor Customer\n@enduml');
+      .toBe('@startuml\n!pragma teoz true\nskinparam defaultFontSize 10\n\nactor Customer\n@enduml');
   });
 });

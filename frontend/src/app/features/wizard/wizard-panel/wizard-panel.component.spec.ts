@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { WizardDiagramChange } from './wizard-model';
-import { WizardPanelComponent } from './wizard-panel.component';
+import { SequenceStep, WizardDiagramChange } from './wizard-model';
+import { STEP_DRAG_TYPE, WizardPanelComponent } from './wizard-panel.component';
 
 describe('WizardPanelComponent', () => {
   let fixture: ComponentFixture<WizardPanelComponent>;
@@ -262,19 +262,91 @@ describe('WizardPanelComponent', () => {
       click('wizard-next');
     }
 
-    function addParticipant(kind: string, name: string): void {
+    function addParticipant(kind: string, name: string, color = ''): void {
       select('wizard-participant-kind', kind);
       type('wizard-participant-name', name);
+      if (color) {
+        type('wizard-participant-color', color);
+      }
       click('wizard-add-participant');
     }
 
-    it('writes nothing until the first participant, then renders', () => {
+    /** Straight to the messages step with the starter pair added. */
+    function startMessages(): void {
+      startSequence();
+      addParticipant('actor', 'Customer');
+      addParticipant('participant', 'Web App');
+      click('wizard-next');
+    }
+
+    function addMessage(label: string): void {
+      if (label) {
+        type('wizard-message-label', label);
+      }
+      click('wizard-add-message');
+    }
+
+    function stepRowEls(): HTMLElement[] {
+      return allByTestId('wizard-step-row');
+    }
+
+    function clickRow(index: number, init: MouseEventInit = {}): void {
+      stepRowEls()[index].dispatchEvent(new MouseEvent('click', { bubbles: true, ...init }));
+      fixture.detectChanges();
+    }
+
+    function rightClickRow(index: number): void {
+      stepRowEls()[index].dispatchEvent(
+        new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 20, clientY: 20 }),
+      );
+      fixture.detectChanges();
+    }
+
+    function menuButton(command: string): HTMLButtonElement {
+      return fixture.nativeElement.querySelector(`[data-command="${command}"]`) as HTMLButtonElement;
+    }
+
+    function stepLabels(): string[] {
+      return component.steps().map((step) => ('label' in step ? step.label : step.kind));
+    }
+
+    /**
+     * Drives the drag handlers directly with stub events -- jsdom has no
+     * DataTransfer, and the handlers only touch the members stubbed here.
+     * clientY 0 against a rect at top 0 lands in the row's upper half, so the
+     * block drops before the row at gapIndex.
+     */
+    function dragRowTo(stepId: string, gapIndex: number): void {
+      const step = component.steps().find((candidate) => candidate.id === stepId) as SequenceStep;
+      const dataTransfer = {
+        types: [STEP_DRAG_TYPE],
+        setData: jest.fn(),
+        getData: () => stepId,
+        dropEffect: '',
+        effectAllowed: '',
+      };
+      const noop = () => undefined;
+      component.onStepDragStart(step, { dataTransfer } as unknown as DragEvent);
+      component.onStepDragOver(gapIndex, {
+        dataTransfer,
+        preventDefault: noop,
+        stopPropagation: noop,
+        clientY: 0,
+        currentTarget: { getBoundingClientRect: () => ({ top: 0, height: 20 }) },
+      } as unknown as DragEvent);
+      component.onStepDrop({ dataTransfer, preventDefault: noop } as unknown as DragEvent);
+      fixture.detectChanges();
+    }
+
+    it('writes nothing until the first participant, then renders with the teoz preamble', () => {
       startSequence();
       expect(emitted).not.toHaveBeenCalled();
 
       addParticipant('actor', 'Customer');
 
-      expect(lastChange().plantUml).toBe('@startuml\nactor Customer\n@enduml');
+      expect(lastChange().plantUml).toBe(
+        '@startuml\n!pragma teoz true\nskinparam defaultFontSize 10\n\nactor Customer\n@enduml',
+      );
       expect(lastChange().previousPlantUml).toBeNull();
       expect(lastChange().renderable).toBe(true);
     });
@@ -298,7 +370,74 @@ describe('WizardPanelComponent', () => {
       expect((byTestId('wizard-next') as HTMLButtonElement).disabled).toBe(false);
     });
 
-    it('sends messages between the added participants', async () => {
+    it('emits the title when it is committed, not per keystroke', () => {
+      startSequence();
+      addParticipant('actor', 'Customer');
+      const emissionsBefore = emitted.mock.calls.length;
+
+      type('wizard-sequence-title', 'Checkout flow');
+      expect(emitted.mock.calls.length).toBe(emissionsBefore);
+
+      byTestId('wizard-sequence-title')!.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+
+      expect(lastChange().plantUml).toContain('title Checkout flow');
+    });
+
+    it('colors a participant, and refuses a color it could not emit', () => {
+      startSequence();
+      addParticipant('actor', 'Customer', 'EEE');
+
+      expect(lastChange().plantUml).toContain('actor Customer #EEE');
+
+      type('wizard-participant-name', 'Shop');
+      type('wizard-participant-color', 'not a color!');
+      expect((byTestId('wizard-add-participant') as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    it('declares a participant inside the box picked for it', () => {
+      startSequence();
+      type('wizard-box-name', 'Backend');
+      type('wizard-box-color', 'LightBlue');
+      click('wizard-add-box');
+
+      select('wizard-participant-box', 'box-1');
+      type('wizard-participant-name', 'api');
+      click('wizard-add-participant');
+
+      expect(lastChange().plantUml).toContain('box "Backend" #LightBlue\n  participant api\nend box');
+    });
+
+    it('moves a participant into a box through its row select', () => {
+      startSequence();
+      addParticipant('participant', 'api');
+      type('wizard-box-name', 'Backend');
+      click('wizard-add-box');
+
+      select('wizard-participant-row-box', 'box-1');
+
+      expect(lastChange().plantUml).toContain('box "Backend"\n  participant api\nend box');
+    });
+
+    it('dissolves a removed box into its parent, keeping members and child boxes', () => {
+      startSequence();
+      type('wizard-box-name', 'Outer');
+      click('wizard-add-box');
+      type('wizard-box-name', 'Inner');
+      select('wizard-box-parent', 'box-1');
+      click('wizard-add-box');
+      select('wizard-participant-box', 'box-2');
+      type('wizard-participant-name', 'api');
+      click('wizard-add-participant');
+
+      component.removeBox('box-2');
+      fixture.detectChanges();
+
+      expect(component.participants()[0].boxId).toBe('box-1');
+      expect(lastChange().plantUml).toContain('box "Outer"\n  participant api\nend box');
+    });
+
+    it('sends messages between the added participants, marking the activations', async () => {
       startSequence();
       addParticipant('actor', 'Customer');
       addParticipant('participant', 'Web App');
@@ -313,7 +452,7 @@ describe('WizardPanelComponent', () => {
       type('wizard-message-label', 'Place order');
       click('wizard-add-message');
 
-      expect(lastChange().plantUml).toContain('Customer -> webApp : Place order');
+      expect(lastChange().plantUml).toContain('Customer -> webApp ++ : Place order');
 
       select('wizard-message-arrow', '-->');
       select('wizard-message-from', 'webApp');
@@ -321,7 +460,26 @@ describe('WizardPanelComponent', () => {
       type('wizard-message-label', 'Confirmation');
       click('wizard-add-message');
 
-      expect(lastChange().plantUml).toContain('webApp --> Customer : Confirmation');
+      expect(lastChange().plantUml).toContain('webApp --> Customer -- : Confirmation');
+    });
+
+    it('allows a message with no label and omits the colon', () => {
+      startMessages();
+
+      expect((byTestId('wizard-add-message') as HTMLButtonElement).disabled).toBe(false);
+      click('wizard-add-message');
+
+      expect(lastChange().plantUml).toContain('Customer -> webApp ++\n');
+    });
+
+    it('stops marking activations when automatic lifelines are switched off', () => {
+      startMessages();
+      addMessage('Place order');
+      expect(lastChange().plantUml).toContain('Customer -> webApp ++ : Place order');
+
+      click('wizard-auto-lifelines');
+
+      expect(lastChange().plantUml).toContain('Customer -> webApp : Place order');
     });
 
     it('drops messages that referenced a removed participant', () => {
@@ -335,8 +493,158 @@ describe('WizardPanelComponent', () => {
       component.removeParticipant('webApp');
       fixture.detectChanges();
 
-      expect(component.messages()).toEqual([]);
+      expect(component.steps()).toEqual([]);
       expect(lastChange().plantUml).not.toContain('Place order');
+    });
+
+    it('appends blocks with no selection, and inserts after the selection otherwise', () => {
+      startMessages();
+      addMessage('one');
+      addMessage('two');
+
+      select('wizard-block-kind', 'divider');
+      type('wizard-block-label', 'Later');
+      click('wizard-insert-block');
+      expect(component.steps().map((step) => step.kind)).toEqual(['message', 'message', 'divider']);
+
+      clickRow(0);
+      select('wizard-block-kind', 'alt');
+      type('wizard-block-label', 'happy path');
+      click('wizard-insert-block');
+
+      expect(component.steps().map((step) => step.kind)).toEqual(['message', 'group-open', 'message', 'divider']);
+      expect(lastChange().plantUml).toContain(
+        'alt happy path\n  Customer -> webApp ++ : two\n  == Later ==\nend',
+      );
+      // The inserted row is now the selection -- the cursor a following insert chains from.
+      expect([...component.selectedStepIds()]).toEqual([component.steps()[1].id]);
+    });
+
+    it('requires a label for a divider and a participant for a lifeline block', () => {
+      startMessages();
+
+      select('wizard-block-kind', 'divider');
+      expect((byTestId('wizard-insert-block') as HTMLButtonElement).disabled).toBe(true);
+      type('wizard-block-label', 'Checkout');
+      expect((byTestId('wizard-insert-block') as HTMLButtonElement).disabled).toBe(false);
+
+      select('wizard-block-kind', 'activate');
+      // The participant defaults to the first one, so the block is ready to insert.
+      expect((byTestId('wizard-insert-block') as HTMLButtonElement).disabled).toBe(false);
+      click('wizard-insert-block');
+
+      expect(lastChange().plantUml).toContain('activate Customer');
+    });
+
+    it('multi-selects rows with ctrl and ranges with shift', () => {
+      startMessages();
+      addMessage('one');
+      addMessage('two');
+      addMessage('three');
+
+      clickRow(0);
+      expect(component.selectedStepIds().size).toBe(1);
+
+      clickRow(2, { ctrlKey: true });
+      expect(component.selectedStepIds().size).toBe(2);
+      expect(stepRowEls()[2].classList).toContain('wizard-panel__step-row--selected');
+
+      clickRow(2, { ctrlKey: true });
+      expect(component.selectedStepIds().size).toBe(1);
+
+      // A plain click re-anchors; shift extends from that anchor.
+      clickRow(0);
+      clickRow(2, { shiftKey: true });
+      expect(component.selectedStepIds().size).toBe(3);
+    });
+
+    it('deletes the whole selection through the context menu', () => {
+      startMessages();
+      addMessage('one');
+      addMessage('two');
+      addMessage('three');
+
+      clickRow(0);
+      clickRow(1, { ctrlKey: true });
+      rightClickRow(1);
+
+      expect(byTestId('tree-context-menu')).toBeTruthy();
+      expect(menuButton('delete').textContent).toContain('Delete 2 steps');
+
+      menuButton('delete').click();
+      fixture.detectChanges();
+
+      expect(stepLabels()).toEqual(['three']);
+      expect(lastChange().plantUml).not.toContain('one');
+    });
+
+    it('retargets the selection when right-clicking outside it', () => {
+      startMessages();
+      addMessage('one');
+      addMessage('two');
+
+      clickRow(0);
+      rightClickRow(1);
+
+      const secondId = component.steps()[1].id;
+      expect([...component.selectedStepIds()]).toEqual([secondId]);
+    });
+
+    it('reverses the selected calls as replies, in reverse order', () => {
+      startMessages();
+      addMessage('a');
+      select('wizard-message-from', 'webApp');
+      select('wizard-message-to', 'Customer');
+      addMessage('b');
+
+      clickRow(0);
+      clickRow(1, { ctrlKey: true });
+      rightClickRow(0);
+      menuButton('reverse-replies').click();
+      fixture.detectChanges();
+
+      expect(stepLabels()).toEqual(['a', 'b', '', '']);
+      expect(lastChange().plantUml).toContain('Customer --> webApp --');
+      expect(lastChange().plantUml).toContain('webApp --> Customer --');
+    });
+
+    it('offers no reversal when the selection holds no solid call', () => {
+      startMessages();
+      select('wizard-block-kind', 'divider');
+      type('wizard-block-label', 'Checkout');
+      click('wizard-insert-block');
+
+      clickRow(0);
+      rightClickRow(0);
+
+      expect(menuButton('reverse-replies').disabled).toBe(true);
+    });
+
+    it('reorders a step by dragging it above an earlier row', () => {
+      startMessages();
+      addMessage('one');
+      addMessage('two');
+      addMessage('three');
+
+      dragRowTo(component.steps()[2].id, 0);
+
+      expect(stepLabels()).toEqual(['three', 'one', 'two']);
+      const body = lastChange().plantUml;
+      expect(body.indexOf(': three')).toBeLessThan(body.indexOf(': one'));
+    });
+
+    it('drags a multi-selected block as one unit', () => {
+      startMessages();
+      addMessage('one');
+      addMessage('two');
+      addMessage('three');
+      const ids = component.steps().map((step) => step.id);
+
+      clickRow(0);
+      clickRow(1, { ctrlKey: true });
+      dragRowTo(ids[0], 3);
+
+      expect(stepLabels()).toEqual(['three', 'one', 'two']);
     });
 
     it('finishes with a summary of what was built', () => {
@@ -346,7 +654,7 @@ describe('WizardPanelComponent', () => {
       click('wizard-next');
 
       expect(byTestId('wizard-summary')!.textContent).toContain('Sequence diagram complete.');
-      expect(fixture.nativeElement.textContent).toContain('1 participant · 0 messages');
+      expect(fixture.nativeElement.textContent).toContain('1 participant · 0 messages · 0 blocks');
     });
   });
 

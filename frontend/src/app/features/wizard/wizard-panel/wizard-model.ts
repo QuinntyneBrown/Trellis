@@ -67,6 +67,22 @@ export type SequenceParticipantKind =
   | 'collections';
 
 /**
+ * A `box "Name" #color` grouping of participants. Boxes nest (that is why the
+ * generated diagram opens with `!pragma teoz true` -- the classic engine
+ * cannot draw a box inside a box). `id` is an internal counter ("box-1", ...)
+ * that never reaches PlantUML: boxes have no alias syntax, so unlike
+ * participants there is nothing to derive one from.
+ */
+export interface SequenceBox {
+  readonly id: string;
+  readonly name: string;
+  /** Color name or hex without the leading '#'; '' means unstyled. */
+  readonly color: string;
+  /** The id of the box this box sits inside, or null for the diagram root. */
+  readonly parentId: string | null;
+}
+
+/**
  * One added participant. `id` is what messages reference: the name itself when
  * it is already a bare PlantUML identifier, otherwise a derived alias (the
  * `participant "Web App" as webApp` form).
@@ -75,16 +91,96 @@ export interface SequenceParticipant {
   readonly id: string;
   readonly kind: SequenceParticipantKind;
   readonly name: string;
+  /** Color name or hex without the leading '#'; '' means unstyled. */
+  readonly color: string;
+  /** The id of the SequenceBox this participant sits inside, or null for the diagram root. */
+  readonly boxId: string | null;
 }
 
 /** Solid call, dashed reply, and async -- PlantUML's three everyday arrows. */
 export type SequenceArrow = '->' | '-->' | '->>';
 
-export interface SequenceMessage {
+/** The grouping fragments the wizard offers; an "if" is an alt (or opt) in PlantUML. */
+export type SequenceGroupKind = 'alt' | 'opt' | 'loop' | 'group';
+
+export type SequenceLifelineAction = 'activate' | 'deactivate';
+
+/**
+ * The body of a sequence diagram is one ordered list of steps -- messages,
+ * `== section ==` dividers, group markers and manual lifeline commands --
+ * mirroring how PlantUML itself reads them: line by line, top to bottom.
+ *
+ * Group open/else/end are flat marker steps rather than a nested tree so that
+ * every row in the panel drags, selects and deletes the same way. The cost is
+ * that the list can be momentarily unbalanced (an `end` before its `alt`, an
+ * orphan `else`); buildSequenceDiagram repairs that at emission instead of the
+ * UI forbidding it mid-drag.
+ *
+ * Every step has an `id` so selection and drag survive reordering; it is a
+ * component counter ("step-1", ...) that never appears in the PlantUML.
+ */
+export interface SequenceMessageStep {
+  readonly id: string;
+  readonly kind: 'message';
   readonly fromId: string;
   readonly toId: string;
   readonly arrow: SequenceArrow;
+  /** May be empty -- a reply often needs no words, and the ` : ` is then omitted. */
   readonly label: string;
+}
+
+export interface SequenceDividerStep {
+  readonly id: string;
+  readonly kind: 'divider';
+  readonly label: string;
+}
+
+export interface SequenceGroupOpenStep {
+  readonly id: string;
+  readonly kind: 'group-open';
+  readonly groupKind: SequenceGroupKind;
+  readonly label: string;
+}
+
+export interface SequenceGroupElseStep {
+  readonly id: string;
+  readonly kind: 'group-else';
+  readonly label: string;
+}
+
+export interface SequenceGroupEndStep {
+  readonly id: string;
+  readonly kind: 'group-end';
+}
+
+export interface SequenceLifelineStep {
+  readonly id: string;
+  readonly kind: 'lifeline';
+  readonly action: SequenceLifelineAction;
+  readonly participantId: string;
+}
+
+export type SequenceStep =
+  | SequenceMessageStep
+  | SequenceDividerStep
+  | SequenceGroupOpenStep
+  | SequenceGroupElseStep
+  | SequenceGroupEndStep
+  | SequenceLifelineStep;
+
+/** Everything buildSequenceDiagram needs, as one value. */
+export interface SequenceDiagramModel {
+  /** '' means no title line. */
+  readonly title: string;
+  /**
+   * When true the generator works out activations itself: a solid call
+   * activates its target, the matching dashed reply deactivates it. Manual
+   * lifeline steps are emitted either way.
+   */
+  readonly autoLifelines: boolean;
+  readonly boxes: readonly SequenceBox[];
+  readonly participants: readonly SequenceParticipant[];
+  readonly steps: readonly SequenceStep[];
 }
 
 /**

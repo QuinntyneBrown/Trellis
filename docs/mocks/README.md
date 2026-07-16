@@ -123,14 +123,33 @@ steps. Key design facts:
   relationships → finish. Sequence: participants → messages → finish. The
   progress pips show a generic Type · Build · Finish trio until a track is
   chosen, then expand to the track's own step count.
-- **Content is structurally equivalent to the seeded starters.** The C4
-  track rebuilds the "C4 - Container" starter and the sequence track the
-  "Sequence Diagram" starter (both seeded by the `AddTemplates` migration),
-  so generated C4 code opens with the real `!define RELATIVE_INCLUDE` /
-  `!include C4_Container.puml` idiom. Mid-flow facsimiles (C4 elements
-  without relationships, participants without messages) keep final element
-  positions for step-to-step continuity — a real render would pack unlinked
-  elements differently.
+- **The sequence track outgrew these mocks.** The participants step now
+  also takes an optional diagram title, an optional per-participant color
+  (`actor Customer #EEE`), and nestable participant boxes
+  (`box "Shop" #LightBlue … end box`; nesting is why generated sequence
+  documents open with `!pragma teoz true` — the classic engine cannot draw
+  a box inside a box — plus the `skinparam defaultFontSize 10` house
+  style). The messages step became a uniform **step list**: messages,
+  `== section ==` dividers, group markers (`alt`/`opt`/`loop`/`group`,
+  `else`, `end` — inserted flat, indentation computed, unbalanced markers
+  repaired at emission) and manual `activate`/`deactivate` steps. Rows
+  drag to reorder (native HTML5 DnD, the Documents tree's idiom),
+  multi-select with Ctrl/Shift click, and carry a right-click
+  `tree-context-menu` with **Reverse as replies** (unwinds the selected
+  calls as dashed replies) and **Delete**. An **Automatic lifelines**
+  toggle (default on) marks calls/replies with `++`/`--` from a call-stack
+  simulation that never emits an unmatched `--`. The
+  `editor-wizard-sequence-*` mocks predate all of this and show only the
+  original participants/messages forms.
+- **Content is a superset of the seeded starters.** The C4 track rebuilds
+  the "C4 - Container" starter and the sequence track the "Sequence
+  Diagram" starter (both seeded by the `AddTemplates` migration), so
+  generated C4 code opens with the real `!define RELATIVE_INCLUDE` /
+  `!include C4_Container.puml` idiom, while a generated sequence diagram
+  is the starter's shape plus the teoz preamble and activation marks.
+  Mid-flow facsimiles (C4 elements without relationships, participants
+  without messages) keep final element positions for step-to-step
+  continuity — a real render would pack unlinked elements differently.
 - **Ids and aliases are auto-derived — one deliberate deviation from these
   mocks.** The mocked forms carry no Id/Alias field, and the ids and aliases
   they show (`shop`, `web`, `api`, `db`; aliases `Web`, `Orders`, `DB`) are

@@ -283,9 +283,23 @@
 
       @case ('sequence-participants') {
         <p class="wizard-panel__hint">
-          Add the actors and systems that take part. Each participant is written into the editor and rendered
-          immediately.
+          Add the actors and systems that take part, grouped into boxes if you like. Each addition is written
+          into the editor and rendered immediately.
         </p>
+
+        <label class="wizard-panel__label" for="wizard-sequence-title">Title</label>
+        <input
+          id="wizard-sequence-title"
+          class="wizard-panel__input"
+          data-testid="wizard-sequence-title"
+          type="text"
+          placeholder="(optional)"
+          autocomplete="off"
+          spellcheck="false"
+          [value]="sequenceTitle()"
+          (input)="onTextInput($event, sequenceTitle)"
+          (change)="onTitleChanged()"
+        />
 
         <label class="wizard-panel__label" for="wizard-participant-kind">Kind</label>
         <select
@@ -313,6 +327,40 @@
           (input)="onTextInput($event, participantName)"
         />
 
+        <label class="wizard-panel__label" for="wizard-participant-color">Color</label>
+        <div class="wizard-panel__color-field">
+          <input
+            id="wizard-participant-color"
+            class="wizard-panel__input"
+            data-testid="wizard-participant-color"
+            type="text"
+            placeholder="e.g. EEE or LightBlue (optional)"
+            autocomplete="off"
+            spellcheck="false"
+            [value]="participantColor()"
+            (input)="onTextInput($event, participantColor)"
+          />
+          <span
+            class="wizard-panel__color-swatch"
+            [style.background]="swatchBackground(participantColor())"
+            aria-hidden="true"
+          ></span>
+        </div>
+
+        <label class="wizard-panel__label" for="wizard-participant-box">Inside box</label>
+        <select
+          id="wizard-participant-box"
+          class="wizard-panel__select"
+          data-testid="wizard-participant-box"
+          [ngModel]="participantBoxId() ?? ''"
+          (ngModelChange)="participantBoxId.set($event || null)"
+        >
+          <option value="">— None —</option>
+          @for (box of boxes(); track box.id) {
+            <option [value]="box.id">{{ box.name }}</option>
+          }
+        </select>
+
         <button
           type="button"
           class="wizard-panel__button wizard-panel__button--confirm"
@@ -322,6 +370,89 @@
         >
           Add Participant
         </button>
+
+        <div class="wizard-panel__divider" aria-hidden="true">boxes</div>
+
+        <label class="wizard-panel__label" for="wizard-box-name">Box name</label>
+        <input
+          id="wizard-box-name"
+          class="wizard-panel__input"
+          data-testid="wizard-box-name"
+          type="text"
+          placeholder="e.g. Backend"
+          autocomplete="off"
+          spellcheck="false"
+          [value]="boxName()"
+          (input)="onTextInput($event, boxName)"
+        />
+
+        <label class="wizard-panel__label" for="wizard-box-color">Box color</label>
+        <div class="wizard-panel__color-field">
+          <input
+            id="wizard-box-color"
+            class="wizard-panel__input"
+            data-testid="wizard-box-color"
+            type="text"
+            placeholder="e.g. LightBlue (optional)"
+            autocomplete="off"
+            spellcheck="false"
+            [value]="boxColor()"
+            (input)="onTextInput($event, boxColor)"
+          />
+          <span
+            class="wizard-panel__color-swatch"
+            [style.background]="swatchBackground(boxColor())"
+            aria-hidden="true"
+          ></span>
+        </div>
+
+        <label class="wizard-panel__label" for="wizard-box-parent">Inside box</label>
+        <select
+          id="wizard-box-parent"
+          class="wizard-panel__select"
+          data-testid="wizard-box-parent"
+          [ngModel]="boxParentId() ?? ''"
+          (ngModelChange)="boxParentId.set($event || null)"
+        >
+          <option value="">— None —</option>
+          @for (box of boxes(); track box.id) {
+            <option [value]="box.id">{{ box.name }}</option>
+          }
+        </select>
+
+        <button
+          type="button"
+          class="wizard-panel__button"
+          data-testid="wizard-add-box"
+          [disabled]="!canAddBox()"
+          (click)="addBox()"
+        >
+          Add Box
+        </button>
+
+        @if (boxes().length > 0) {
+          <ul class="wizard-panel__added" data-testid="wizard-box-list" aria-label="Added boxes">
+            @for (box of boxes(); track box.id) {
+              <li class="wizard-panel__added-item" [attr.data-box-name]="box.name">
+                <span class="wizard-panel__added-kind">box</span>
+                @if (swatchBackground(box.color); as swatch) {
+                  <span class="wizard-panel__color-swatch" [style.background]="swatch" aria-hidden="true"></span>
+                }
+                <span class="wizard-panel__added-name">{{ box.name }}</span>
+                @if (box.parentId) {
+                  <span class="wizard-panel__added-context">in {{ boxName_(box.parentId) }}</span>
+                }
+                <app-tree-action-button
+                  icon="delete"
+                  label="Remove"
+                  testId="wizard-box-remove"
+                  [danger]="true"
+                  (clicked)="removeBox(box.id)"
+                ></app-tree-action-button>
+              </li>
+            }
+          </ul>
+        }
 
         <div class="wizard-panel__divider" aria-hidden="true">added</div>
 
@@ -334,7 +465,22 @@
             @for (participant of participants(); track participant.id) {
               <li class="wizard-panel__added-item" [attr.data-participant-name]="participant.name">
                 <span class="wizard-panel__added-kind">{{ participant.kind }}</span>
+                @if (swatchBackground(participant.color); as swatch) {
+                  <span class="wizard-panel__color-swatch" [style.background]="swatch" aria-hidden="true"></span>
+                }
                 <span class="wizard-panel__added-name">{{ participant.name }}</span>
+                <select
+                  class="wizard-panel__select wizard-panel__row-select"
+                  data-testid="wizard-participant-row-box"
+                  [attr.aria-label]="'Box for ' + participant.name"
+                  [ngModel]="participant.boxId ?? ''"
+                  (ngModelChange)="setParticipantBox(participant.id, $event || null)"
+                >
+                  <option value="">—</option>
+                  @for (box of boxes(); track box.id) {
+                    <option [value]="box.id">{{ box.name }}</option>
+                  }
+                </select>
                 <app-tree-action-button
                   icon="delete"
                   label="Remove"
@@ -350,9 +496,19 @@
 
       @case ('sequence-messages') {
         <p class="wizard-panel__hint">
-          Send messages between participants, top to bottom. Each message appends a line and re-renders the
-          preview.
+          Send messages between participants, top to bottom. Drag steps to reorder them; select several (Ctrl or
+          Shift click) and right-click for more.
         </p>
+
+        <label class="wizard-panel__toggle" data-testid="wizard-auto-lifelines-label">
+          <input
+            type="checkbox"
+            data-testid="wizard-auto-lifelines"
+            [checked]="autoLifelines()"
+            (change)="onAutoLifelinesToggled($event)"
+          />
+          <span>Automatic lifelines</span>
+        </label>
 
         <label class="wizard-panel__label" for="wizard-message-from">From</label>
         <select
@@ -399,7 +555,7 @@
           class="wizard-panel__input"
           data-testid="wizard-message-label"
           type="text"
-          placeholder="e.g. Place order"
+          placeholder="e.g. Place order (optional)"
           autocomplete="off"
           spellcheck="false"
           [value]="messageLabel()"
@@ -416,24 +572,112 @@
           Add Message
         </button>
 
-        <div class="wizard-panel__divider" aria-hidden="true">added</div>
+        <div class="wizard-panel__divider" aria-hidden="true">blocks</div>
 
-        @if (messages().length === 0) {
-          <p class="wizard-panel__empty" data-testid="wizard-added-empty">No messages yet — add your first above.</p>
+        <label class="wizard-panel__label" for="wizard-block-kind">Block</label>
+        <select
+          id="wizard-block-kind"
+          class="wizard-panel__select"
+          data-testid="wizard-block-kind"
+          [ngModel]="blockKind()"
+          (ngModelChange)="blockKind.set($event)"
+        >
+          @for (option of blockOptions; track option.kind) {
+            <option [value]="option.kind">{{ option.label }}</option>
+          }
+        </select>
+
+        @if (blockNeedsLabel()) {
+          <label class="wizard-panel__label" for="wizard-block-label">Label</label>
+          <input
+            id="wizard-block-label"
+            class="wizard-panel__input"
+            data-testid="wizard-block-label"
+            type="text"
+            [placeholder]="blockKind() === 'divider' ? 'e.g. Checkout' : '(optional)'"
+            autocomplete="off"
+            spellcheck="false"
+            [value]="blockLabel()"
+            (input)="onTextInput($event, blockLabel)"
+          />
+        }
+
+        @if (blockNeedsParticipant()) {
+          <label class="wizard-panel__label" for="wizard-block-participant">Participant</label>
+          <select
+            id="wizard-block-participant"
+            class="wizard-panel__select"
+            data-testid="wizard-block-participant"
+            [ngModel]="blockParticipantId() ?? ''"
+            (ngModelChange)="blockParticipantId.set($event || null)"
+          >
+            @for (participant of participants(); track participant.id) {
+              <option [value]="participant.id">{{ participant.name }}</option>
+            }
+          </select>
+        }
+
+        <button
+          type="button"
+          class="wizard-panel__button"
+          data-testid="wizard-insert-block"
+          [disabled]="!canInsertBlock()"
+          (click)="insertBlock()"
+        >
+          Insert Block
+        </button>
+
+        <div class="wizard-panel__divider" aria-hidden="true">steps</div>
+
+        @if (steps().length === 0) {
+          <p class="wizard-panel__empty" data-testid="wizard-added-empty">
+            No steps yet — add a message or block above.
+          </p>
         } @else {
-          <ul class="wizard-panel__added" data-testid="wizard-added-list" aria-label="Added messages">
-            @for (message of messages(); track $index) {
-              <li class="wizard-panel__added-item">
-                <span class="wizard-panel__added-name">{{ participantName_(message.fromId) }}</span>
-                <span class="wizard-panel__added-arrow">{{ message.arrow }}</span>
-                <span class="wizard-panel__added-name">{{ participantName_(message.toId) }}</span>
-                <span class="wizard-panel__added-context">{{ message.label }}</span>
+          <ul
+            class="wizard-panel__added"
+            data-testid="wizard-step-list"
+            aria-label="Added steps"
+            (dragenter)="onStepListDragEnter($event)"
+            (dragover)="onStepListDragOver($event)"
+            (dragleave)="onStepListDragLeave($event)"
+            (drop)="onStepDrop($event)"
+          >
+            @for (row of stepRows(); track row.step.id) {
+              <li
+                class="wizard-panel__added-item wizard-panel__step-row"
+                data-testid="wizard-step-row"
+                [attr.data-step-id]="row.step.id"
+                [attr.data-step-kind]="row.step.kind"
+                [class.wizard-panel__step-row--selected]="selectedStepIds().has(row.step.id)"
+                [class.wizard-panel__step-row--dragging]="draggingStepId() === row.step.id"
+                [class.wizard-panel__step-row--drop-before]="dropIndex() === row.index"
+                [class.wizard-panel__step-row--drop-after]="
+                  dropIndex() === stepRows().length && row.index === stepRows().length - 1
+                "
+                [style.padding-left.px]="8 + row.depth * 14"
+                draggable="true"
+                (click)="onStepRowClick(row.step, $event)"
+                (contextmenu)="onStepRowContextMenu(row.step, $event)"
+                (dragstart)="onStepDragStart(row.step, $event)"
+                (dragover)="onStepDragOver(row.index, $event)"
+                (dragend)="onStepDragEnd()"
+              >
+                @if (row.badge !== null) {
+                  <span class="wizard-panel__added-kind">{{ row.badge }}</span>
+                  <span class="wizard-panel__added-name">{{ row.text }}</span>
+                } @else {
+                  <span class="wizard-panel__added-name">{{ row.from }}</span>
+                  <span class="wizard-panel__added-arrow">{{ row.arrow }}</span>
+                  <span class="wizard-panel__added-name">{{ row.to }}</span>
+                  <span class="wizard-panel__added-context">{{ row.text }}</span>
+                }
                 <app-tree-action-button
                   icon="delete"
                   label="Remove"
-                  testId="wizard-added-remove"
+                  testId="wizard-step-remove"
                   [danger]="true"
-                  (clicked)="removeMessage($index)"
+                  (clicked)="removeStep(row.step.id)"
                 ></app-tree-action-button>
               </li>
             }
@@ -484,4 +728,15 @@
       </button>
     }
   </div>
+
+  @if (contextMenuRequest(); as request) {
+    <app-tree-context-menu
+      ariaLabel="Sequence step commands"
+      [items]="contextMenuItems()"
+      [clientX]="request.clientX"
+      [clientY]="request.clientY"
+      (commandSelected)="onStepContextMenuCommand($event)"
+      (menuClosed)="closeContextMenu($event.restoreFocus)"
+    />
+  }
 </aside>

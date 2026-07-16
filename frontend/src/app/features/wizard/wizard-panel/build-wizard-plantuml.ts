@@ -3,7 +3,8 @@ import {
   C4Element,
   C4ElementKind,
   C4Relationship,
-  SequenceMessage,
+  SequenceBox,
+  SequenceDiagramModel,
   SequenceParticipant,
   WizardDiagramChange,
 } from './wizard-model';
@@ -185,21 +186,204 @@ export function buildC4Diagram(
   return lines.join('\n');
 }
 
-export function buildSequenceDiagram(
+/**
+ * ` #color` when a color is set, nothing when it is not. Colors are stored
+ * without the '#' but users paste them with one; stripping it here is the
+ * single place that forgives both.
+ */
+function colorSuffix(color: string): string {
+  const normalized = color.trim().replace(/^#/, '');
+  return normalized ? ` #${normalized}` : '';
+}
+
+function participantLine(participant: SequenceParticipant, indent: string): string {
+  const declaration =
+    participant.id === participant.name
+      ? `${participant.kind} ${participant.name}`
+      : `${participant.kind} ${quote(participant.name)} as ${participant.id}`;
+  return `${indent}${declaration}${colorSuffix(participant.color)}`;
+}
+
+/**
+ * One `box ... end box` block and everything inside it: the box's own
+ * participants in add order, then its child boxes in creation order. Nested
+ * boxes are why the sequence preamble carries `!pragma teoz true` -- the
+ * classic engine refuses a box inside a box.
+ */
+function boxBlock(
+  box: SequenceBox,
+  boxes: readonly SequenceBox[],
   participants: readonly SequenceParticipant[],
-  messages: readonly SequenceMessage[],
-): string {
-  const lines: string[] = ['@startuml'];
+  indent: string,
+  lines: string[],
+  emittedBoxIds: Set<string>,
+): void {
+  emittedBoxIds.add(box.id);
+  lines.push(`${indent}box ${quote(box.name)}${colorSuffix(box.color)}`);
+  const inner = `${indent}  `;
+  for (const participant of participants) {
+    if (participant.boxId === box.id) {
+      lines.push(participantLine(participant, inner));
+    }
+  }
+  for (const child of boxes) {
+    if (child.parentId === box.id && !emittedBoxIds.has(child.id)) {
+      boxBlock(child, boxes, participants, inner, lines, emittedBoxIds);
+    }
+  }
+  lines.push(`${indent}end box`);
+}
+
+/** Follows parentId to the top of a box tree, treating a missing parent as the root. */
+function rootBox(box: SequenceBox, boxes: readonly SequenceBox[]): SequenceBox {
+  const seen = new Set<string>();
+  let current = box;
+  while (current.parentId !== null && !seen.has(current.id)) {
+    seen.add(current.id);
+    const parent = boxes.find((candidate) => candidate.id === current.parentId);
+    if (parent === undefined) {
+      break;
+    }
+    current = parent;
+  }
+  return current;
+}
+
+/**
+ * Participants and their boxes, in the friendliest order this model allows: a
+ * participant walk in add order, where the first member of a box tree pulls
+ * the whole tree in at that spot (a box's members must be declared inside its
+ * block, so members of one box are always emitted together regardless of when
+ * each was added). Boxes nobody joined yet come last -- an empty box renders
+ * fine and shows the user their box exists.
+ */
+function sequenceDeclarations(
+  boxes: readonly SequenceBox[],
+  participants: readonly SequenceParticipant[],
+): string[] {
+  const lines: string[] = [];
+  const emittedBoxIds = new Set<string>();
 
   for (const participant of participants) {
-    lines.push(
-      participant.id === participant.name
-        ? `${participant.kind} ${participant.name}`
-        : `${participant.kind} ${quote(participant.name)} as ${participant.id}`,
-    );
+    const box = boxes.find((candidate) => candidate.id === participant.boxId);
+    if (box === undefined) {
+      lines.push(participantLine(participant, ''));
+    } else if (!emittedBoxIds.has(box.id)) {
+      const root = rootBox(box, boxes);
+      if (!emittedBoxIds.has(root.id)) {
+        boxBlock(root, boxes, participants, '', lines, emittedBoxIds);
+      }
+    }
   }
-  if (messages.length > 0) {
-    lines.push('', ...messages.map((message) => `${message.fromId} ${message.arrow} ${message.toId} : ${message.label.trim()}`));
+  for (const box of boxes) {
+    if (!emittedBoxIds.has(box.id)) {
+      const root = rootBox(box, boxes);
+      if (!emittedBoxIds.has(root.id)) {
+        boxBlock(root, boxes, participants, '', lines, emittedBoxIds);
+      }
+    }
+  }
+  return lines;
+}
+
+/**
+ * The step list as PlantUML lines, with three repairs the flat-marker model
+ * calls for:
+ *
+ * - Group markers are balanced best-effort: an `end` or `else` with no open
+ *   group is dropped, and groups still open at the bottom are closed. The
+ *   user is mid-rearrangement, not wrong.
+ * - With autoLifelines on, activations are worked out from a call stack: a
+ *   solid call activates its target (` ++`), and a dashed reply deactivates
+ *   its sender only when that sender is the innermost activation (` --`).
+ *   An unmatched `--` is a hard PlantUML error, so when the stack disagrees
+ *   the mark is simply not emitted -- a lifeline left open renders fine.
+ * - Manual activate/deactivate steps are emitted verbatim either way, and
+ *   feed the same stack so the automatic marks stay matched around them.
+ */
+function sequenceBody(model: SequenceDiagramModel): string[] {
+  const lines: string[] = [];
+  const activationStack: string[] = [];
+  let depth = 0;
+  const indent = () => '  '.repeat(depth);
+
+  for (const step of model.steps) {
+    switch (step.kind) {
+      case 'message': {
+        let mark = '';
+        if (model.autoLifelines) {
+          if (step.arrow === '->' && step.fromId !== step.toId) {
+            mark = ' ++';
+            activationStack.push(step.toId);
+          } else if (step.arrow === '-->' && activationStack[activationStack.length - 1] === step.fromId) {
+            mark = ' --';
+            activationStack.pop();
+          }
+        }
+        const label = step.label.trim();
+        lines.push(`${indent()}${step.fromId} ${step.arrow} ${step.toId}${mark}${label ? ` : ${label}` : ''}`);
+        break;
+      }
+      case 'divider':
+        lines.push(`${indent()}== ${step.label.trim()} ==`);
+        break;
+      case 'group-open': {
+        const label = step.label.trim();
+        lines.push(`${indent()}${step.groupKind}${label ? ` ${label}` : ''}`);
+        depth += 1;
+        break;
+      }
+      case 'group-else':
+        if (depth > 0) {
+          const label = step.label.trim();
+          lines.push(`${'  '.repeat(depth - 1)}else${label ? ` ${label}` : ''}`);
+        }
+        break;
+      case 'group-end':
+        if (depth > 0) {
+          depth -= 1;
+          lines.push(`${indent()}end`);
+        }
+        break;
+      case 'lifeline': {
+        lines.push(`${indent()}${step.action} ${step.participantId}`);
+        if (step.action === 'activate') {
+          activationStack.push(step.participantId);
+        } else {
+          const at = activationStack.lastIndexOf(step.participantId);
+          if (at !== -1) {
+            activationStack.splice(at, 1);
+          }
+        }
+        break;
+      }
+    }
+  }
+  while (depth > 0) {
+    depth -= 1;
+    lines.push(`${'  '.repeat(depth)}end`);
+  }
+  return lines;
+}
+
+export function buildSequenceDiagram(model: SequenceDiagramModel): string {
+  // teoz is not a nicety: nested boxes and the same-line activation marks this
+  // generator emits need it. The font size matches what the wizard's diagrams
+  // are for -- flows with enough participants that the default 14 wraps.
+  const lines: string[] = ['@startuml', '!pragma teoz true', 'skinparam defaultFontSize 10'];
+
+  const title = model.title.trim();
+  if (title) {
+    lines.push(`title ${title}`);
+  }
+
+  const declarations = sequenceDeclarations(model.boxes, model.participants);
+  if (declarations.length > 0) {
+    lines.push('', ...declarations);
+  }
+  const body = sequenceBody(model);
+  if (body.length > 0) {
+    lines.push('', ...body);
   }
 
   lines.push('@enduml');

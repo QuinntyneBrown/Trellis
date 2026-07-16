@@ -2,16 +2,30 @@ import { Component, EventEmitter, Output, computed, signal } from '@angular/core
 import { FormsModule } from '@angular/forms';
 
 import { TreeActionButtonComponent } from '../../../shared/components/tree-action-button/tree-action-button.component';
+import { TreeContextMenuComponent } from '../../../shared/components/tree-context-menu/tree-context-menu.component';
+import {
+  TreeContextMenuItem,
+  TreeContextMenuRequest,
+} from '../../../shared/components/tree-context-menu/tree-context-menu.model';
 import { buildC4Diagram, buildSequenceDiagram, deriveId, deriveParticipantId } from './build-wizard-plantuml';
+import {
+  computeStepDepths,
+  deleteSteps,
+  moveSteps,
+  reverseAsReplies,
+} from './sequence-step-operations';
 import {
   C4DiagramType,
   C4Element,
   C4ElementKind,
   C4Relationship,
   SequenceArrow,
-  SequenceMessage,
+  SequenceBox,
+  SequenceGroupKind,
+  SequenceLifelineAction,
   SequenceParticipant,
   SequenceParticipantKind,
+  SequenceStep,
   WizardDiagramChange,
   WizardTrack,
 } from './wizard-model';
@@ -42,6 +56,38 @@ interface ArrowOption {
   readonly arrow: SequenceArrow;
   readonly label: string;
 }
+
+/** What the "Insert Block" form can insert -- every non-message step kind. */
+type SequenceBlockChoice = 'divider' | SequenceGroupKind | 'else' | 'end' | SequenceLifelineAction;
+
+interface BlockOption {
+  readonly kind: SequenceBlockChoice;
+  readonly label: string;
+}
+
+/**
+ * One rendered row of the sequence step list, with its display strings already
+ * resolved. The template reads these instead of the step union directly, so it
+ * never needs to narrow the discriminant itself: message rows use from/arrow/
+ * to, every other kind carries a badge.
+ */
+interface SequenceStepRow {
+  readonly step: SequenceStep;
+  readonly index: number;
+  readonly depth: number;
+  readonly badge: string | null;
+  readonly from: string | null;
+  readonly arrow: string | null;
+  readonly to: string | null;
+  readonly text: string;
+}
+
+/**
+ * Identifies a step-row drag in dataTransfer.types, the same way the
+ * Documents tree identifies its rows -- only the presence of the type is
+ * readable mid-drag (protected mode).
+ */
+export const STEP_DRAG_TYPE = 'application/x-trellis-wizard-step-id';
 
 const C4_TYPE_OPTIONS: readonly C4TypeOption[] = [
   { type: 'Context', description: 'Your system, its users and the systems it talks to.' },
@@ -91,6 +137,30 @@ const ARROW_OPTIONS: readonly ArrowOption[] = [
   { arrow: '->>', label: '->>  async' },
 ];
 
+const BLOCK_OPTIONS: readonly BlockOption[] = [
+  { kind: 'divider', label: '== section ==' },
+  { kind: 'alt', label: 'alt — alternatives (if)' },
+  { kind: 'opt', label: 'opt — optional (if)' },
+  { kind: 'loop', label: 'loop' },
+  { kind: 'group', label: 'group' },
+  { kind: 'else', label: 'else — next branch' },
+  { kind: 'end', label: 'end — close block' },
+  { kind: 'activate', label: 'activate lifeline' },
+  { kind: 'deactivate', label: 'deactivate lifeline' },
+];
+
+/**
+ * A color the wizard will emit: empty, a 3/6-digit hex (leading # optional --
+ * it is stripped either way), or a name PlantUML resolves (LightBlue). Anything
+ * else disables the Add button rather than emitting a broken line.
+ */
+const COLOR_PATTERN = /^#?(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{6}|[A-Za-z]+)$/;
+
+function isValidColor(color: string): boolean {
+  const trimmed = color.trim();
+  return trimmed.length === 0 || COLOR_PATTERN.test(trimmed);
+}
+
 /**
  * The Diagram Wizard -- the fifth exclusive side panel. Walks the user through
  * building a C4 or sequence diagram a step at a time, for people who know what
@@ -105,6 +175,11 @@ const ARROW_OPTIONS: readonly ArrowOption[] = [
  * Rebuilding the whole document (rather than appending a line per action) is
  * what makes nesting work: adding a container to a System_Boundary edits the
  * middle of the document, not the end. It also makes removal free.
+ *
+ * The sequence track's step list is the panel's one rich list: rows
+ * multi-select (click / ctrl / shift), drag to reorder (native HTML5 DnD, the
+ * Documents tree's idiom), and carry a right-click context menu for acting on
+ * the whole selection.
  */
 @Component({
   selector: 'app-wizard-panel',
@@ -114,7 +189,7 @@ const ARROW_OPTIONS: readonly ArrowOption[] = [
   // value is applied before the options exist. ngModel handles the ordering,
   // and is what the save dialog already uses for the same reason. Text inputs
   // stay on raw (input) + signal.set, the Explain panel's idiom.
-  imports: [FormsModule, TreeActionButtonComponent],
+  imports: [FormsModule, TreeActionButtonComponent, TreeContextMenuComponent],
   templateUrl: './wizard-panel.component.html',
   styleUrl: './wizard-panel.component.scss',
 })
@@ -128,6 +203,7 @@ export class WizardPanelComponent {
   readonly c4ElementKinds = C4_ELEMENT_KINDS;
   readonly sequenceParticipantKinds = SEQUENCE_PARTICIPANT_KINDS;
   readonly arrowOptions = ARROW_OPTIONS;
+  readonly blockOptions = BLOCK_OPTIONS;
 
   readonly step = signal<WizardStep>('type');
   readonly track = signal<WizardTrack | null>(null);
@@ -136,7 +212,11 @@ export class WizardPanelComponent {
   readonly elements = signal<readonly C4Element[]>([]);
   readonly relationships = signal<readonly C4Relationship[]>([]);
   readonly participants = signal<readonly SequenceParticipant[]>([]);
-  readonly messages = signal<readonly SequenceMessage[]>([]);
+  readonly boxes = signal<readonly SequenceBox[]>([]);
+  readonly steps = signal<readonly SequenceStep[]>([]);
+
+  readonly sequenceTitle = signal('');
+  readonly autoLifelines = signal(true);
 
   /** Element form. */
   readonly elementKind = signal<C4ElementKind>('Person');
@@ -154,12 +234,41 @@ export class WizardPanelComponent {
   /** Participant form. */
   readonly participantKind = signal<SequenceParticipantKind>('participant');
   readonly participantName = signal('');
+  readonly participantColor = signal('');
+  // Sticky across adds, unlike the other participant fields: filling a box
+  // with several members in a row is the common case.
+  readonly participantBoxId = signal<string | null>(null);
+
+  /** Box form. */
+  readonly boxName = signal('');
+  readonly boxColor = signal('');
+  readonly boxParentId = signal<string | null>(null);
 
   /** Message form. */
   readonly messageFromId = signal<string | null>(null);
   readonly messageToId = signal<string | null>(null);
   readonly messageArrow = signal<SequenceArrow>('->');
   readonly messageLabel = signal('');
+
+  /** Insert-block form. */
+  readonly blockKind = signal<SequenceBlockChoice>('divider');
+  readonly blockLabel = signal('');
+  readonly blockParticipantId = signal<string | null>(null);
+
+  /** Step-list selection; the anchor is where a shift-click range grows from. */
+  readonly selectedStepIds = signal<ReadonlySet<string>>(new Set());
+  private selectionAnchorId: string | null = null;
+
+  /** Step-list drag state: the dragged row, and the gap the drop would land in. */
+  readonly draggingStepId = signal<string | null>(null);
+  readonly dropIndex = signal<number | null>(null);
+  /** Same child-element enter/leave counting the tree rows use -- see DocumentTreeNodeComponent.dragEnterCount. */
+  private listDragEnterCount = 0;
+
+  readonly contextMenuRequest = signal<TreeContextMenuRequest<SequenceStep> | null>(null);
+
+  private stepIdSequence = 0;
+  private boxIdSequence = 0;
 
   /**
    * The exact document last handed to the editor page. Sending it back with
@@ -175,6 +284,36 @@ export class WizardPanelComponent {
   readonly connectableElements = computed(() =>
     this.elements().filter((element) => element.kind !== 'System_Boundary'),
   );
+
+  readonly stepRows = computed<readonly SequenceStepRow[]>(() => {
+    const steps = this.steps();
+    const depths = computeStepDepths(steps);
+    return steps.map((step, index) => this.toStepRow(step, index, depths[index]));
+  });
+
+  // A computed, not a getter: the menu's [items] binding needs a stable array
+  // reference for the lifetime of one open. A getter would mint a new array on
+  // every change-detection pass, which the menu's ngOnChanges sees as a fresh
+  // change each tick -- the feedback loop that used to wedge the tab (see
+  // TreeContextMenuComponent.ngOnChanges).
+  readonly contextMenuItems = computed<TreeContextMenuItem[]>(() => {
+    const selected = this.selectedStepIds();
+    if (selected.size === 0) {
+      return [];
+    }
+    const callCount = this.steps().filter(
+      (step) => selected.has(step.id) && step.kind === 'message' && step.arrow === '->',
+    ).length;
+    return [
+      { id: 'reverse-replies', label: 'Reverse as replies', disabled: callCount === 0 },
+      {
+        id: 'delete',
+        label: selected.size > 1 ? `Delete ${selected.size} steps` : 'Delete',
+        danger: true,
+        separatorBefore: true,
+      },
+    ];
+  });
 
   readonly pips = computed<WizardPip[]>(() => {
     const labels = this.stepLabels();
@@ -204,10 +343,31 @@ export class WizardPanelComponent {
       this.relationshipFromId() !== null &&
       this.relationshipToId() !== null,
   );
-  readonly canAddParticipant = computed(() => this.participantName().trim().length > 0);
-  readonly canAddMessage = computed(
-    () => this.messageLabel().trim().length > 0 && this.messageFromId() !== null && this.messageToId() !== null,
+  readonly canAddParticipant = computed(
+    () => this.participantName().trim().length > 0 && isValidColor(this.participantColor()),
   );
+  readonly canAddBox = computed(() => this.boxName().trim().length > 0 && isValidColor(this.boxColor()));
+  // No label requirement: a reply message often needs no words.
+  readonly canAddMessage = computed(() => this.messageFromId() !== null && this.messageToId() !== null);
+
+  readonly blockNeedsLabel = computed(() => {
+    const kind = this.blockKind();
+    return kind !== 'end' && kind !== 'activate' && kind !== 'deactivate';
+  });
+  readonly blockNeedsParticipant = computed(
+    () => this.blockKind() === 'activate' || this.blockKind() === 'deactivate',
+  );
+  readonly canInsertBlock = computed(() => {
+    switch (this.blockKind()) {
+      case 'divider':
+        return this.blockLabel().trim().length > 0;
+      case 'activate':
+      case 'deactivate':
+        return this.blockParticipantId() !== null;
+      default:
+        return true;
+    }
+  });
 
   readonly canGoBack = computed(() => this.step() !== 'type');
 
@@ -248,9 +408,12 @@ export class WizardPanelComponent {
         count(this.relationships().length, 'relationship', 'relationships'),
       ].join(' · ');
     }
+    const messages = this.steps().filter((step) => step.kind === 'message').length;
+    const blocks = this.steps().length - messages;
     return [
       count(this.participants().length, 'participant', 'participants'),
-      count(this.messages().length, 'message', 'messages'),
+      count(messages, 'message', 'messages'),
+      count(blocks, 'block', 'blocks'),
     ].join(' · ');
   });
 
@@ -268,6 +431,23 @@ export class WizardPanelComponent {
 
   boundaryName(id: string | null): string {
     return id === null ? '' : this.boundaries().find((boundary) => boundary.id === id)?.name ?? '';
+  }
+
+  boxName_(id: string | null): string {
+    return id === null ? '' : this.boxes().find((box) => box.id === id)?.name ?? '';
+  }
+
+  /**
+   * The CSS background for a color swatch, or null (no fill) when the field is
+   * empty or not yet valid. Hex works with the # restored; names are passed
+   * through -- PlantUML's everyday color names are CSS names too.
+   */
+  swatchBackground(color: string): string | null {
+    const normalized = color.trim().replace(/^#/, '');
+    if (normalized.length === 0 || !isValidColor(normalized)) {
+      return null;
+    }
+    return /^[0-9A-Fa-f]{3}$|^[0-9A-Fa-f]{6}$/.test(normalized) ? `#${normalized}` : normalized;
   }
 
   // -- step 1 ---------------------------------------------------------------
@@ -354,7 +534,58 @@ export class WizardPanelComponent {
     this.emitDiagram();
   }
 
-  // -- sequence -------------------------------------------------------------
+  // -- sequence: title, boxes, participants ----------------------------------
+
+  /**
+   * The title emits on (change) -- commit on blur/Enter -- rather than every
+   * keystroke: each emission rewrites the buffer and re-renders the preview,
+   * which is the right cost per action but not per typed letter.
+   */
+  onTitleChanged(): void {
+    this.emitDiagram();
+  }
+
+  addBox(): void {
+    if (!this.canAddBox()) {
+      return;
+    }
+    this.boxIdSequence += 1;
+    this.boxes.update((list) => [
+      ...list,
+      {
+        id: `box-${this.boxIdSequence}`,
+        name: this.boxName().trim(),
+        color: this.boxColor().trim(),
+        parentId: this.boxParentId(),
+      },
+    ]);
+    this.boxName.set('');
+    this.boxColor.set('');
+    this.boxParentId.set(null);
+    this.emitDiagram();
+  }
+
+  /**
+   * Deleting a box dissolves it in place: its members and its child boxes move
+   * up to its parent (or the root), the same way removing a C4 boundary
+   * returns its elements to the diagram root rather than vanishing them.
+   */
+  removeBox(id: string): void {
+    const parentId = this.boxes().find((box) => box.id === id)?.parentId ?? null;
+    this.boxes.update((list) =>
+      list.filter((box) => box.id !== id).map((box) => (box.parentId === id ? { ...box, parentId } : box)),
+    );
+    this.participants.update((list) =>
+      list.map((participant) => (participant.boxId === id ? { ...participant, boxId: parentId } : participant)),
+    );
+    if (this.participantBoxId() === id) {
+      this.participantBoxId.set(parentId);
+    }
+    if (this.boxParentId() === id) {
+      this.boxParentId.set(parentId);
+    }
+    this.emitDiagram();
+  }
 
   addParticipant(): void {
     if (!this.canAddParticipant()) {
@@ -364,18 +595,51 @@ export class WizardPanelComponent {
 
     this.participants.update((list) => [
       ...list,
-      { id: deriveParticipantId(name, list.map((participant) => participant.id)), kind: this.participantKind(), name },
+      {
+        id: deriveParticipantId(name, list.map((participant) => participant.id)),
+        kind: this.participantKind(),
+        name,
+        color: this.participantColor().trim(),
+        boxId: this.participantBoxId(),
+      },
     ]);
     this.participantKind.set('participant');
     this.participantName.set('');
+    this.participantColor.set('');
     this.syncMessageForm();
     this.emitDiagram();
   }
 
   removeParticipant(id: string): void {
     this.participants.update((list) => list.filter((participant) => participant.id !== id));
-    this.messages.update((list) => list.filter((message) => message.fromId !== id && message.toId !== id));
+    this.steps.update((list) =>
+      list.filter((step) => {
+        if (step.kind === 'message') {
+          return step.fromId !== id && step.toId !== id;
+        }
+        if (step.kind === 'lifeline') {
+          return step.participantId !== id;
+        }
+        return true;
+      }),
+    );
+    this.pruneStepSelection();
     this.syncMessageForm();
+    this.emitDiagram();
+  }
+
+  /** Per-row reassignment -- how a participant joins a box created after it was. */
+  setParticipantBox(id: string, boxId: string | null): void {
+    this.participants.update((list) =>
+      list.map((participant) => (participant.id === id ? { ...participant, boxId } : participant)),
+    );
+    this.emitDiagram();
+  }
+
+  // -- sequence: steps --------------------------------------------------------
+
+  onAutoLifelinesToggled(event: Event): void {
+    this.autoLifelines.set((event.target as HTMLInputElement).checked);
     this.emitDiagram();
   }
 
@@ -386,17 +650,199 @@ export class WizardPanelComponent {
       return;
     }
 
-    this.messages.update((list) => [
+    this.steps.update((list) => [
       ...list,
-      { fromId, toId, arrow: this.messageArrow(), label: this.messageLabel().trim() },
+      { id: this.nextStepId(), kind: 'message', fromId, toId, arrow: this.messageArrow(), label: this.messageLabel().trim() },
     ]);
     this.resetMessageForm();
     this.emitDiagram();
   }
 
-  removeMessage(index: number): void {
-    this.messages.update((list) => list.filter((_, at) => at !== index));
+  /**
+   * Inserts after the last selected row when there is a selection, else
+   * appends -- and the inserted row becomes the selection, so consecutive
+   * inserts chain in order like a cursor (alt, then else, then end). To wrap
+   * rows that already exist: select them, insert the closing `end` (it lands
+   * right below), then drag the opening marker in above.
+   */
+  insertBlock(): void {
+    if (!this.canInsertBlock()) {
+      return;
+    }
+    const step = this.buildBlockStep();
+    if (step === null) {
+      return;
+    }
+    this.steps.update((list) => {
+      const at = this.insertionIndex(list);
+      return [...list.slice(0, at), step, ...list.slice(at)];
+    });
+    this.selectedStepIds.set(new Set([step.id]));
+    this.selectionAnchorId = step.id;
+    this.blockLabel.set('');
     this.emitDiagram();
+  }
+
+  removeStep(id: string): void {
+    this.steps.update((list) => list.filter((step) => step.id !== id));
+    this.pruneStepSelection();
+    this.emitDiagram();
+  }
+
+  // -- sequence: step selection ----------------------------------------------
+
+  onStepRowClick(step: SequenceStep, event: MouseEvent): void {
+    if (event.shiftKey && this.selectionAnchorId !== null) {
+      const list = this.steps();
+      const anchorIndex = list.findIndex((candidate) => candidate.id === this.selectionAnchorId);
+      const targetIndex = list.findIndex((candidate) => candidate.id === step.id);
+      if (anchorIndex !== -1 && targetIndex !== -1) {
+        const [from, to] = anchorIndex <= targetIndex ? [anchorIndex, targetIndex] : [targetIndex, anchorIndex];
+        this.selectedStepIds.set(new Set(list.slice(from, to + 1).map((candidate) => candidate.id)));
+        return;
+      }
+    }
+    if (event.ctrlKey || event.metaKey) {
+      this.selectedStepIds.update((selected) => {
+        const next = new Set(selected);
+        if (next.has(step.id)) {
+          next.delete(step.id);
+        } else {
+          next.add(step.id);
+        }
+        return next;
+      });
+      this.selectionAnchorId = step.id;
+      return;
+    }
+    this.selectedStepIds.set(new Set([step.id]));
+    this.selectionAnchorId = step.id;
+  }
+
+  onStepRowContextMenu(step: SequenceStep, event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    // Right-clicking outside the selection retargets it (the file-manager
+    // convention); right-clicking inside it keeps the selection for the menu.
+    if (!this.selectedStepIds().has(step.id)) {
+      this.selectedStepIds.set(new Set([step.id]));
+      this.selectionAnchorId = step.id;
+    }
+    this.contextMenuRequest.set({
+      target: step,
+      clientX: event.clientX,
+      clientY: event.clientY,
+      triggerElement: event.currentTarget as HTMLElement,
+    });
+  }
+
+  onStepContextMenuCommand(command: string): void {
+    // A selected command takes over focus itself; Escape remains the path
+    // that deliberately returns focus to the originating row.
+    this.closeContextMenu(false);
+    const selected = this.selectedStepIds();
+
+    switch (command) {
+      case 'reverse-replies':
+        this.steps.update((list) => reverseAsReplies(list, selected, () => this.nextStepId()));
+        this.emitDiagram();
+        break;
+      case 'delete':
+        this.steps.update((list) => deleteSteps(list, selected));
+        this.selectedStepIds.set(new Set());
+        this.selectionAnchorId = null;
+        this.emitDiagram();
+        break;
+    }
+  }
+
+  closeContextMenu(restoreFocus: boolean): void {
+    const trigger = this.contextMenuRequest()?.triggerElement;
+    this.contextMenuRequest.set(null);
+    if (restoreFocus) {
+      trigger?.focus();
+    }
+  }
+
+  // -- sequence: step drag-reorder ---------------------------------------------
+  // Native HTML5 DnD, the Documents tree's idiom (DocumentTreeNodeComponent):
+  // a custom dataTransfer type identifies our rows, dragover must
+  // preventDefault or the browser never fires drop, and enter/leave counting
+  // keeps the indicator stable while crossing row children.
+
+  onStepDragStart(step: SequenceStep, event: DragEvent): void {
+    if (!event.dataTransfer) {
+      return;
+    }
+    event.dataTransfer.setData(STEP_DRAG_TYPE, step.id);
+    event.dataTransfer.setData('text/plain', step.id);
+    event.dataTransfer.effectAllowed = 'move';
+    this.draggingStepId.set(step.id);
+  }
+
+  onStepDragOver(index: number, event: DragEvent): void {
+    if (!this.isStepDrag(event)) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    event.dataTransfer!.dropEffect = 'move';
+    // The row's upper half drops before it, the lower half after it.
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    this.dropIndex.set(event.clientY < rect.top + rect.height / 2 ? index : index + 1);
+  }
+
+  /** The list's own space below the last row drops at the end. */
+  onStepListDragOver(event: DragEvent): void {
+    if (!this.isStepDrag(event)) {
+      return;
+    }
+    event.preventDefault();
+    event.dataTransfer!.dropEffect = 'move';
+    this.dropIndex.set(this.steps().length);
+  }
+
+  onStepListDragEnter(event: DragEvent): void {
+    if (!this.isStepDrag(event)) {
+      return;
+    }
+    event.preventDefault();
+    this.listDragEnterCount += 1;
+  }
+
+  onStepListDragLeave(event: DragEvent): void {
+    if (!this.isStepDrag(event)) {
+      return;
+    }
+    this.listDragEnterCount = Math.max(0, this.listDragEnterCount - 1);
+    if (this.listDragEnterCount === 0) {
+      this.dropIndex.set(null);
+    }
+  }
+
+  onStepDrop(event: DragEvent): void {
+    if (!this.isStepDrag(event)) {
+      return;
+    }
+    event.preventDefault();
+    const draggedId = event.dataTransfer!.getData(STEP_DRAG_TYPE) || this.draggingStepId();
+    const target = this.dropIndex();
+    this.clearDragState();
+    if (!draggedId || target === null) {
+      return;
+    }
+
+    // Dragging a row that is part of a multi-selection moves the whole
+    // selection (the file-manager convention); any other row moves alone.
+    const selected = this.selectedStepIds();
+    const movedIds = selected.has(draggedId) && selected.size > 1 ? selected : new Set([draggedId]);
+    this.steps.update((list) => moveSteps(list, movedIds, target));
+    this.emitDiagram();
+  }
+
+  /** Fires on the source row whether the drag completed or was cancelled. */
+  onStepDragEnd(): void {
+    this.clearDragState();
   }
 
   // -- navigation -----------------------------------------------------------
@@ -505,16 +951,106 @@ export class WizardPanelComponent {
     }
   }
 
+  private nextStepId(): string {
+    this.stepIdSequence += 1;
+    return `step-${this.stepIdSequence}`;
+  }
+
+  private toStepRow(step: SequenceStep, index: number, depth: number): SequenceStepRow {
+    const base = { step, index, depth, from: null, arrow: null, to: null };
+    switch (step.kind) {
+      case 'message':
+        return {
+          ...base,
+          badge: null,
+          from: this.participantName_(step.fromId),
+          arrow: step.arrow,
+          to: this.participantName_(step.toId),
+          text: step.label,
+        };
+      case 'divider':
+        return { ...base, badge: '==', text: step.label };
+      case 'group-open':
+        return { ...base, badge: step.groupKind, text: step.label };
+      case 'group-else':
+        return { ...base, badge: 'else', text: step.label };
+      case 'group-end':
+        return { ...base, badge: 'end', text: '' };
+      case 'lifeline':
+        return { ...base, badge: step.action, text: this.participantName_(step.participantId) };
+    }
+  }
+
+  private buildBlockStep(): SequenceStep | null {
+    const kind = this.blockKind();
+    const label = this.blockLabel().trim();
+    const id = this.nextStepId();
+    switch (kind) {
+      case 'divider':
+        return { id, kind: 'divider', label };
+      case 'alt':
+      case 'opt':
+      case 'loop':
+      case 'group':
+        return { id, kind: 'group-open', groupKind: kind, label };
+      case 'else':
+        return { id, kind: 'group-else', label };
+      case 'end':
+        return { id, kind: 'group-end' };
+      case 'activate':
+      case 'deactivate': {
+        const participantId = this.blockParticipantId();
+        return participantId === null ? null : { id, kind: 'lifeline', action: kind, participantId };
+      }
+    }
+  }
+
+  private insertionIndex(list: readonly SequenceStep[]): number {
+    const selected = this.selectedStepIds();
+    let last = -1;
+    list.forEach((step, index) => {
+      if (selected.has(step.id)) {
+        last = index;
+      }
+    });
+    return last === -1 ? list.length : last + 1;
+  }
+
+  private pruneStepSelection(): void {
+    const alive = new Set(this.steps().map((step) => step.id));
+    this.selectedStepIds.update((selected) => new Set([...selected].filter((id) => alive.has(id))));
+    if (this.selectionAnchorId !== null && !alive.has(this.selectionAnchorId)) {
+      this.selectionAnchorId = null;
+    }
+  }
+
+  private clearDragState(): void {
+    this.draggingStepId.set(null);
+    this.dropIndex.set(null);
+    this.listDragEnterCount = 0;
+  }
+
+  private isStepDrag(event: DragEvent): boolean {
+    return event.dataTransfer?.types.includes(STEP_DRAG_TYPE) ?? false;
+  }
+
   private resetModel(): void {
     this.c4Type.set(null);
     this.elements.set([]);
     this.relationships.set([]);
     this.participants.set([]);
-    this.messages.set([]);
+    this.boxes.set([]);
+    this.steps.set([]);
+    this.sequenceTitle.set('');
+    this.autoLifelines.set(true);
+    this.selectedStepIds.set(new Set());
+    this.selectionAnchorId = null;
+    this.closeContextMenu(false);
+    this.clearDragState();
     this.resetElementForm();
     this.resetRelationshipForm();
-    this.participantKind.set('participant');
-    this.participantName.set('');
+    this.resetParticipantForm();
+    this.resetBoxForm();
     this.resetMessageForm();
   }
 
@@ -524,6 +1060,19 @@ export class WizardPanelComponent {
     this.elementTechnology.set('');
     this.elementDescription.set('');
     this.elementBoundaryId.set(null);
+  }
+
+  private resetParticipantForm(): void {
+    this.participantKind.set('participant');
+    this.participantName.set('');
+    this.participantColor.set('');
+    this.participantBoxId.set(null);
+  }
+
+  private resetBoxForm(): void {
+    this.boxName.set('');
+    this.boxColor.set('');
+    this.boxParentId.set(null);
   }
 
   /**
@@ -546,6 +1095,9 @@ export class WizardPanelComponent {
     this.messageToId.set(ids[1] ?? ids[0] ?? null);
     this.messageArrow.set('->');
     this.messageLabel.set('');
+    this.blockKind.set('divider');
+    this.blockLabel.set('');
+    this.blockParticipantId.set(ids[0] ?? null);
   }
 
   /**
@@ -562,6 +1114,7 @@ export class WizardPanelComponent {
     const ids = this.participants().map((participant) => participant.id);
     this.messageFromId.set(pick(this.messageFromId(), ids, 0));
     this.messageToId.set(pick(this.messageToId(), ids, 1));
+    this.blockParticipantId.set(pick(this.blockParticipantId(), ids, 0));
   }
 
   private buildDocument(): string | null {
@@ -570,7 +1123,15 @@ export class WizardPanelComponent {
       return type === null ? null : buildC4Diagram(type, this.elements(), this.relationships());
     }
     if (this.track() === 'sequence') {
-      return this.participants().length === 0 ? null : buildSequenceDiagram(this.participants(), this.messages());
+      return this.participants().length === 0
+        ? null
+        : buildSequenceDiagram({
+            title: this.sequenceTitle(),
+            autoLifelines: this.autoLifelines(),
+            boxes: this.boxes(),
+            participants: this.participants(),
+            steps: this.steps(),
+          });
     }
     return null;
   }
