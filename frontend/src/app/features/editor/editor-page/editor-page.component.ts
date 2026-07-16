@@ -9,6 +9,7 @@ import { catchError, switchMap } from 'rxjs/operators';
 import { Document } from '../../../core/models/document.model';
 import { DocumentKind, inferDocumentKindFromFileName } from '../../../core/models/document-kind.model';
 import { DocumentSummary } from '../../../core/models/document-summary.model';
+import { ExplainPrompt } from '../../../core/models/explain-prompt.model';
 import { OpenedDiskFile } from '../../../core/models/opened-disk-file.model';
 import { TemplateSummary } from '../../../core/models/template-summary.model';
 import { Folder } from '../../../core/models/folder.model';
@@ -21,6 +22,7 @@ import { FoldersService } from '../../../core/services/folders.service';
 import { TemplatesService } from '../../../core/services/templates.service';
 import { ErrorBannerComponent } from '../../../shared/components/error-banner/error-banner.component';
 import { DocumentsPanelComponent } from '../../documents/documents-panel/documents-panel.component';
+import { ExplainPanelComponent } from '../../explain/explain-panel/explain-panel.component';
 import { ExplorerPanelComponent } from '../../explorer/explorer-panel/explorer-panel.component';
 import { TemplatesPanelComponent } from '../../templates/templates-panel/templates-panel.component';
 import { DiagramPreviewComponent } from '../diagram-preview/diagram-preview.component';
@@ -47,7 +49,7 @@ import {
 const BLANK_DOCUMENT_NAME = 'Untitled diagram';
 
 /** Which (if either) of the exclusive side panels is currently showing. */
-export type SidePanel = 'explorer' | 'documents' | 'templates' | null;
+export type SidePanel = 'explorer' | 'documents' | 'templates' | 'explain' | null;
 
 /**
  * Route root for both 'editor' (blank) and 'editor/:documentId' (resolved
@@ -69,6 +71,7 @@ export type SidePanel = 'explorer' | 'documents' | 'templates' | null;
     DocumentsPanelComponent,
     ExplorerPanelComponent,
     TemplatesPanelComponent,
+    ExplainPanelComponent,
     ErrorBannerComponent,
   ],
   templateUrl: './editor-page.component.html',
@@ -616,13 +619,34 @@ export class EditorPageComponent implements OnInit {
   }
 
   /**
+   * Loads a generated "Explain This" prompt as an unsaved markdown document
+   * (the template-apply idiom: no document identity, savedSourceCode
+   * untouched so the buffer counts as unsaved and the normal save flow can
+   * persist it). The preview pane renders the prompt's markdown through the
+   * existing hub pipeline.
+   */
+  onExplainPromptGenerated(result: ExplainPrompt): void {
+    if (this.hasUnsavedChanges() && !window.confirm('Discard unsaved changes and load the generated prompt?')) {
+      return;
+    }
+
+    this.documentId.set(null);
+    this.documentName.set('Explain This');
+    this.documentKind.set('markdown');
+    this.sourceCode.set(result.prompt);
+    this.openFileHandle.set(null);
+    this.location.go('/editor');
+    void this.hubService.render(result.prompt, 'markdown');
+  }
+
+  /**
    * The panel the title bar's sidebar toggle reopens after a close --
    * whichever was open most recently, the way VS Code's own toggle restores
    * the last-used sidebar view. Falls back to 'documents' when nothing has
    * been opened yet this session ('explorer' additionally requires the File
    * System Access API).
    */
-  private lastOpenSidePanel: 'explorer' | 'documents' | 'templates' | null = this.activeSidePanel();
+  private lastOpenSidePanel: 'explorer' | 'documents' | 'templates' | 'explain' | null = this.activeSidePanel();
 
   /**
    * Sets the shared selection to `panel`, or clears it if `panel` is already
@@ -630,7 +654,7 @@ export class EditorPageComponent implements OnInit {
    * (including an explicit null for a deliberate close) so the layout comes
    * back identically after a refresh.
    */
-  toggleSidePanel(panel: 'explorer' | 'documents' | 'templates'): void {
+  toggleSidePanel(panel: 'explorer' | 'documents' | 'templates' | 'explain'): void {
     this.activeSidePanel.update((current) => (current === panel ? null : panel));
     const active = this.activeSidePanel();
     if (active) {

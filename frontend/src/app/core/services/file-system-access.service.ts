@@ -29,19 +29,47 @@ export class FileSystemAccessService {
   }
 
   /**
-   * Opens the native directory picker. Always requests 'readwrite' up
-   * front (rather than 'read' followed by a later upgrade prompt): almost
-   * every folder opened here will eventually have a file saved back into
-   * it, and a second permission prompt at that later point would be worse
-   * UX than asking once, up front.
+   * Whether the native single-file open picker exists. Tracked separately
+   * from isSupported(): the pair usually ship together, but the Explain
+   * wizard's file picker only needs this one.
+   */
+  isFilePickerSupported(): boolean {
+    return 'showOpenFilePicker' in window;
+  }
+
+  /**
+   * Opens the native directory picker. The Explorer flow requests
+   * 'readwrite' up front (rather than 'read' followed by a later upgrade
+   * prompt): almost every folder opened there will eventually have a file
+   * saved back into it, and a second permission prompt at that later point
+   * would be worse UX than asking once, up front. Read-only consumers (the
+   * Explain This wizard) pass 'read' explicitly so users aren't asked to
+   * grant write access that will never be used.
    *
    * Resolves to `null` (rather than rejecting) when the user cancels the
    * picker -- an expected, caller-uninteresting outcome, not an error.
    * Anything else is rethrown.
    */
-  async pickDirectory(): Promise<FileSystemDirectoryHandle | null> {
+  async pickDirectory(mode: FileSystemPermissionMode = DEFAULT_PERMISSION_MODE): Promise<FileSystemDirectoryHandle | null> {
     try {
-      return await window.showDirectoryPicker({ mode: 'readwrite' });
+      return await window.showDirectoryPicker({ mode });
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Opens the native single-file picker (the vscode.dev Ctrl+O idiom).
+   * Same cancel contract as pickDirectory: `null` on user cancel, anything
+   * else rethrown.
+   */
+  async pickFile(): Promise<FileSystemFileHandle | null> {
+    try {
+      const [handle] = await window.showOpenFilePicker({ multiple: false });
+      return handle ?? null;
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
         return null;

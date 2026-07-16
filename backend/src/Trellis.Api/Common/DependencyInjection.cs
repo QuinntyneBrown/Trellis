@@ -1,6 +1,7 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Trellis.Api.ErrorHandling;
+using Trellis.Api.Explain;
 using Trellis.Api.Markdown;
 using Trellis.Api.Persistence;
 using Trellis.Api.Persistence.Initialisation;
@@ -68,6 +69,15 @@ public static class DependencyInjection
         services.Configure<PlantUmlOptions>(configuration.GetSection(PlantUmlOptions.SectionName));
         services.AddSingleton<IPlantUmlRenderer, PlantUmlRenderer>();
         services.AddSingleton<IMarkdownRenderer, MarkdigMarkdownRenderer>();
+
+        services.AddSingleton<IFileAggregator, FileAggregator>();
+        services.AddSingleton<IExplainPromptBuilder, ExplainPromptBuilder>();
+        services.AddHttpClient<IGitRepositoryFetcher, GitRepositoryFetcher>(client =>
+        {
+            // GitHub rejects requests without a User-Agent outright.
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("Trellis-Explain/1.0");
+            client.Timeout = TimeSpan.FromSeconds(60);
+        });
 
         return services;
     }

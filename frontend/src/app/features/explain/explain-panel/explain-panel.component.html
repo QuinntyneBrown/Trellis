@@ -1,0 +1,86 @@
+<aside class="explain-panel" data-testid="explain-panel">
+  <div class="explain-panel__header">
+    <span class="explain-panel__header-title">Explain This</span>
+  </div>
+
+  <div class="explain-panel__body">
+    <p class="explain-panel__hint">
+      Generate an LLM-ready &quot;explain this&quot; prompt from a local file or folder, or from a GitHub / GitLab
+      repository URL.
+    </p>
+
+    @if (pickersSupported) {
+      <div class="explain-panel__pickers">
+        <button
+          type="button"
+          class="explain-panel__button"
+          data-testid="explain-pick-file"
+          (click)="onPickFileClicked()"
+        >
+          Select File&#8230;
+        </button>
+        <button
+          type="button"
+          class="explain-panel__button"
+          data-testid="explain-pick-folder"
+          (click)="onPickFolderClicked()"
+        >
+          Select Folder&#8230;
+        </button>
+      </div>
+
+      <div class="explain-panel__divider" aria-hidden="true">or</div>
+    }
+
+    <label class="explain-panel__label" for="explain-url-input">Repository URL</label>
+    <input
+      id="explain-url-input"
+      class="explain-panel__url-input"
+      data-testid="explain-url-input"
+      type="url"
+      placeholder="https://github.com/owner/repo"
+      autocomplete="off"
+      spellcheck="false"
+      [value]="url()"
+      (input)="onUrlInput($event)"
+    />
+    <p class="explain-panel__hint explain-panel__hint--small">
+      A repository root, or a folder / file inside one (tree and blob URLs work).
+    </p>
+
+    @if (selectionLabel(); as label) {
+      <div class="explain-panel__selection" data-testid="explain-selection">{{ label }}</div>
+    }
+
+    <button
+      type="button"
+      class="explain-panel__button explain-panel__button--confirm"
+      data-testid="explain-confirm"
+      [disabled]="!canConfirm()"
+      (click)="onConfirmClicked()"
+    >
+      {{ isGenerating() ? 'Generating\u2026' : 'Explain This' }}
+    </button>
+
+    @if (error(); as message) {
+      <p class="explain-panel__error" data-testid="explain-error" role="alert">{{ message }}</p>
+    }
+
+    @if (lastPrompt(); as prompt) {
+      <div class="explain-panel__result" data-testid="explain-result">
+        <p class="explain-panel__result-summary">
+          Prompt generated from {{ prompt.fileCount }} file{{ prompt.fileCount === 1 ? '' : 's' }} and loaded into
+          the editor.
+        </p>
+        <button
+          type="button"
+          class="explain-panel__button"
+          data-testid="explain-copy-prompt"
+          (click)="onCopyPromptClicked()"
+        >
+          {{ copied() ? 'Copied!' : 'Copy prompt to clipboard' }}
+        </button>
+      </div>
+    }
+  </div>
+</aside>

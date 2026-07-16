@@ -1,0 +1,167 @@
+// Chrome mirrors the other three side panels (templates-panel.component.scss
+// et al.); the body is a simple form column rather than a row list.
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.explain-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  background-color: var(--tds-surface-chrome);
+  border-left: 1px solid var(--tds-border);
+  color: var(--tds-ink);
+}
+
+.explain-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--tds-border);
+}
+
+.explain-panel__header-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tds-ink-muted);
+}
+
+.explain-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.75rem;
+}
+
+.explain-panel__hint {
+  margin: 0;
+  color: var(--tds-ink-muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.explain-panel__hint--small {
+  font-size: 0.7rem;
+}
+
+.explain-panel__pickers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+// Same button chrome as the Explorer's Open Folder button.
+.explain-panel__button {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--tds-border-strong);
+  border-radius: 0.35rem;
+  background-color: var(--tds-surface-raised);
+  color: var(--tds-ink);
+  font-size: 0.85rem;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background-color: var(--tds-hover-wash);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+
+.explain-panel__button--confirm {
+  border-color: var(--tds-accent-strong);
+  background-color: var(--tds-accent-strong);
+  color: #fff;
+  font-weight: 600;
+
+  &:hover:not(:disabled) {
+    background-color: var(--tds-accent-hover);
+  }
+}
+
+// The "or" separator between the native pickers and the URL input.
+.explain-panel__divider {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--tds-ink-muted);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    border-top: 1px solid var(--tds-border);
+  }
+}
+
+.explain-panel__label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tds-ink-muted);
+}
+
+.explain-panel__url-input {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--tds-border-strong);
+  border-radius: 0.35rem;
+  background-color: var(--tds-surface-raised);
+  color: var(--tds-ink);
+  font-size: 0.85rem;
+
+  &:focus {
+    outline: 1px solid var(--tds-accent);
+    outline-offset: -1px;
+  }
+
+  &::placeholder {
+    color: var(--tds-ink-muted);
+  }
+}
+
+.explain-panel__selection {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--tds-border);
+  border-radius: 0.35rem;
+  background-color: var(--tds-surface-raised);
+  font-size: 0.8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.explain-panel__error {
+  margin: 0;
+  color: var(--tds-status-error-ink);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.explain-panel__result {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--tds-border);
+}
+
+.explain-panel__result-summary {
+  margin: 0;
+  color: var(--tds-ink-muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}

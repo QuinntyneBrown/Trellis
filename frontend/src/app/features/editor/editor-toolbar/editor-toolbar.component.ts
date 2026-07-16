@@ -29,12 +29,13 @@ export class EditorToolbarComponent {
   @Input() connectionState: HubConnectionState = 'disconnected';
   /** Gates the Explorer rail button entirely (hidden, not disabled) in browsers without the File System Access API. */
   @Input() explorerSupported = false;
-  /** Which (if any) side panel is currently active -- drives the [active] state of the three panel-toggle rail buttons. */
-  @Input() activeSidePanel: 'explorer' | 'documents' | 'templates' | null = null;
+  /** Which (if any) side panel is currently active -- drives the [active] state of the four panel-toggle rail buttons. */
+  @Input() activeSidePanel: 'explorer' | 'documents' | 'templates' | 'explain' | null = null;
 
   @Output() readonly explorerPanelToggle = new EventEmitter<void>();
   @Output() readonly documentsPanelToggle = new EventEmitter<void>();
   @Output() readonly templatesPanelToggle = new EventEmitter<void>();
+  @Output() readonly explainPanelToggle = new EventEmitter<void>();
   /** Fired by File > New (Alt+N lives with the parent's keydown handler). */
   @Output() readonly newDocument = new EventEmitter<void>();
   /** Fired by File > Save. */

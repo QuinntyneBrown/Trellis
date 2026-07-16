@@ -118,6 +118,7 @@ describe('FileSystemAccessService', () => {
 
   afterEach(() => {
     delete (window as unknown as { showDirectoryPicker?: unknown }).showDirectoryPicker;
+    delete (window as unknown as { showOpenFilePicker?: unknown }).showOpenFilePicker;
     (globalThis as { indexedDB?: unknown }).indexedDB = originalIndexedDb;
   });
 
@@ -135,6 +136,20 @@ describe('FileSystemAccessService', () => {
     });
   });
 
+  describe('isFilePickerSupported', () => {
+    it('returns true when window.showOpenFilePicker exists', () => {
+      (window as unknown as { showOpenFilePicker: unknown }).showOpenFilePicker = jest.fn();
+
+      expect(service.isFilePickerSupported()).toBe(true);
+    });
+
+    it('returns false when window.showOpenFilePicker does not exist', () => {
+      delete (window as unknown as { showOpenFilePicker?: unknown }).showOpenFilePicker;
+
+      expect(service.isFilePickerSupported()).toBe(false);
+    });
+  });
+
   describe('pickDirectory', () => {
     it('resolves the handle returned by window.showDirectoryPicker, requesting readwrite mode up front', async () => {
       const handle = {} as FileSystemDirectoryHandle;
@@ -145,6 +160,15 @@ describe('FileSystemAccessService', () => {
 
       expect(showDirectoryPicker).toHaveBeenCalledWith({ mode: 'readwrite' });
       expect(result).toBe(handle);
+    });
+
+    it('forwards an explicit read mode for read-only consumers', async () => {
+      const showDirectoryPicker = jest.fn().mockResolvedValue({} as FileSystemDirectoryHandle);
+      (window as unknown as { showDirectoryPicker: unknown }).showDirectoryPicker = showDirectoryPicker;
+
+      await service.pickDirectory('read');
+
+      expect(showDirectoryPicker).toHaveBeenCalledWith({ mode: 'read' });
     });
 
     it('returns null when the user cancels the picker (AbortError)', async () => {
@@ -163,6 +187,37 @@ describe('FileSystemAccessService', () => {
         .mockRejectedValue(new Error('boom'));
 
       await expect(service.pickDirectory()).rejects.toThrow('boom');
+    });
+  });
+
+  describe('pickFile', () => {
+    it('resolves the first handle returned by window.showOpenFilePicker, requesting a single file', async () => {
+      const handle = {} as FileSystemFileHandle;
+      const showOpenFilePicker = jest.fn().mockResolvedValue([handle]);
+      (window as unknown as { showOpenFilePicker: unknown }).showOpenFilePicker = showOpenFilePicker;
+
+      const result = await service.pickFile();
+
+      expect(showOpenFilePicker).toHaveBeenCalledWith({ multiple: false });
+      expect(result).toBe(handle);
+    });
+
+    it('returns null when the user cancels the picker (AbortError)', async () => {
+      (window as unknown as { showOpenFilePicker: unknown }).showOpenFilePicker = jest
+        .fn()
+        .mockRejectedValue(new DOMException('The user aborted a request.', 'AbortError'));
+
+      const result = await service.pickFile();
+
+      expect(result).toBeNull();
+    });
+
+    it('rethrows any error other than AbortError', async () => {
+      (window as unknown as { showOpenFilePicker: unknown }).showOpenFilePicker = jest
+        .fn()
+        .mockRejectedValue(new Error('boom'));
+
+      await expect(service.pickFile()).rejects.toThrow('boom');
     });
   });
 

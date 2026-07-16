@@ -98,6 +98,14 @@
       [active]="activeSidePanel === 'documents'"
       (clicked)="documentsPanelToggle.emit()"
     ></app-rail-button>
+
+    <app-rail-button
+      icon="explain"
+      label="Explain This"
+      testId="explain-panel-toggle"
+      [active]="activeSidePanel === 'explain'"
+      (clicked)="explainPanelToggle.emit()"
+    ></app-rail-button>
   </div>
 
   <div class="editor-toolbar__group editor-toolbar__group--bottom">

@@ -3,7 +3,7 @@
  * path `d` strings on a shared 24x24 viewBox, drawn in an outline
  * (Heroicons/Feather-like) style: `fill="none" stroke="currentColor"`.
  */
-export type RailIconName = 'menu' | 'new' | 'save' | 'upload' | 'templates' | 'documents' | 'explorer';
+export type RailIconName = 'menu' | 'new' | 'save' | 'upload' | 'templates' | 'documents' | 'explorer' | 'explain';
 
 /**
  * Hand-authored outline icon paths -- no icon-library dependency. Kept
@@ -42,5 +42,13 @@ export const RAIL_ICON_PATHS: Record<RailIconName, string[]> = {
   explorer: [
     'M4 9a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z',
     'M8 5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-1',
+  ],
+
+  // A speech bubble carrying a question mark -- "ask about this code", the
+  // Explain This wizard's visual metaphor. The bubble's tail anchors bottom
+  // -left; the question mark is a hooked stroke plus a separate dot.
+  explain: [
+    'M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-7l-4 4v-4H6a2 2 0 0 1-2-2z',
+    'M9.9 8.2a2.2 2.2 0 1 1 3 2.05c-.65.26-.9.65-.9 1.35M12 13.9h.01',
   ],
 };

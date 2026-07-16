@@ -14,6 +14,7 @@ import { ClipboardService } from '../../../core/services/clipboard.service';
 import { DiagramHubService } from '../../../core/services/diagram-hub.service';
 import { DocumentsService } from '../../../core/services/documents.service';
 import { EditorLayoutPreferencesService } from '../../../core/services/editor-layout-preferences.service';
+import { ExplainService } from '../../../core/services/explain.service';
 import { FileSystemAccessService } from '../../../core/services/file-system-access.service';
 import { FoldersService } from '../../../core/services/folders.service';
 import { MonacoLoaderService } from '../../../core/services/monaco-loader.service';
@@ -65,7 +66,9 @@ describe('EditorPageComponent', () => {
   };
   let fileSystemAccessServiceMock: {
     isSupported: jest.Mock;
+    isFilePickerSupported: jest.Mock;
     pickDirectory: jest.Mock;
+    pickFile: jest.Mock;
     listChildren: jest.Mock;
     readTextFile: jest.Mock;
     writeTextFile: jest.Mock;
@@ -75,6 +78,7 @@ describe('EditorPageComponent', () => {
     loadRootHandle: jest.Mock;
   };
   let clipboardServiceMock: { copyText: jest.Mock; copyPng: jest.Mock };
+  let explainServiceMock: { aggregateFiles: jest.Mock; aggregateUrl: jest.Mock };
 
   /**
    * The single source of truth for the TestBed provider list -- the
@@ -106,6 +110,7 @@ describe('EditorPageComponent', () => {
       { provide: FileSystemAccessService, useValue: fileSystemAccessServiceMock },
       { provide: TemplatesService, useValue: templatesServiceMock },
       { provide: ClipboardService, useValue: clipboardServiceMock },
+      { provide: ExplainService, useValue: explainServiceMock },
       { provide: MonacoLoaderService, useValue: { load: jest.fn().mockResolvedValue(fakeMonaco) } },
     ];
   }
@@ -155,7 +160,9 @@ describe('EditorPageComponent', () => {
       // "Open Folder" button state, a no-op as far as these
       // EditorPageComponent-focused tests are concerned.
       isSupported: jest.fn().mockReturnValue(true),
+      isFilePickerSupported: jest.fn().mockReturnValue(true),
       pickDirectory: jest.fn(),
+      pickFile: jest.fn(),
       listChildren: jest.fn().mockResolvedValue([]),
       readTextFile: jest.fn(),
       writeTextFile: jest.fn().mockResolvedValue(undefined),
@@ -168,6 +175,7 @@ describe('EditorPageComponent', () => {
       copyText: jest.fn().mockResolvedValue(undefined),
       copyPng: jest.fn().mockResolvedValue(undefined),
     };
+    explainServiceMock = { aggregateFiles: jest.fn(), aggregateUrl: jest.fn() };
 
     await TestBed.configureTestingModule({
       imports: [EditorPageComponent],
@@ -1287,6 +1295,61 @@ describe('EditorPageComponent', () => {
 
       component.onTitleBarSidebarToggle();
       expect(component.activeSidePanel()).toBe('templates');
+    });
+  });
+
+  describe('Explain This side panel (fourth exclusive panel)', () => {
+    it('toggles open/closed, persists the choice, and participates in exclusivity', () => {
+      fixture.detectChanges();
+
+      component.toggleSidePanel('explain');
+      expect(component.activeSidePanel()).toBe('explain');
+      expect(layoutPreferencesMock.setActiveSidePanel).toHaveBeenCalledWith('explain');
+
+      component.toggleSidePanel('documents');
+      expect(component.activeSidePanel()).toBe('documents');
+
+      component.toggleSidePanel('explain');
+      component.toggleSidePanel('explain');
+      expect(component.activeSidePanel()).toBeNull();
+    });
+
+    it('loads a generated prompt as an unsaved markdown document named "Explain This" and renders it', () => {
+      fixture.detectChanges();
+
+      component.onExplainPromptGenerated({ prompt: '# Explain This\n\nbody', fileCount: 2 });
+
+      expect(component.documentId()).toBeNull();
+      expect(component.documentName()).toBe('Explain This');
+      expect(component.documentKind()).toBe('markdown');
+      expect(component.sourceCode()).toBe('# Explain This\n\nbody');
+      expect(component.hasUnsavedChanges()).toBe(true);
+      expect(locationMock.go).toHaveBeenCalledWith('/editor');
+      expect(hubServiceMock.render).toHaveBeenCalledWith('# Explain This\n\nbody', 'markdown');
+    });
+
+    it('guards prompt loading behind the discard confirm when there are unsaved changes', () => {
+      fixture.detectChanges();
+      component.sourceCode.set('unsaved content');
+
+      const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(false);
+      component.onExplainPromptGenerated({ prompt: '# Explain This', fileCount: 1 });
+
+      expect(confirmSpy).toHaveBeenCalled();
+      expect(component.sourceCode()).toBe('unsaved content');
+
+      confirmSpy.mockRestore();
+    });
+
+    it('is reopened by the title-bar toggle as the last-used panel', () => {
+      fixture.detectChanges();
+
+      component.toggleSidePanel('explain');
+      component.onTitleBarSidebarToggle();
+      expect(component.activeSidePanel()).toBeNull();
+
+      component.onTitleBarSidebarToggle();
+      expect(component.activeSidePanel()).toBe('explain');
     });
   });
 

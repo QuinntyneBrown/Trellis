@@ -25,6 +25,7 @@ describe('EditorToolbarComponent', () => {
     expect(byTestId('rail-hamburger')).toBeTruthy();
     expect(byTestId('templates-panel-toggle')).toBeTruthy();
     expect(byTestId('documents-panel-toggle')).toBeTruthy();
+    expect(byTestId('explain-panel-toggle')).toBeTruthy();
     expect(byTestId('connection-status')).toBeTruthy();
     expect(byTestId('toolbar-new')).toBeNull();
     expect(byTestId('toolbar-save')).toBeNull();
@@ -169,6 +170,19 @@ describe('EditorToolbarComponent', () => {
     component.activeSidePanel = 'templates';
     fixture.detectChanges();
     expect(byTestId('templates-panel-toggle').classList).toContain('rail-button--active');
+  });
+
+  it('emits explainPanelToggle and reflects the active state on the Explain This toggle', () => {
+    const spy = jest.fn();
+    component.explainPanelToggle.subscribe(spy);
+
+    byTestId('explain-panel-toggle').click();
+    expect(spy).toHaveBeenCalledTimes(1);
+
+    expect(byTestId('explain-panel-toggle').classList).not.toContain('rail-button--active');
+    component.activeSidePanel = 'explain';
+    fixture.detectChanges();
+    expect(byTestId('explain-panel-toggle').classList).toContain('rail-button--active');
   });
 
   it('forwards connectionState down to the connection-status indicator', () => {

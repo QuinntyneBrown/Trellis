@@ -15,7 +15,7 @@ interface StoredEditorLayout {
    * explicitly (not just absent) when the user closes the panel, so a
    * deliberately-closed panel also survives a reload as closed.
    */
-  activeSidePanel?: 'explorer' | 'documents' | 'templates' | null;
+  activeSidePanel?: 'explorer' | 'documents' | 'templates' | 'explain' | null;
   /**
    * Additive field, same story as activeSidePanel: `null` is stored
    * explicitly when the user clears the Documents panel's folder scope.
@@ -60,12 +60,14 @@ export class EditorLayoutPreferencesService {
   }
 
   /** Returns the persisted side-panel choice, or null (panel closed, never stored, or a corrupt value). */
-  getActiveSidePanel(): 'explorer' | 'documents' | 'templates' | null {
+  getActiveSidePanel(): 'explorer' | 'documents' | 'templates' | 'explain' | null {
     const stored = this.readStored()?.activeSidePanel;
-    return stored === 'explorer' || stored === 'documents' || stored === 'templates' ? stored : null;
+    return stored === 'explorer' || stored === 'documents' || stored === 'templates' || stored === 'explain'
+      ? stored
+      : null;
   }
 
-  setActiveSidePanel(panel: 'explorer' | 'documents' | 'templates' | null): void {
+  setActiveSidePanel(panel: 'explorer' | 'documents' | 'templates' | 'explain' | null): void {
     this.writeStored({ activeSidePanel: panel });
   }
 
