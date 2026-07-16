@@ -1,189 +1,140 @@
 # Trellis
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![.NET](https://img.shields.io/badge/.NET-8.0-512BD4.svg)](backend/global.json)
-[![Angular](https://img.shields.io/badge/Angular-17-DD0031.svg)](frontend/package.json)
+Trellis is a browser-based diagram-as-code workspace with an Angular frontend and an
+ASP.NET Core backend. It provides a Monaco editor, live PlantUML and Markdown previews
+over SignalR, a SQLite-backed document library, templates, and a local file explorer.
 
-Trellis is an open-source workspace for authoring, rendering, and managing PlantUML diagrams. It combines a Monaco-powered Angular editor in a VS Code-style shell, a real-time ASP.NET Core rendering service, built-in PlantUML and C4 templates, a folder-organized document library, and a local file explorer for editing `.puml` files straight from disk.
+[![License: MIT](https://img.shields.io/badge/license-MIT-107C10.svg)](LICENSE)
+[![Angular](https://img.shields.io/badge/Angular-17-DD0031?logo=angular&logoColor=white)](https://angular.dev/)
+[![.NET](https://img.shields.io/badge/.NET-8-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
+[![Contributions welcome](https://img.shields.io/badge/contributions-welcome-0078D4.svg)](CONTRIBUTING.md)
 
-The project is intended for teams that prefer diagram-as-code workflows but still need a responsive browser-based editing experience.
+[Documentation](#documentation) | [Design system](https://jolly-plant-0a4016c0f.7.azurestaticapps.net/) | [Contributing](CONTRIBUTING.md) | [Security](SECURITY.md) | [Support](SUPPORT.md)
+
+## About the project
+
+Trellis gives diagram-as-code teams a responsive workspace for authoring, rendering, and organizing PlantUML diagrams and Markdown documents. The Angular application combines a VS Code-inspired editor shell with saved documents, templates, a live preview, and a Chromium-based local file explorer; the ASP.NET Core API provides rendering, persistence, and real-time updates.
+
+The repository includes architecture and development guidance, decision records, UI mocks, and a deployed design-system reference to make the product and its visual language traceable.
 
 ## Features
 
-- Live PlantUML-to-SVG rendering through SignalR — `Ctrl+Enter` to render, and the loaded document re-renders automatically on open and after a browser refresh.
-- VS Code-style workspace chrome: a top title bar whose command center tracks the open document, an activity rail, and resizable editor/preview panes and side panel whose layout (including which panel is open) persists across sessions.
-- Document library backed by SQLite and Entity Framework Core, organized into nested virtual folders: create, rename, and delete folders; move documents by dragging them onto a folder (or to the tree's empty space for the root) or via a "Move to Folder" dialog; the document being edited is highlighted in the tree and its folder chain auto-expands when the panel opens.
-- Local file explorer built on the File System Access API (Chromium-based browsers): browse a folder on disk, create and delete entries, open `.puml` files, and `Ctrl+S` writes straight back to the file.
-- Keyboard save flows: `Ctrl+S` quick-saves, `Ctrl+Shift+S` is Save As — always a name-and-folder dialog, always a new document.
-- Built-in starter templates for blank, sequence, and class diagrams plus the three C4 levels (context, container, component).
-- Upload support for `.puml` and `.txt` diagrams.
-- Syntax failure handling that reports render errors without breaking the editor session.
-- Focused unit, integration, and Playwright end-to-end coverage.
+- Author and preview PlantUML diagrams as SVG and Markdown documents as sanitized HTML through SignalR.
+- Work in a Monaco-powered, VS Code-inspired editor with resizable, persisted workspace panels.
+- Organize SQLite-backed documents in nested virtual folders, including drag-and-drop moves and folder exports to Markdown.
+- Create, update, apply, rename, and delete templates; six PlantUML starters cover blank, sequence, class, and C4 diagrams.
+- Upload `.puml`, `.txt`, `.md`, and `.markdown` files, and copy or download successful diagram previews as PNG.
+- Browse, create, open, and save local files through the File System Access API in Chromium-based browsers.
+- Run focused backend, frontend, and Playwright end-to-end test coverage.
 
-## Project Status
+## Getting started
 
-Trellis is in active development. Public APIs, storage schema, and deployment conventions may change until the first stable release is tagged. The `main` branch is the source of truth for current development.
+### Prerequisites
 
-## Repository Layout
+- [.NET 8 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) `8.0.422`, as pinned by [backend/global.json](backend/global.json).
+- [Node.js](https://nodejs.org/) 20 or later with npm.
+- A Java runtime available on `PATH` as `java` for PlantUML rendering.
+- [Graphviz](https://graphviz.org/) is optional, but recommended for PlantUML diagram types that require DOT layout.
 
-```text
-backend/   ASP.NET Core API, application layer, domain model, infrastructure, tests, and vendored renderer assets.
-frontend/  Angular application, shared UI components, editor experience, and Jest tests.
-e2e/       Playwright test suite that runs the frontend and backend together.
-docs/      Architecture, development, and testing guides, plus ADRs, the defect log, and static HTML UI mocks.
-```
+### Local development
 
-## Requirements
-
-- .NET SDK `8.0.422` as pinned by [backend/global.json](backend/global.json).
-- Node.js 20 or later with npm.
-- Java runtime available on `PATH` as `java` for PlantUML rendering.
-- Playwright browser dependencies for end-to-end tests.
-- Graphviz is optional, but recommended for PlantUML diagram types that require DOT layout support.
-
-## Running on Windows
-
-These steps take a Windows 10/11 machine with nothing installed to a running instance of Trellis, using PowerShell.
-
-### 1. Install dependencies
-
-**Option A: winget (recommended)**
-
-Open PowerShell and run each line:
-
-```powershell
-winget install --id Git.Git -e
-winget install --id Microsoft.DotNet.SDK.8 -e
-winget install --id OpenJS.NodeJS.LTS -e
-winget install --id EclipseAdoptium.Temurin.17.JRE -e
-winget install --id Graphviz.Graphviz -e
-```
-
-- `Microsoft.DotNet.SDK.8` installs the latest .NET 8 SDK; [backend/global.json](backend/global.json) pins the exact patch version (`8.0.422`) that `dotnet` will roll forward to within the 8.x line.
-- `EclipseAdoptium.Temurin.17.JRE` provides the `java` executable that the backend shells out to for rendering PlantUML diagrams (see `PlantUml:JavaExecutablePath` in [Configuration](#configuration)). Any modern JRE or JDK on `PATH` as `java` works.
-- Graphviz is optional; it's only needed for PlantUML diagram types that require DOT layout (e.g., activity or use case diagrams).
-
-Close and reopen your terminal after installing so `PATH` changes take effect.
-
-**Option B: manual installers**
-
-If `winget` isn't available, install each of the following from its official site and accept the default options (which add the tool to `PATH`): Git, the .NET 8 SDK, Node.js 20 LTS, a Java runtime (e.g. Eclipse Temurin 17), and Graphviz (optional).
-
-### 2. Verify the toolchain
-
-```powershell
-git --version
-dotnet --version
-node --version
-npm --version
-java -version
-```
-
-`dotnet --version` should report an `8.x` SDK. `java -version` must succeed in the terminal you'll use to run the API — PlantUML rendering fails immediately if Java isn't resolvable on `PATH`.
-
-### 3. Clone the repository and install project dependencies
-
-```powershell
+```bash
 git clone https://github.com/QuinntyneBrown/Trellis.git
 cd Trellis
-
-dotnet restore backend/Trellis.sln
-
-cd frontend
-npm ci
-cd ..
-
-cd e2e
-npm ci
-npx playwright install
-cd ..
 ```
 
-### 4. Run the app
+Start the backend (`http://localhost:5000`):
 
-Open two PowerShell windows.
-
-Terminal 1 — start the API:
-
-```powershell
+```bash
+dotnet restore backend/Trellis.sln
 dotnet run --project backend/src/Trellis.Api --urls=http://localhost:5000
 ```
 
-Terminal 2 — start the frontend:
+PlantUML rendering requires `java` to be resolvable from the terminal that starts the API. See the [Development Guide](docs/development.md) for configuration and troubleshooting.
 
-```powershell
+Start the frontend (`http://localhost:4200`) in a second terminal:
+
+```bash
 cd frontend
-npm start
+npm ci
+npm run start
 ```
 
-Open `http://localhost:4200`. The Angular dev server proxies `/api` and `/hubs` to the backend on `http://localhost:5000`.
+The frontend proxy routes `/api` and `/hubs` traffic to the backend.
 
-### Troubleshooting
+## Technology
 
-- **PlantUML renders fail immediately** — confirm `java -version` succeeds in the same terminal running the API. If Java is installed but not on `PATH`, set `PlantUml:JavaExecutablePath` in [backend/src/Trellis.Api/appsettings.json](backend/src/Trellis.Api/appsettings.json) to the full path of `java.exe`.
-- **Port already in use** — pass a different `--urls` value to `dotnet run`, or find and stop the process holding the port: `Get-Process -Id (Get-NetTCPConnection -LocalPort 5000).OwningProcess`.
-- **`npm ci` fails** — confirm `node --version` is 20 or later, delete the `node_modules` folder, and rerun `npm ci`.
+| Area | Technologies |
+| --- | --- |
+| Frontend application | Angular 17, TypeScript, RxJS, Monaco Editor |
+| Backend | ASP.NET Core 8 Web API, SignalR |
+| Data layer | Entity Framework Core 8, SQLite |
+| Rendering | Vendored PlantUML and C4-PlantUML through Java; Markdig for Markdown |
+| Testing | xUnit, Jest, Playwright |
 
 ## Testing
 
 Run backend tests:
 
-```powershell
+```bash
 dotnet test backend/Trellis.sln
 ```
 
 Run frontend unit tests:
 
-```powershell
+```bash
 cd frontend
-npm test
+npm run test
 ```
 
 Run end-to-end tests:
 
-```powershell
+```bash
 cd e2e
-npm test
+npm ci
+npx playwright install
+npm run test
 ```
 
-The Playwright configuration starts the API and frontend automatically and resets the E2E database on backend startup.
+The Playwright configuration starts both services and resets the E2E database before a run.
 
-## Configuration
+## Project structure
 
-Runtime configuration is owned by [backend/src/Trellis.Api/appsettings.json](backend/src/Trellis.Api/appsettings.json). The most commonly changed settings are:
-
-| Setting | Purpose |
-| --- | --- |
-| `ConnectionStrings:DefaultConnection` | SQLite database path used by the API. |
-| `Cors:AllowedOrigins` | Frontend origins allowed to call the API and SignalR hub. |
-| `PlantUml:JavaExecutablePath` | Java executable used to run the vendored PlantUML JAR. |
-| `PlantUml:RenderTimeoutSeconds` | Maximum time allowed for a single render operation. |
-| `PlantUml:MaxConcurrentRenders` | Maximum concurrent PlantUML render processes. |
-
-Production frontend URLs are configured in [frontend/src/environments/environment.ts](frontend/src/environments/environment.ts). Development uses relative URLs and the Angular proxy configuration.
+```text
+backend/                       .NET solution, single API project, persistence, renderer, and integration tests
+frontend/                      Angular application, editor workspace, shared components, and Jest tests
+e2e/                           Playwright end-to-end suite that runs the frontend and backend together
+docs/                          Architecture, development, testing, ADRs, UI mocks, and design-system sources
+infra/                         Azure Static Web App infrastructure for the design-system documentation site
+eng/scripts/                   Windows helpers for starting and stopping Trellis
+```
 
 ## Documentation
 
-- [Architecture](docs/architecture.md)
-- [Development Guide](docs/development.md)
-- [Testing Guide](docs/testing.md)
-- [Architecture Decision Records](docs/adr) — why the move endpoint, native drag-and-drop, and shared UI components are shaped the way they are.
-- [Defect & Change Log](docs/defects/log.md) — issues found while exercising the app, and how each was fixed.
-- [HTML UI Mocks](docs/mocks/README.md) — static, dependency-free mocks of every screen and state, kept in sync with the shipped UI.
-- [Contributing](CONTRIBUTING.md)
-- [Security](SECURITY.md)
-- [Support](SUPPORT.md)
-- [Governance](GOVERNANCE.md)
+| Document | Purpose |
+| --- | --- |
+| [Architecture](docs/architecture.md) | System design, rendering flow, persistence, and frontend structure |
+| [Development Guide](docs/development.md) | Local setup, configuration, and development workflow |
+| [Testing Guide](docs/testing.md) | Backend, frontend, and end-to-end test instructions |
+| [Architecture decision records](docs/adr/) | Decisions behind product and implementation choices |
+| [Defect & Change Log](docs/defects/log.md) | Issues found while exercising the app and their fixes |
+| [HTML UI Mocks](docs/mocks/README.md) | Static, dependency-free references for application screens and states |
+| [Trellis Design System](https://jolly-plant-0a4016c0f.7.azurestaticapps.net/) | Deployed tokens, components, and patterns reference |
 
 ## Contributing
 
-Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request, and follow the [Code of Conduct](CODE_OF_CONDUCT.md) in all project spaces.
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for setup, workflow, and pull-request expectations. Participation is governed by the [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+
+Contributors are listed in [CONTRIBUTORS.md](CONTRIBUTORS.md), and notable repository changes are tracked in [CHANGELOG.md](CHANGELOG.md).
 
 ## Security
 
-Do not report suspected vulnerabilities in public issues. Follow the private reporting guidance in [SECURITY.md](SECURITY.md).
+Please do not open public issues for security vulnerabilities. Follow [SECURITY.md](SECURITY.md) to report security concerns privately.
+
+## Governance
+
+Project roles and decision-making expectations are documented in [GOVERNANCE.md](GOVERNANCE.md).
 
 ## License
 
-Original Trellis source code and documentation are licensed under the [MIT License](LICENSE). Vendored and package-managed third-party components remain under their own licenses. See [NOTICE](NOTICE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
-
+Copyright (c) 2026 Trellis contributors. Released under the [MIT License](LICENSE).
