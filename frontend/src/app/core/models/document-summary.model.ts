@@ -8,4 +8,6 @@ export interface DocumentSummary {
   folderId: string | null;
   /** What the content is -- surfaces as the tree's MD badge. */
   kind: DocumentKind;
+  /** Whether folder exports omit this document -- surfaces as the tree's "no export" badge. */
+  excludedFromExport: boolean;
 }

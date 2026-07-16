@@ -10,4 +10,6 @@ export interface Document {
   folderId: string | null;
   /** What the content is -- decides the render pipeline and editor language. */
   kind: DocumentKind;
+  /** Whether folder markdown exports omit this document (unless overridden). */
+  excludedFromExport: boolean;
 }

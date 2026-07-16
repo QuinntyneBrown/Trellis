@@ -141,12 +141,15 @@ public class FoldersController : ControllerBase
     /// documents are wrapped in a ```plantuml fenced code block. A wholly
     /// empty export returns just an italic "no documents" note. Sections are
     /// separated by blank lines and line endings are normalized to LF.
+    /// Documents marked as excluded from export are omitted unless
+    /// <paramref name="includeExcluded"/> is true.
     /// </summary>
     /// <param name="id">The identifier of the folder to export.</param>
+    /// <param name="includeExcluded">Whether to include documents marked as excluded from export.</param>
     /// <param name="cancellationToken">A token used to observe cancellation requests.</param>
     /// <returns>The aggregated markdown as text/markdown, or 404 if the folder does not exist.</returns>
     [HttpGet("{id:guid}/export")]
-    public async Task<IActionResult> Export(Guid id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Export(Guid id, [FromQuery] bool includeExcluded, CancellationToken cancellationToken)
     {
         var folders = await this.context.Folders
             .AsNoTracking()
@@ -180,7 +183,9 @@ public class FoldersController : ControllerBase
         // Full entities, not the list projection - the export needs Content.
         var documents = await this.context.Documents
             .AsNoTracking()
-            .Where(d => d.FolderId.HasValue && subtreeIds.Contains(d.FolderId.Value))
+            .Where(d => d.FolderId.HasValue
+                && subtreeIds.Contains(d.FolderId.Value)
+                && (includeExcluded || !d.ExcludedFromExport))
             .ToListAsync(cancellationToken);
 
         var markdown = BuildExportMarkdown(root, folders, documents);

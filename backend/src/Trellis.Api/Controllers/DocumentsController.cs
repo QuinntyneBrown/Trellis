@@ -54,6 +54,7 @@ public class DocumentsController : ControllerBase
                 UpdatedAt = d.UpdatedAt ?? d.CreatedAt,
                 FolderId = d.FolderId,
                 Kind = d.Kind,
+                ExcludedFromExport = d.ExcludedFromExport,
             })
             .ToListAsync(cancellationToken);
 
@@ -175,6 +176,33 @@ public class DocumentsController : ControllerBase
         }
 
         document.FolderId = request.FolderId;
+        await this.context.SaveChangesAsync(cancellationToken);
+
+        return this.Ok(document);
+    }
+
+    /// <summary>
+    /// Sets whether a document is omitted from folder markdown exports. Like
+    /// <see cref="Move"/>, this deliberately does not touch UpdatedAt: the list
+    /// view is ordered by recency, and re-organizing what an export contains
+    /// should not reshuffle it the way editing content does.
+    /// </summary>
+    /// <param name="id">The identifier of the document to change.</param>
+    /// <param name="request">The new export-exclusion state.</param>
+    /// <param name="cancellationToken">A token used to observe cancellation requests.</param>
+    /// <returns>The updated document, or 404 if it does not exist.</returns>
+    [HttpPut("{id:guid}/export-exclusion")]
+    public async Task<ActionResult<PlantUmlDocument>> SetExportExclusion(Guid id, SetDocumentExportExclusionRequest request, CancellationToken cancellationToken)
+    {
+        var document = await this.context.Documents
+            .FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
+
+        if (document is null)
+        {
+            return this.NotFound();
+        }
+
+        document.ExcludedFromExport = request.ExcludedFromExport;
         await this.context.SaveChangesAsync(cancellationToken);
 
         return this.Ok(document);

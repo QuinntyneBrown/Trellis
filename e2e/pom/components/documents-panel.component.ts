@@ -173,17 +173,42 @@ export class DocumentsPanelComponent {
   }
 
   /**
-   * Clicks the folder row's "Export folder as Markdown" action and returns
-   * the browser Download it triggers (the suite's first
-   * waitForEvent('download') usage). Callers assert suggestedFilename() and
-   * read the content via download.saveAs into testInfo.outputPath -- never
-   * a real Downloads directory.
+   * Exports a folder as markdown via the folder row's Export action and the
+   * confirmation dialog it opens ([data-testid="export-folder-dialog"], with
+   * an "include excluded documents" checkbox), returning the browser
+   * Download the confirm triggers (the suite's first waitForEvent('download')
+   * usage). Callers assert suggestedFilename() and read the content via
+   * download.saveAs into testInfo.outputPath -- never a real Downloads
+   * directory.
    */
-  async exportFolder(name: string): Promise<Download> {
+  async exportFolder(name: string, options: { includeExcluded?: boolean } = {}): Promise<Download> {
     const page = this.root.page();
-    const downloadPromise = page.waitForEvent('download');
     await byTestId(this.folder(name), 'document-folder-export').click();
+
+    const dialog = byTestId(page, 'export-folder-dialog');
+    await expect(dialog).toBeVisible();
+    if (options.includeExcluded) {
+      await byTestId(dialog, 'export-folder-dialog-include-excluded').check();
+    }
+
+    const downloadPromise = page.waitForEvent('download');
+    await byTestId(dialog, 'export-folder-dialog-confirm').click();
+    await expect(dialog).toBeHidden();
     return downloadPromise;
+  }
+
+  /**
+   * Flips whether folder exports omit the document with the given name via
+   * its row's toggle button. The excluded state surfaces as a
+   * [data-testid="document-excluded-badge"] chip on the row.
+   */
+  async toggleExportExclusion(name: string): Promise<void> {
+    await byTestId(this.item(name), 'document-item-toggle-export').click();
+  }
+
+  /** Asserts the document row carries the "no export" badge. */
+  async expectDocumentExcludedFromExport(name: string): Promise<void> {
+    await expect(byTestId(this.item(name), 'document-excluded-badge')).toBeVisible();
   }
 
   // ---- Scoping the tree to a folder -------------------------------------------

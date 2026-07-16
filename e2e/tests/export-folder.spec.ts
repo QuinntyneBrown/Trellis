@@ -11,8 +11,10 @@ const MD_CONTENT = ['# Notes heading', '', 'Some exported *prose*.'].join('\n');
  * folder and its descendant folders into one markdown file, downloaded by
  * the browser as "<folder-name>.md" — PlantUML documents as ```plantuml
  * fenced blocks, markdown documents inlined verbatim, with no folder or
- * document names in the output. First waitForEvent('download') in this
- * suite.
+ * document names in the output. Export is confirmed through a dialog whose
+ * "include excluded" checkbox overrides per-document export exclusions:
+ * an excluded document is omitted from a default export and restored by
+ * the override. First waitForEvent('download') in this suite.
  */
 test.describe('export a folder as markdown', () => {
   test('downloads <folder>.md aggregating the subtree with fenced plantuml and inline markdown', async ({
@@ -87,6 +89,35 @@ test.describe('export a folder as markdown', () => {
       // PlantUML document as a ```plantuml fence wrapping its source
       // verbatim (export normalizes line endings to LF).
       expect(markdown).toBe(`${MD_CONTENT}\n\n\`\`\`plantuml\n${PUML_CONTENT}\n\`\`\`\n`);
+
+      // Mark the markdown document as excluded from export. The panel is
+      // reopened first: the documents were saved from the editor, and the
+      // panel only refreshes its cached lists on a closed->open transition.
+      // The markdown document is the one open in the editor, so the reveal-
+      // active-on-open behavior expands its ancestor folders for us -- an
+      // explicit chevron toggle here would race that reveal and collapse
+      // the subfolder again.
+      await editorPage.documentsPanel.toggle.click();
+      await editorPage.documentsPanel.open();
+      await editorPage.documentsPanel.expectDocumentListed(mdDocName);
+      await editorPage.documentsPanel.toggleExportExclusion(mdDocName);
+      await editorPage.documentsPanel.expectDocumentExcludedFromExport(mdDocName);
+
+      // A default export now omits the excluded markdown document...
+      const filteredDownload = await editorPage.documentsPanel.exportFolder(folderName);
+      const filteredPath = testInfo.outputPath('exported-filtered.md');
+      await filteredDownload.saveAs(filteredPath);
+      const filteredMarkdown = await readFile(filteredPath, 'utf-8');
+      expect(filteredMarkdown).toBe(`\`\`\`plantuml\n${PUML_CONTENT}\n\`\`\`\n`);
+
+      // ...and the dialog's "include excluded" override brings it back.
+      const everythingDownload = await editorPage.documentsPanel.exportFolder(folderName, {
+        includeExcluded: true,
+      });
+      const everythingPath = testInfo.outputPath('exported-everything.md');
+      await everythingDownload.saveAs(everythingPath);
+      const everythingMarkdown = await readFile(everythingPath, 'utf-8');
+      expect(everythingMarkdown).toBe(`${MD_CONTENT}\n\n\`\`\`plantuml\n${PUML_CONTENT}\n\`\`\`\n`);
     } finally {
       if (folderExists) {
         try {

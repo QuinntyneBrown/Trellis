@@ -46,4 +46,12 @@ public class PlantUmlDocument
     /// file's extension); the update endpoint never changes it.
     /// </summary>
     public string Kind { get; set; } = DocumentKinds.PlantUml;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the document is omitted from
+    /// folder markdown exports (unless the export explicitly asks to include
+    /// excluded documents). Changed only by the dedicated export-exclusion
+    /// endpoint - the update endpoint never touches it.
+    /// </summary>
+    public bool ExcludedFromExport { get; set; }
 }

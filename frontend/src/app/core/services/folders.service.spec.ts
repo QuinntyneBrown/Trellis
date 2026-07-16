@@ -81,4 +81,21 @@ describe('FoldersService', () => {
     expect(req.request.responseType).toBe('text');
     req.flush(markdown);
   });
+
+  it('exports without an includeExcluded param by default', () => {
+    service.exportFolder('f1').subscribe();
+
+    const req = httpMock.expectOne(`${baseUrl}/f1/export`);
+    expect(req.request.params.has('includeExcluded')).toBe(false);
+    req.flush('');
+  });
+
+  it('exports with includeExcluded=true when overriding exclusions', () => {
+    service.exportFolder('f1', true).subscribe();
+
+    const req = httpMock.expectOne(`${baseUrl}/f1/export?includeExcluded=true`);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.responseType).toBe('text');
+    req.flush('');
+  });
 });

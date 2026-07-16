@@ -6,6 +6,11 @@ All notable changes to Trellis are recorded in this file.
 
 ### Added
 
+- Per-document export exclusion: a document row toggle marks a document as
+  excluded from folder markdown exports (shown as a "no export" badge and
+  a dimmed name in the tree). The folder export action now opens a dialog
+  whose "Include documents excluded from export" checkbox overrides the
+  per-document setting for that one export.
 - Folder export: a Documents-explorer folder row action that aggregates
   every PlantUML and Markdown document in the folder and its subfolders
   into one markdown file downloaded by the browser as `<folder-name>.md` —

@@ -36,6 +36,13 @@ public class PlantUmlDocumentConfiguration : IEntityTypeConfiguration<PlantUmlDo
             .HasMaxLength(16)
             .HasDefaultValue(DocumentKinds.PlantUml);
 
+        // The constant default satisfies SQLite's requirement for adding a
+        // NOT NULL column to an existing table and backfills pre-existing rows
+        // as included in exports, which they always were.
+        builder.Property(document => document.ExcludedFromExport)
+            .IsRequired()
+            .HasDefaultValue(false);
+
         // ON DELETE CASCADE so deleting a folder deletes the documents inside it
         // (together with FolderConfiguration's self-referencing cascade, the
         // database engine wipes the whole subtree). No navigation property - the

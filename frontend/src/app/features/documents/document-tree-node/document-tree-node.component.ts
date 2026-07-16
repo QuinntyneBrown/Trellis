@@ -91,6 +91,8 @@ export class DocumentTreeNodeComponent {
   @Output() readonly scopeRequested = new EventEmitter<DocumentTreeNode>();
   /** Fires when this folder row's "Export folder as Markdown" button is used (the panel owns the fetch + download), or is re-emitted from a descendant row. */
   @Output() readonly exportRequested = new EventEmitter<DocumentTreeNode>();
+  /** Fires when this document row's export-exclusion toggle is used (the panel owns the API call), or is re-emitted from a descendant row. */
+  @Output() readonly exportExclusionToggleRequested = new EventEmitter<DocumentTreeNode>();
 
   /** True while a document drag hovers this folder row -- drives the drop-target highlight. */
   isDragOver = false;
@@ -159,6 +161,12 @@ export class DocumentTreeNodeComponent {
   onExportClicked(event: MouseEvent): void {
     event.stopPropagation();
     this.exportRequested.emit(this.node);
+  }
+
+  /** Asks the panel to flip whether folder exports omit this document. */
+  onToggleExportExclusionClicked(event: MouseEvent): void {
+    event.stopPropagation();
+    this.exportExclusionToggleRequested.emit(this.node);
   }
 
   /** Document rows are drag sources: the custom type carries the id, text/plain carries a human-readable name. */

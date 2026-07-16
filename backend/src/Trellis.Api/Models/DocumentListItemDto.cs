@@ -31,4 +31,10 @@ public record DocumentListItemDto
     /// Gets the document kind - "plantuml" or "markdown".
     /// </summary>
     public required string Kind { get; init; }
+
+    /// <summary>
+    /// Gets a value indicating whether the document is omitted from folder
+    /// markdown exports unless the export explicitly includes excluded documents.
+    /// </summary>
+    public required bool ExcludedFromExport { get; init; }
 }

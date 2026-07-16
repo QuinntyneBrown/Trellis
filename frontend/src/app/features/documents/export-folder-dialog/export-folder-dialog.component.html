@@ -1,0 +1,37 @@
+@if (visible) {
+  <div class="export-folder-dialog" data-testid="export-folder-dialog">
+    <div class="export-folder-dialog__backdrop" (click)="onCancelClicked()"></div>
+    <div class="export-folder-dialog__panel">
+      <h2 class="export-folder-dialog__title">Export "{{ folderName }}" as Markdown</h2>
+
+      <label class="export-folder-dialog__checkbox-row">
+        <input
+          type="checkbox"
+          data-testid="export-folder-dialog-include-excluded"
+          [ngModel]="includeExcluded()"
+          (ngModelChange)="onIncludeExcludedChange($event)"
+        />
+        Include documents excluded from export
+      </label>
+
+      <div class="export-folder-dialog__actions">
+        <button
+          type="button"
+          class="export-folder-dialog__button export-folder-dialog__button--cancel"
+          data-testid="export-folder-dialog-cancel"
+          (click)="onCancelClicked()"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="export-folder-dialog__button export-folder-dialog__button--confirm"
+          data-testid="export-folder-dialog-confirm"
+          (click)="onConfirmClicked()"
+        >
+          Export
+        </button>
+      </div>
+    </div>
+  </div>
+}

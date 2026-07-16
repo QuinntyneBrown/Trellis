@@ -65,6 +65,7 @@
       [title]="'Updated ' + node.document!.updatedAt"
       draggable="true"
       [class.document-tree-node__row--active]="isActive"
+      [class.document-tree-node__row--excluded]="node.document!.excludedFromExport"
       [attr.aria-current]="isActive ? 'true' : null"
       (click)="onRowClick()"
       (dragstart)="onDragStart($event)"
@@ -77,12 +78,22 @@
         <span class="document-tree-node__kind-badge" data-testid="document-kind-badge" aria-label="Markdown document">MD</span>
       }
 
+      @if (node.document!.excludedFromExport) {
+        <span class="document-tree-node__excluded-badge" data-testid="document-excluded-badge" aria-label="Excluded from export">no export</span>
+      }
+
       <div class="document-tree-node__actions">
         <app-tree-action-button
           icon="move"
           label="Move to Folder…"
           testId="document-item-move"
           (clicked)="onMoveClicked($event)"
+        />
+        <app-tree-action-button
+          [icon]="node.document!.excludedFromExport ? 'export' : 'no-export'"
+          [label]="node.document!.excludedFromExport ? 'Include in export' : 'Exclude from export'"
+          testId="document-item-toggle-export"
+          (clicked)="onToggleExportExclusionClicked($event)"
         />
         <app-tree-action-button
           icon="open"
@@ -123,6 +134,7 @@
           (moveRequested)="moveRequested.emit($event)"
           (scopeRequested)="scopeRequested.emit($event)"
           (exportRequested)="exportRequested.emit($event)"
+          (exportExclusionToggleRequested)="exportExclusionToggleRequested.emit($event)"
         ></app-document-tree-node>
       }
     </div>

@@ -18,6 +18,10 @@ import {
   RenameNodeEvent,
 } from '../document-tree-node/document-tree-node.component';
 import {
+  ExportFolderDialogComponent,
+  ExportFolderDialogResult,
+} from '../export-folder-dialog/export-folder-dialog.component';
+import {
   MoveDocumentDialogComponent,
   MoveDocumentDialogResult,
 } from '../move-document-dialog/move-document-dialog.component';
@@ -40,7 +44,7 @@ import { TreeActionButtonComponent } from '../../../shared/components/tree-actio
 @Component({
   selector: 'app-documents-panel',
   standalone: true,
-  imports: [DocumentTreeNodeComponent, MoveDocumentDialogComponent, TreeActionButtonComponent],
+  imports: [DocumentTreeNodeComponent, ExportFolderDialogComponent, MoveDocumentDialogComponent, TreeActionButtonComponent],
   templateUrl: './documents-panel.component.html',
   styleUrl: './documents-panel.component.scss',
 })
@@ -91,6 +95,8 @@ export class DocumentsPanelComponent implements OnChanges {
   readonly folderList = signal<Folder[]>([]);
   /** The document node whose "Move to Folder…" dialog is open, or null when it's closed. */
   readonly movingDocument = signal<DocumentTreeNode | null>(null);
+  /** The folder node whose export dialog is open, or null when it's closed. */
+  readonly exportingFolder = signal<DocumentTreeNode | null>(null);
 
   /** True while a document drag hovers the tree's root space (not a folder row) -- drives the root drop-zone highlight. */
   isRootDragOver = false;
@@ -222,15 +228,34 @@ export class DocumentsPanelComponent implements OnChanges {
     this.setScope(null);
   }
 
-  /**
-   * A folder row's "Export folder as Markdown" button: fetches the subtree
-   * aggregated server-side and hands it to the browser as a
-   * "&lt;folder-name&gt;.md" download.
-   */
+  /** A folder row's "Export folder as Markdown" button opens the export dialog. */
   onExportFolder(node: DocumentTreeNode): void {
-    this.foldersService.exportFolder(node.id).subscribe((markdown) => {
-      this.fileDownloadService.downloadTextFile(`${node.name}.md`, markdown);
-    });
+    this.exportingFolder.set(node);
+  }
+
+  /**
+   * The export dialog's Export button: fetches the subtree aggregated
+   * server-side (with or without excluded documents, per the dialog's
+   * checkbox) and hands it to the browser as a "&lt;folder-name&gt;.md" download.
+   */
+  onExportDialogConfirm(result: ExportFolderDialogResult): void {
+    const node = this.exportingFolder();
+    if (node) {
+      this.foldersService.exportFolder(node.id, result.includeExcluded).subscribe((markdown) => {
+        this.fileDownloadService.downloadTextFile(`${node.name}.md`, markdown);
+      });
+    }
+    this.exportingFolder.set(null);
+  }
+
+  onExportDialogCancel(): void {
+    this.exportingFolder.set(null);
+  }
+
+  /** A document row's export-exclusion toggle: flip the flag, then refresh so the badge and future exports agree. */
+  onToggleExportExclusion(node: DocumentTreeNode): void {
+    const excluded = node.document?.excludedFromExport ?? false;
+    this.documentsService.setExportExclusion(node.id, !excluded).subscribe(() => this.refresh());
   }
 
   /**

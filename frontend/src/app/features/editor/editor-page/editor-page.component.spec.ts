@@ -191,6 +191,7 @@ describe('EditorPageComponent', () => {
       updatedAt: null,
       kind: 'plantuml' as const,
       folderId: null,
+      excludedFromExport: false,
       ...overrides,
     };
   }
@@ -440,7 +441,7 @@ describe('EditorPageComponent', () => {
       const document = sampleDocument({ id: 'picked', name: 'Picked', content: 'picked content' });
       documentsServiceMock.getById.mockReturnValue(of(document));
 
-      component.onDocumentOpenedFromPanel({ id: 'picked', name: 'Picked', updatedAt: '2026-01-01T00:00:00Z', folderId: null, kind: 'plantuml' });
+      component.onDocumentOpenedFromPanel({ id: 'picked', name: 'Picked', updatedAt: '2026-01-01T00:00:00Z', folderId: null, kind: 'plantuml', excludedFromExport: false });
 
       // The panel stays open (VS Code explorer idiom) so the user keeps
       // their place in the tree; the now-active row highlights instead.
@@ -455,7 +456,7 @@ describe('EditorPageComponent', () => {
 
       documentsServiceMock.getById.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
 
-      component.onDocumentOpenedFromPanel({ id: 'gone', name: 'Gone Doc', updatedAt: '2026-01-01T00:00:00Z', folderId: null, kind: 'plantuml' });
+      component.onDocumentOpenedFromPanel({ id: 'gone', name: 'Gone Doc', updatedAt: '2026-01-01T00:00:00Z', folderId: null, kind: 'plantuml', excludedFromExport: false });
 
       expect(locationMock.go).not.toHaveBeenCalled();
       expect(component.saveError()).toBe('Could not open "Gone Doc".');
@@ -698,7 +699,7 @@ describe('EditorPageComponent', () => {
         of(sampleDocument({ id: 'md-1', name: 'Notes', content: '# hi', kind: 'markdown' })),
       );
 
-      component.onDocumentOpenedFromPanel({ id: 'md-1', name: 'Notes', updatedAt: '2026-01-01T00:00:00Z', folderId: null, kind: 'markdown' });
+      component.onDocumentOpenedFromPanel({ id: 'md-1', name: 'Notes', updatedAt: '2026-01-01T00:00:00Z', folderId: null, kind: 'markdown', excludedFromExport: false });
 
       expect(component.documentKind()).toBe('markdown');
       expect(hubServiceMock.render).toHaveBeenCalledWith('# hi', 'markdown');

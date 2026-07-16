@@ -15,6 +15,7 @@ describe('buildDocumentTree', () => {
     updatedAt: '2026-01-01T00:00:00Z',
     folderId,
     kind: 'plantuml',
+    excludedFromExport: false,
   });
 
   it('returns an empty tree for empty inputs', () => {

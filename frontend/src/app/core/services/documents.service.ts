@@ -51,6 +51,15 @@ export class DocumentsService {
     return this.http.put<Document>(`${this.baseUrl}/${id}/folder`, { folderId });
   }
 
+  /**
+   * Sets whether folder markdown exports omit this document. A dedicated
+   * endpoint (like move) because toggling export visibility is
+   * re-organization, not editing -- it must not bump the recency timestamp.
+   */
+  setExportExclusion(id: string, excludedFromExport: boolean): Observable<Document> {
+    return this.http.put<Document>(`${this.baseUrl}/${id}/export-exclusion`, { excludedFromExport });
+  }
+
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }

@@ -41,6 +41,7 @@ function documentNode(overrides: Partial<DocumentTreeNode> = {}): DocumentTreeNo
     updatedAt: '2026-01-01T00:00:00Z',
     folderId: null,
     kind: 'plantuml',
+    excludedFromExport: false,
   };
   return {
     id: summary.id,
@@ -241,6 +242,48 @@ describe('DocumentTreeNodeComponent', () => {
 
       expect(byTestId('document-kind-badge')).toBeTruthy();
       expect(byTestId('document-kind-badge')!.textContent).toBe('MD');
+    });
+
+    it('shows the excluded badge and dims the row only for excluded documents', () => {
+      component.node = documentNode();
+      fixture.detectChanges();
+      expect(byTestId('document-excluded-badge')).toBeNull();
+      expect(byTestId('document-item')!.classList).not.toContain('document-tree-node__row--excluded');
+
+      const summary = { ...documentNode().document!, excludedFromExport: true };
+      component.node = { ...documentNode(), document: summary };
+      fixture.detectChanges();
+
+      expect(byTestId('document-excluded-badge')).toBeTruthy();
+      expect(byTestId('document-excluded-badge')!.textContent).toBe('no export');
+      expect(byTestId('document-item')!.classList).toContain('document-tree-node__row--excluded');
+    });
+
+    it('emits exportExclusionToggleRequested from the toggle button without firing the row click', () => {
+      const node = documentNode();
+      component.node = node;
+      fixture.detectChanges();
+      const toggleSpy = jest.fn();
+      const openSpy = jest.fn();
+      component.exportExclusionToggleRequested.subscribe(toggleSpy);
+      component.openDocument.subscribe(openSpy);
+
+      byTestId('document-item-toggle-export')!.click();
+
+      expect(toggleSpy).toHaveBeenCalledWith(node);
+      expect(openSpy).not.toHaveBeenCalled();
+    });
+
+    it('labels the toggle by the action it performs, not the current state', () => {
+      component.node = documentNode();
+      fixture.detectChanges();
+      expect(byTestId('document-item-toggle-export')!.getAttribute('aria-label')).toBe('Exclude from export');
+
+      const summary = { ...documentNode().document!, excludedFromExport: true };
+      component.node = { ...documentNode(), document: summary };
+      fixture.detectChanges();
+
+      expect(byTestId('document-item-toggle-export')!.getAttribute('aria-label')).toBe('Include in export');
     });
 
     it('emits openDocument with the summary when the row is clicked', () => {

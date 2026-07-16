@@ -33,6 +33,27 @@
   line-height: 1.5;
 }
 
+// Small "no export" chip marking documents that folder exports omit,
+// paired with a dimmed name so exclusion reads at a glance.
+.document-tree-node__excluded-badge {
+  flex: 0 0 auto;
+  padding: 0 0.25rem;
+  border-radius: 0.2rem;
+  background-color: #f3f4f6;
+  color: #6b7280;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.document-tree-node__row--excluded {
+  .document-tree-node__name {
+    color: #9ca3af;
+  }
+}
+
 // The document currently open in the editor -- the VS Code active-file
 // idiom: a steady tint (using the app's #3b82f6 accent) plus a slightly
 // emphasized name, so the user always sees their place in the tree.

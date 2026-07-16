@@ -275,6 +275,43 @@ public class DocumentsControllerTests : IClassFixture<CustomWebApplicationFactor
     }
 
     [Fact]
+    public async Task GetList_CarriesTheExportExclusion()
+    {
+        var createResponse = await this.client.PostAsJsonAsync("/api/documents", new { name = "Excluded list doc", content = "c" });
+        var created = await createResponse.Content.ReadFromJsonAsync<PlantUmlDocument>();
+
+        await this.client.PutAsJsonAsync($"/api/documents/{created!.Id}/export-exclusion", new { excludedFromExport = true });
+
+        // The list projection must carry the flag so the tree can badge excluded documents.
+        var list = await this.client.GetFromJsonAsync<List<DocumentListItemDto>>("/api/documents");
+        var listItem = list!.Single(d => d.Id == created.Id);
+
+        Assert.True(listItem.ExcludedFromExport);
+    }
+
+    [Fact]
+    public async Task Create_DefaultsToIncludedInExport()
+    {
+        var response = await this.client.PostAsJsonAsync("/api/documents", new { name = "Included doc", content = "c" });
+
+        var created = await response.Content.ReadFromJsonAsync<PlantUmlDocument>();
+        Assert.False(created!.ExcludedFromExport);
+    }
+
+    [Fact]
+    public async Task Update_PreservesExportExclusion()
+    {
+        var createResponse = await this.client.PostAsJsonAsync("/api/documents", new { name = "Sticky exclusion", content = "v1" });
+        var created = await createResponse.Content.ReadFromJsonAsync<PlantUmlDocument>();
+        await this.client.PutAsJsonAsync($"/api/documents/{created!.Id}/export-exclusion", new { excludedFromExport = true });
+
+        var updateResponse = await this.client.PutAsJsonAsync($"/api/documents/{created.Id}", new { name = "Sticky exclusion", content = "v2" });
+
+        var updated = await updateResponse.Content.ReadFromJsonAsync<PlantUmlDocument>();
+        Assert.True(updated!.ExcludedFromExport);
+    }
+
+    [Fact]
     public async Task Move_ToAnotherFolder_UpdatesFolderId()
     {
         var folderAResponse = await this.client.PostAsJsonAsync("/api/folders", new { name = "Move source" });
@@ -376,6 +413,54 @@ public class DocumentsControllerTests : IClassFixture<CustomWebApplicationFactor
         // Moving is re-organization, not editing: it must not reshuffle the
         // recency-ordered list the way a content update does.
         Assert.Null(moved.UpdatedAt);
+    }
+
+    [Fact]
+    public async Task SetExportExclusion_SetThenClear_RoundTrips()
+    {
+        var createResponse = await this.client.PostAsJsonAsync("/api/documents", new { name = "Toggled doc", content = "c" });
+        var created = await createResponse.Content.ReadFromJsonAsync<PlantUmlDocument>();
+
+        var excludeResponse = await this.client.PutAsJsonAsync($"/api/documents/{created!.Id}/export-exclusion", new { excludedFromExport = true });
+
+        Assert.Equal(HttpStatusCode.OK, excludeResponse.StatusCode);
+        var excluded = await excludeResponse.Content.ReadFromJsonAsync<PlantUmlDocument>();
+        Assert.True(excluded!.ExcludedFromExport);
+
+        var fetched = await this.client.GetFromJsonAsync<PlantUmlDocument>($"/api/documents/{created.Id}");
+        Assert.True(fetched!.ExcludedFromExport);
+
+        var includeResponse = await this.client.PutAsJsonAsync($"/api/documents/{created.Id}/export-exclusion", new { excludedFromExport = false });
+
+        Assert.Equal(HttpStatusCode.OK, includeResponse.StatusCode);
+        var included = await includeResponse.Content.ReadFromJsonAsync<PlantUmlDocument>();
+        Assert.False(included!.ExcludedFromExport);
+    }
+
+    [Fact]
+    public async Task SetExportExclusion_ReturnsNotFound_ForUnknownDocument()
+    {
+        var response = await this.client.PutAsJsonAsync($"/api/documents/{Guid.NewGuid()}/export-exclusion", new { excludedFromExport = true });
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task SetExportExclusion_DoesNotChangeNameContentOrUpdatedAt()
+    {
+        var createResponse = await this.client.PostAsJsonAsync("/api/documents", new { name = "Quiet toggle doc", content = "original" });
+        var created = await createResponse.Content.ReadFromJsonAsync<PlantUmlDocument>();
+
+        var toggleResponse = await this.client.PutAsJsonAsync($"/api/documents/{created!.Id}/export-exclusion", new { excludedFromExport = true });
+
+        Assert.Equal(HttpStatusCode.OK, toggleResponse.StatusCode);
+        var toggled = await toggleResponse.Content.ReadFromJsonAsync<PlantUmlDocument>();
+        Assert.Equal("Quiet toggle doc", toggled!.Name);
+        Assert.Equal("original", toggled.Content);
+
+        // Toggling export visibility is re-organization, not editing: it must
+        // not reshuffle the recency-ordered list the way a content update does.
+        Assert.Null(toggled.UpdatedAt);
     }
 
     [Fact]

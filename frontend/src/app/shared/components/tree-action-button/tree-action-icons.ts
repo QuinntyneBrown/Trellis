@@ -21,6 +21,7 @@ export type TreeActionIconName =
   | 'up'
   | 'clear'
   | 'export'
+  | 'no-export'
   | 'copy'
   | 'check';
 
@@ -68,6 +69,8 @@ export const TREE_ACTION_ICON_PATHS: Record<TreeActionIconName, string[]> = {
   clear: ['M6 6l12 12M18 6L6 18'],
   // Arrow into a tray: "download this as a file".
   export: ['M12 3v12M8 11l4 4 4-4', 'M4 19h16'],
+  // The export glyph struck through: "excluded from folder exports".
+  'no-export': ['M12 3v12M8 11l4 4 4-4', 'M4 19h16', 'M3 3l18 18'],
   // Two overlapping rounded rectangles: "copy to clipboard".
   copy: [
     'M9 9h10a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H11a2 2 0 0 1-2-2V9z',

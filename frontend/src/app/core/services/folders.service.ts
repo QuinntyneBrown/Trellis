@@ -33,8 +33,13 @@ export class FoldersService {
    * Fetches the folder subtree aggregated as one markdown document.
    * responseType 'text' is load-bearing: the endpoint returns raw
    * text/markdown, which the default JSON parser would mangle.
+   * Documents marked as excluded from export are omitted unless
+   * includeExcluded is true.
    */
-  exportFolder(id: string): Observable<string> {
-    return this.http.get(`${this.baseUrl}/${id}/export`, { responseType: 'text' });
+  exportFolder(id: string, includeExcluded = false): Observable<string> {
+    return this.http.get(`${this.baseUrl}/${id}/export`, {
+      responseType: 'text',
+      params: includeExcluded ? { includeExcluded: true } : {},
+    });
   }
 }

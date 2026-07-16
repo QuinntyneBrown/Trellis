@@ -60,6 +60,7 @@
             (moveRequested)="onMoveRequested($event)"
             (scopeRequested)="onScopeToFolder($event)"
             (exportRequested)="onExportFolder($event)"
+            (exportExclusionToggleRequested)="onToggleExportExclusion($event)"
           ></app-document-tree-node>
         }
       </div>
@@ -72,6 +73,13 @@
       [currentFolderId]="movingDocument()?.document?.folderId ?? null"
       (confirm)="onMoveDialogConfirm($event)"
       (cancel)="onMoveDialogCancel()"
+    />
+
+    <app-export-folder-dialog
+      [visible]="exportingFolder() !== null"
+      [folderName]="exportingFolder()?.name ?? ''"
+      (confirm)="onExportDialogConfirm($event)"
+      (cancel)="onExportDialogCancel()"
     />
   </aside>
 }

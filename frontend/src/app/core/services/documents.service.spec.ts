@@ -26,7 +26,7 @@ describe('DocumentsService', () => {
 
   it('lists document summaries', () => {
     const summaries: DocumentSummary[] = [
-      { id: '1', name: 'Doc 1', updatedAt: '2026-01-01T00:00:00Z', folderId: null, kind: 'plantuml' },
+      { id: '1', name: 'Doc 1', updatedAt: '2026-01-01T00:00:00Z', folderId: null, kind: 'plantuml', excludedFromExport: false },
     ];
 
     service.list().subscribe((result) => {
@@ -47,6 +47,7 @@ describe('DocumentsService', () => {
       updatedAt: null,
       folderId: null,
       kind: 'plantuml',
+      excludedFromExport: false,
     };
 
     service.getById('1').subscribe((result) => {
@@ -99,6 +100,24 @@ describe('DocumentsService', () => {
     const req = httpMock.expectOne(`${baseUrl}/42/folder`);
     expect(req.request.method).toBe('PUT');
     expect(req.request.body).toEqual({ folderId: null });
+    req.flush({});
+  });
+
+  it('sets the export exclusion via the dedicated export-exclusion endpoint', () => {
+    service.setExportExclusion('42', true).subscribe();
+
+    const req = httpMock.expectOne(`${baseUrl}/42/export-exclusion`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ excludedFromExport: true });
+    req.flush({});
+  });
+
+  it('clears the export exclusion with an explicit false', () => {
+    service.setExportExclusion('42', false).subscribe();
+
+    const req = httpMock.expectOne(`${baseUrl}/42/export-exclusion`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ excludedFromExport: false });
     req.flush({});
   });
 

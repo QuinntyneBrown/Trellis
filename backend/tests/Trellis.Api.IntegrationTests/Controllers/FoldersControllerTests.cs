@@ -306,6 +306,46 @@ public class FoldersControllerTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Export_OmitsExcludedDocuments()
+    {
+        var folder = await this.CreateFolderAsync("Export exclusions");
+        await this.CreateDocumentAsync("kept", "kept content", folder.Id, "markdown");
+        var excluded = await this.CreateDocumentAsync("scratch", "scratch content", folder.Id, "markdown");
+        await this.SetExportExclusionAsync(excluded.Id, true);
+
+        var markdown = await this.client.GetStringAsync($"/api/folders/{folder.Id}/export");
+
+        Assert.Equal("kept content\n", markdown);
+    }
+
+    [Fact]
+    public async Task Export_IncludesExcludedDocuments_WhenIncludeExcludedRequested()
+    {
+        var folder = await this.CreateFolderAsync("Export exclusion override");
+        await this.CreateDocumentAsync("kept", "kept content", folder.Id, "markdown");
+        var excluded = await this.CreateDocumentAsync("scratch", "scratch content", folder.Id, "markdown");
+        await this.SetExportExclusionAsync(excluded.Id, true);
+
+        var markdown = await this.client.GetStringAsync($"/api/folders/{folder.Id}/export?includeExcluded=true");
+
+        Assert.Equal("kept content\n\nscratch content\n", markdown);
+    }
+
+    [Fact]
+    public async Task Export_ReturnsEmptyNote_WhenAllDocumentsAreExcluded()
+    {
+        // An all-excluded subtree exports the same note as a subtree with no
+        // documents at all - exclusion leaves no trace.
+        var folder = await this.CreateFolderAsync("Export all excluded");
+        var excluded = await this.CreateDocumentAsync("scratch", "scratch content", folder.Id, "markdown");
+        await this.SetExportExclusionAsync(excluded.Id, true);
+
+        var markdown = await this.client.GetStringAsync($"/api/folders/{folder.Id}/export");
+
+        Assert.Equal("_This folder contains no documents._\n", markdown);
+    }
+
     private async Task<Folder> CreateFolderAsync(string name, Guid? parentFolderId = null)
     {
         var response = await this.client.PostAsJsonAsync("/api/folders", new { name, parentFolderId });
@@ -318,5 +358,11 @@ public class FoldersControllerTests : IClassFixture<CustomWebApplicationFactory>
         var response = await this.client.PostAsJsonAsync("/api/documents", new { name, content, folderId, kind });
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<PlantUmlDocument>())!;
+    }
+
+    private async Task SetExportExclusionAsync(Guid documentId, bool excludedFromExport)
+    {
+        var response = await this.client.PutAsJsonAsync($"/api/documents/{documentId}/export-exclusion", new { excludedFromExport });
+        response.EnsureSuccessStatusCode();
     }
 }

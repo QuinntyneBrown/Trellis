@@ -19,6 +19,7 @@ describe('DocumentsPanelComponent', () => {
     getById: jest.Mock;
     update: jest.Mock;
     move: jest.Mock;
+    setExportExclusion: jest.Mock;
   };
   let foldersServiceMock: {
     list: jest.Mock;
@@ -36,8 +37,8 @@ describe('DocumentsPanelComponent', () => {
 
   const folders: Folder[] = [{ id: 'f1', name: 'Diagrams', parentFolderId: null }];
   const summaries: DocumentSummary[] = [
-    { id: '1', name: 'Doc One', updatedAt: '2026-01-01T00:00:00Z', folderId: null, kind: 'plantuml' },
-    { id: '2', name: 'Nested Doc', updatedAt: '2026-01-02T00:00:00Z', folderId: 'f1', kind: 'plantuml' },
+    { id: '1', name: 'Doc One', updatedAt: '2026-01-01T00:00:00Z', folderId: null, kind: 'plantuml', excludedFromExport: false },
+    { id: '2', name: 'Nested Doc', updatedAt: '2026-01-02T00:00:00Z', folderId: 'f1', kind: 'plantuml', excludedFromExport: false },
   ];
 
   beforeEach(async () => {
@@ -48,6 +49,7 @@ describe('DocumentsPanelComponent', () => {
       getById: jest.fn(),
       update: jest.fn(),
       move: jest.fn().mockReturnValue(of({})),
+      setExportExclusion: jest.fn().mockReturnValue(of({})),
     };
     foldersServiceMock = {
       list: jest.fn().mockReturnValue(of(folders)),
@@ -123,15 +125,75 @@ describe('DocumentsPanelComponent', () => {
     expect(byTestId('documents-tree')).toBeNull();
   });
 
-  it('exports a folder: fetches the aggregated markdown and downloads it as <name>.md', () => {
+  it('exports a folder via the dialog: fetches the aggregated markdown and downloads it as <name>.md', () => {
     const markdown = 'Nested doc content.\n\n```plantuml\n@startuml\n@enduml\n```\n';
     foldersServiceMock.exportFolder.mockReturnValue(of(markdown));
     openPanel();
 
     (byTestId('document-folder-export') as HTMLButtonElement).click();
+    fixture.detectChanges();
 
-    expect(foldersServiceMock.exportFolder).toHaveBeenCalledWith('f1');
+    // The export button only opens the dialog -- nothing is fetched yet.
+    expect(byTestId('export-folder-dialog')).toBeTruthy();
+    expect(foldersServiceMock.exportFolder).not.toHaveBeenCalled();
+
+    (byTestId('export-folder-dialog-confirm') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(foldersServiceMock.exportFolder).toHaveBeenCalledWith('f1', false);
     expect(fileDownloadServiceMock.downloadTextFile).toHaveBeenCalledWith('Diagrams.md', markdown);
+    expect(byTestId('export-folder-dialog')).toBeNull();
+  });
+
+  it('exports with includeExcluded=true when the dialog checkbox is ticked', () => {
+    openPanel();
+
+    (byTestId('document-folder-export') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    const checkbox = byTestId('export-folder-dialog-include-excluded') as HTMLInputElement;
+    checkbox.click();
+    fixture.detectChanges();
+
+    (byTestId('export-folder-dialog-confirm') as HTMLButtonElement).click();
+
+    expect(foldersServiceMock.exportFolder).toHaveBeenCalledWith('f1', true);
+  });
+
+  it('cancelling the export dialog fetches nothing', () => {
+    openPanel();
+
+    (byTestId('document-folder-export') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    (byTestId('export-folder-dialog-cancel') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(byTestId('export-folder-dialog')).toBeNull();
+    expect(foldersServiceMock.exportFolder).not.toHaveBeenCalled();
+    expect(fileDownloadServiceMock.downloadTextFile).not.toHaveBeenCalled();
+  });
+
+  it('toggles a document\'s export exclusion and refreshes the tree', () => {
+    openPanel();
+
+    (byTestId('document-item-toggle-export') as HTMLButtonElement).click();
+
+    expect(documentsServiceMock.setExportExclusion).toHaveBeenCalledWith('1', true);
+    // The mutate-then-refresh convention: both lists are refetched.
+    expect(documentsServiceMock.list).toHaveBeenCalledTimes(2);
+    expect(foldersServiceMock.list).toHaveBeenCalledTimes(2);
+  });
+
+  it('toggles an already-excluded document back to included', () => {
+    documentsServiceMock.list.mockReturnValue(
+      of([{ ...summaries[0], excludedFromExport: true }]),
+    );
+    openPanel();
+
+    (byTestId('document-item-toggle-export') as HTMLButtonElement).click();
+
+    expect(documentsServiceMock.setExportExclusion).toHaveBeenCalledWith('1', false);
   });
 
   it('emits documentOpened when a root document row is opened', () => {
@@ -235,7 +297,7 @@ describe('DocumentsPanelComponent', () => {
       { id: 'child', name: 'child', parentFolderId: 'parent' },
     ];
     const nestedSummaries: DocumentSummary[] = [
-      { id: 'deep-doc', name: 'Deep Doc', updatedAt: '2026-01-03T00:00:00Z', folderId: 'child', kind: 'plantuml' },
+      { id: 'deep-doc', name: 'Deep Doc', updatedAt: '2026-01-03T00:00:00Z', folderId: 'child', kind: 'plantuml', excludedFromExport: false },
     ];
 
     beforeEach(() => {
@@ -429,10 +491,10 @@ describe('DocumentsPanelComponent', () => {
       { id: 'personal', name: 'Personal', parentFolderId: null },
     ];
     const scopeSummaries: DocumentSummary[] = [
-      { id: 'root-doc', name: 'Root Doc', updatedAt: '2026-01-01T00:00:00Z', folderId: null, kind: 'plantuml' },
-      { id: 'work-doc', name: 'Work Doc', updatedAt: '2026-01-02T00:00:00Z', folderId: 'work', kind: 'plantuml' },
-      { id: 'report-doc', name: 'Report Doc', updatedAt: '2026-01-03T00:00:00Z', folderId: 'reports', kind: 'plantuml' },
-      { id: 'personal-doc', name: 'Personal Doc', updatedAt: '2026-01-04T00:00:00Z', folderId: 'personal', kind: 'plantuml' },
+      { id: 'root-doc', name: 'Root Doc', updatedAt: '2026-01-01T00:00:00Z', folderId: null, kind: 'plantuml', excludedFromExport: false },
+      { id: 'work-doc', name: 'Work Doc', updatedAt: '2026-01-02T00:00:00Z', folderId: 'work', kind: 'plantuml', excludedFromExport: false },
+      { id: 'report-doc', name: 'Report Doc', updatedAt: '2026-01-03T00:00:00Z', folderId: 'reports', kind: 'plantuml', excludedFromExport: false },
+      { id: 'personal-doc', name: 'Personal Doc', updatedAt: '2026-01-04T00:00:00Z', folderId: 'personal', kind: 'plantuml', excludedFromExport: false },
     ];
 
     beforeEach(() => {
