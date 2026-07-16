@@ -3,7 +3,7 @@
  * path `d` strings on a shared 24x24 viewBox, drawn in an outline
  * (Heroicons/Feather-like) style: `fill="none" stroke="currentColor"`.
  */
-export type RailIconName = 'new' | 'save' | 'upload' | 'templates' | 'documents' | 'explorer';
+export type RailIconName = 'menu' | 'new' | 'save' | 'upload' | 'templates' | 'documents' | 'explorer';
 
 /**
  * Hand-authored outline icon paths -- no icon-library dependency. Kept
@@ -13,6 +13,10 @@ export type RailIconName = 'new' | 'save' | 'upload' | 'templates' | 'documents'
  * few pixels apart in a narrow 48px rail).
  */
 export const RAIL_ICON_PATHS: Record<RailIconName, string[]> = {
+  // Three horizontal lines -- the classic hamburger, used by the rail's
+  // application-menu trigger (the vscode.dev idiom).
+  menu: ['M4 6h16M4 12h16M4 18h16'],
+
   // A page with a folded top-right corner, plus a small "+" badge low on
   // the page to signal document creation.
   new: ['M6 2h7l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM13 2v5h5', 'M12 14v6M9 17h6'],

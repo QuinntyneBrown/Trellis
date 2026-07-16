@@ -3,9 +3,6 @@
   [sidePanelOpen]="activeSidePanel() !== null"
   [copied]="documentCopied()"
   (sidebarToggle)="onTitleBarSidebarToggle()"
-  (newDocument)="onNewDocument()"
-  (save)="onSaveClicked()"
-  (uploadRequested)="onUploadRequested()"
   (copyContents)="onCopyDocumentContents()"
 ></app-title-bar>
 <div class="editor-page" data-testid="editor-page">
@@ -15,6 +12,7 @@
     [activeSidePanel]="activeSidePanel()"
     (newDocument)="onNewDocument()"
     (save)="onSaveClicked()"
+    (uploadRequested)="onUploadRequested()"
     (explorerPanelToggle)="toggleSidePanel('explorer')"
     (documentsPanelToggle)="toggleSidePanel('documents')"
     (templatesPanelToggle)="toggleSidePanel('templates')"

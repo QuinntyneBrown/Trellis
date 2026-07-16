@@ -32,7 +32,7 @@
         row action have different size and tooltip mechanics. Shared
         drawings (page-with-plus) are <em>copied, not imported</em>.</li>
       <li><strong>Rendered sizes:</strong> 20px in the rail, 14px in row
-        actions, 18px for the title-bar logo.</li>
+        actions.</li>
       <li><strong>Visually distinct neighbors.</strong> Glyphs that sit a
         few pixels apart in the rail (new / documents / explorer) use very
         different silhouettes so they never blur together.</li>
@@ -41,6 +41,7 @@
     <h2>Rail set</h2>
     <p class="ds-source">Derived from: <code>shared/components/rail-button/rail-icons.ts</code>.</p>
     <div class="ds-icon-grid">
+      <div class="ds-icon-cell"><svg><use href="#tds-icon-rail-menu"/></svg><span class="ds-icon-cell__name">menu</span></div>
       <div class="ds-icon-cell"><svg><use href="#tds-icon-rail-new"/></svg><span class="ds-icon-cell__name">new</span></div>
       <div class="ds-icon-cell"><svg><use href="#tds-icon-rail-save"/></svg><span class="ds-icon-cell__name">save</span></div>
       <div class="ds-icon-cell"><svg><use href="#tds-icon-rail-upload"/></svg><span class="ds-icon-cell__name">upload</span></div>
@@ -51,6 +52,7 @@
     <table class="ds-table">
       <thead><tr><th>Glyph</th><th>Metaphor</th></tr></thead>
       <tbody>
+        <tr><td><code>menu</code></td><td>Three horizontal lines — the hamburger, the rail's application-menu trigger</td></tr>
         <tr><td><code>new</code></td><td>Page with a folded corner and a "+" badge — create a document</td></tr>
         <tr><td><code>save</code></td><td>Floppy disk with label slots</td></tr>
         <tr><td><code>upload</code></td><td>Arrow dropping into a tray</td></tr>

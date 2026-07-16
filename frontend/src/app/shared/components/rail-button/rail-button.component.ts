@@ -27,6 +27,14 @@ export class RailButtonComponent {
    * pass this and stay at its default false, unaffected visually.
    */
   @Input() active = false;
+  /**
+   * When set (non-null) this rail button is a menu trigger, vscode.dev
+   * hamburger-style: it renders `aria-haspopup="menu"` and mirrors the
+   * menu's open state through `aria-expanded` (which also keeps the
+   * hover-wash fill while the menu is open). Plain action/toggle buttons
+   * leave this null and render neither attribute.
+   */
+  @Input() menuExpanded: boolean | null = null;
 
   @Output() readonly clicked = new EventEmitter<void>();
 

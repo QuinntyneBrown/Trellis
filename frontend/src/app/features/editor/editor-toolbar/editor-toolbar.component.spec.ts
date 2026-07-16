@@ -20,14 +20,133 @@ describe('EditorToolbarComponent', () => {
     return fixture.nativeElement.querySelector(`[data-testid="${testId}"]`);
   }
 
-  it('renders the panel toggles and connection status -- the New/Save/Upload actions live in the File menu (D-012)', () => {
+  it('renders the panel toggles and connection status -- the New/Save/Upload actions live in the hamburger File menu', () => {
     expect(byTestId('editor-toolbar')).toBeTruthy();
+    expect(byTestId('rail-hamburger')).toBeTruthy();
     expect(byTestId('templates-panel-toggle')).toBeTruthy();
     expect(byTestId('documents-panel-toggle')).toBeTruthy();
     expect(byTestId('connection-status')).toBeTruthy();
     expect(byTestId('toolbar-new')).toBeNull();
     expect(byTestId('toolbar-save')).toBeNull();
     expect(byTestId('toolbar-upload')).toBeNull();
+  });
+
+  describe('application (hamburger) menu', () => {
+    function hamburger(): HTMLButtonElement {
+      return byTestId('rail-hamburger') as HTMLButtonElement;
+    }
+
+    function fileEntry(): HTMLButtonElement {
+      return byTestId('rail-menu-file') as HTMLButtonElement;
+    }
+
+    function openFileSubmenu(): void {
+      hamburger().click();
+      fixture.detectChanges();
+      fileEntry().click();
+      fixture.detectChanges();
+    }
+
+    it('is closed by default and opens on hamburger click with the four chevroned entries', () => {
+      expect(byTestId('rail-menu-file')).toBeNull();
+      expect(hamburger().getAttribute('aria-expanded')).toBe('false');
+      expect(hamburger().getAttribute('aria-haspopup')).toBe('menu');
+
+      hamburger().click();
+      fixture.detectChanges();
+
+      expect(hamburger().getAttribute('aria-expanded')).toBe('true');
+      const entries = Array.from(fixture.nativeElement.querySelectorAll('.editor-toolbar__menu-entry')).map(
+        (entry) => (entry as HTMLElement).querySelector('.editor-toolbar__menu-entry-label')?.textContent?.trim(),
+      );
+      expect(entries).toEqual(['File', 'Edit', 'View', 'Help']);
+      for (const entry of Array.from(
+        fixture.nativeElement.querySelectorAll('.editor-toolbar__menu-entry'),
+      ) as HTMLElement[]) {
+        expect(entry.getAttribute('aria-haspopup')).toBe('menu');
+        expect(entry.querySelector('.editor-toolbar__menu-entry-chevron')).toBeTruthy();
+      }
+    });
+
+    it('keeps the File submenu closed until File is clicked, then shows the three commands with honest shortcuts', () => {
+      hamburger().click();
+      fixture.detectChanges();
+      expect(byTestId('rail-menu-item-new')).toBeNull();
+      expect(fileEntry().getAttribute('aria-expanded')).toBe('false');
+
+      fileEntry().click();
+      fixture.detectChanges();
+
+      expect(fileEntry().getAttribute('aria-expanded')).toBe('true');
+      expect(byTestId('rail-menu-item-new').textContent).toContain('Alt+N');
+      expect(byTestId('rail-menu-item-save').textContent).toContain('Ctrl+S');
+      expect(byTestId('rail-menu-item-upload').textContent).toContain('Ctrl+U');
+    });
+
+    it('expands the File submenu on hover and collapses it when an inert entry is hovered', () => {
+      hamburger().click();
+      fixture.detectChanges();
+
+      fileEntry().dispatchEvent(new MouseEvent('mouseenter'));
+      fixture.detectChanges();
+      expect(byTestId('rail-menu-item-new')).toBeTruthy();
+
+      const inertEntries = fixture.nativeElement.querySelectorAll('.editor-toolbar__menu-entry');
+      (inertEntries[1] as HTMLElement).dispatchEvent(new MouseEvent('mouseenter'));
+      fixture.detectChanges();
+      expect(byTestId('rail-menu-item-new')).toBeNull();
+    });
+
+    it('emits the matching output and closes the whole menu on each File command click', () => {
+      const newSpy = jest.fn();
+      const saveSpy = jest.fn();
+      const uploadSpy = jest.fn();
+      component.newDocument.subscribe(newSpy);
+      component.save.subscribe(saveSpy);
+      component.uploadRequested.subscribe(uploadSpy);
+
+      for (const [testId, spy] of [
+        ['rail-menu-item-new', newSpy],
+        ['rail-menu-item-save', saveSpy],
+        ['rail-menu-item-upload', uploadSpy],
+      ] as const) {
+        openFileSubmenu();
+
+        (byTestId(testId) as HTMLButtonElement).click();
+        fixture.detectChanges();
+
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(byTestId(testId)).toBeNull();
+        expect(byTestId('rail-menu-file')).toBeNull();
+      }
+    });
+
+    it('closes on Escape and on a click outside the rail, returning focus to the hamburger on Escape', () => {
+      openFileSubmenu();
+      expect(byTestId('rail-menu-item-new')).toBeTruthy();
+
+      component.onEscape();
+      fixture.detectChanges();
+      expect(byTestId('rail-menu-file')).toBeNull();
+      expect(document.activeElement).toBe(hamburger());
+
+      hamburger().click();
+      fixture.detectChanges();
+
+      document.body.click();
+      fixture.detectChanges();
+      expect(byTestId('rail-menu-file')).toBeNull();
+    });
+
+    it('toggles closed when the hamburger is clicked again', () => {
+      hamburger().click();
+      fixture.detectChanges();
+      hamburger().click();
+      fixture.detectChanges();
+
+      expect(byTestId('rail-menu-file')).toBeNull();
+      expect(hamburger().getAttribute('aria-expanded')).toBe('false');
+    });
   });
 
   it('emits documentsPanelToggle when the documents panel toggle is clicked', () => {

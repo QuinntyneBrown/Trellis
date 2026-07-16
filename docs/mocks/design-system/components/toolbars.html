@@ -15,24 +15,16 @@
     <h1>Toolbars &amp; chrome</h1>
     <p class="ds-lede">
       Two pieces of fixed chrome frame every Trellis screen: the 35px title
-      bar across the top (VS Code-style: menus, command center, layout
-      toggles, window controls) and the 48px vertical activity rail on the
-      left.
+      bar across the top (VS Code-style: command center, layout toggles,
+      window controls) and the 48px vertical activity rail on the left,
+      topped by the hamburger application menu (vscode.dev-style).
     </p>
 
     <h2>Title bar</h2>
     <p class="ds-source">Derived from: <code>features/editor/title-bar/</code> — <code>.tds-title-bar</code>.</p>
     <div class="ds-example ds-example--flush">
       <div class="tds-title-bar">
-        <div class="tds-title-bar__left">
-          <svg class="tds-title-bar__logo" aria-hidden="true"><use href="#tds-icon-chrome-logo"/></svg>
-          <nav class="tds-title-bar__menus" aria-label="Application menu">
-            <button type="button" class="tds-title-bar__menu">File</button>
-            <button type="button" class="tds-title-bar__menu">Edit</button>
-            <button type="button" class="tds-title-bar__menu">View</button>
-            <button type="button" class="tds-title-bar__menu">Help</button>
-          </nav>
-        </div>
+        <div class="tds-title-bar__left"></div>
         <div class="tds-title-bar__center">
           <button type="button" class="tds-title-bar__command-center">
             <svg class="tds-title-bar__search-icon" aria-hidden="true"><use href="#tds-icon-chrome-search"/></svg>
@@ -78,16 +70,17 @@
       </div>
     </div>
     <p class="ds-caption">
-      Left: accent logo + app menus. Center: the command-center pill holding
-      the open document's name. Right: layout toggles (primary-sidebar
-      toggle shown active with its filled band) and window controls.
+      Left: an empty spacer (the app menus live behind the rail's
+      hamburger) that keeps the command center centered. Center: the
+      command-center pill holding the open document's name. Right: layout
+      toggles (primary-sidebar toggle shown active with its filled band)
+      and window controls.
     </p>
     <table class="ds-table">
       <thead><tr><th>Part</th><th>Spec</th></tr></thead>
       <tbody>
         <tr><td>Bar</td><td>35px, chrome surface, bottom hairline, 13px text, three flex regions (1 / 1.5 / 1)</td></tr>
-        <tr><td>Logo</td><td>18px trellis-lattice glyph in accent</td></tr>
-        <tr><td>Menu buttons</td><td>3px 8px padding, 5px radius, hover wash; stay filled while their menu is open</td></tr>
+        <tr><td>Left region</td><td>Empty spacer; keeps its flex share so the command center stays centered — the app menus are the rail hamburger's (see <a href="menus.html">Menus</a>)</td></tr>
         <tr><td>Command center</td><td>24px pill, max-width 38rem, raised surface + strong border, 12px muted text; hover lightens to overlay + primary ink; title is "«document» — Trellis"</td></tr>
         <tr><td>Layout toggles</td><td>26×24, 14px pane glyphs (stroke 1.2); active pane band fills at 35% via <code>.tds-pane-fill</code>; <code>aria-pressed</code></td></tr>
         <tr><td>Window controls</td><td>46px wide, full height, 11px glyphs (stroke 1); close hovers <code>--tds-window-close</code> #c42b1c with white ink — the Windows convention, always last</td></tr>
@@ -99,21 +92,13 @@
     <div class="ds-example ds-example--flush" style="max-width:120px">
       <div class="tds-rail" style="height:22rem;border-right:none">
         <div class="tds-rail__group">
+          <button type="button" class="tds-rail-button" aria-haspopup="menu" aria-expanded="false" aria-label="Application Menu">
+            <svg class="tds-rail-button__icon" aria-hidden="true"><use href="#tds-icon-rail-menu"/></svg>
+            <span class="tds-rail-button__tooltip" role="tooltip">Application Menu</span>
+          </button>
           <button type="button" class="tds-rail-button" aria-label="Explorer">
             <svg class="tds-rail-button__icon" aria-hidden="true"><use href="#tds-icon-rail-explorer"/></svg>
             <span class="tds-rail-button__tooltip" role="tooltip">Explorer</span>
-          </button>
-          <button type="button" class="tds-rail-button" aria-label="New">
-            <svg class="tds-rail-button__icon" aria-hidden="true"><use href="#tds-icon-rail-new"/></svg>
-            <span class="tds-rail-button__tooltip" role="tooltip">New</span>
-          </button>
-          <button type="button" class="tds-rail-button" aria-label="Save">
-            <svg class="tds-rail-button__icon" aria-hidden="true"><use href="#tds-icon-rail-save"/></svg>
-            <span class="tds-rail-button__tooltip" role="tooltip">Save</span>
-          </button>
-          <button type="button" class="tds-rail-button" aria-label="Upload">
-            <svg class="tds-rail-button__icon" aria-hidden="true"><use href="#tds-icon-rail-upload"/></svg>
-            <span class="tds-rail-button__tooltip" role="tooltip">Upload</span>
           </button>
           <button type="button" class="tds-rail-button" aria-label="Templates">
             <svg class="tds-rail-button__icon" aria-hidden="true"><use href="#tds-icon-rail-templates"/></svg>
@@ -132,16 +117,19 @@
       </div>
     </div>
     <p class="ds-caption">
-      Canonical order: Explorer (only in browsers with the File System
-      Access API), New, Save, Upload, Templates, Documents. The connection
-      dot pins to the bottom via the bottom group's <code>margin-top:
-      auto</code>. Documents is shown active.
+      Canonical order: Application Menu (the hamburger, always first),
+      Explorer (only in browsers with the File System Access API),
+      Templates, Documents. The New/Save/Upload actions live in the
+      hamburger's File submenu (see <a href="menus.html">Menus</a>). The
+      connection dot pins to the bottom via the bottom group's
+      <code>margin-top: auto</code>. Documents is shown active.
     </p>
     <table class="ds-table">
       <thead><tr><th>Part</th><th>Spec</th></tr></thead>
       <tbody>
         <tr><td>Rail</td><td>48px wide, chrome surface, right hairline, 0.5rem gaps and vertical padding</td></tr>
-        <tr><td>Groups</td><td>Top: actions in canonical order. Bottom: status, pinned by <code>margin-top: auto</code></td></tr>
+        <tr><td>Groups</td><td>Top: hamburger, then panel toggles in canonical order. Bottom: status, pinned by <code>margin-top: auto</code></td></tr>
+        <tr><td>Hamburger</td><td>A menu-trigger rail button: <code>aria-haspopup="menu"</code> + <code>aria-expanded</code>; stays filled while its menu is open; flyout documented in <a href="menus.html">Menus</a></td></tr>
         <tr><td>Feature gating</td><td>Buttons for unavailable capabilities are removed, not disabled (Explorer without FS Access API)</td></tr>
       </tbody>
     </table>

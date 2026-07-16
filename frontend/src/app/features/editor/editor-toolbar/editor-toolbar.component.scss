@@ -29,6 +29,115 @@
   gap: 0.5rem;
 }
 
+// Positioning context for the hamburger's application-menu flyout.
+.editor-toolbar__menu-anchor {
+  position: relative;
+  display: flex;
+}
+
+// The application menu: a raised panel flying out to the rail's right
+// (+0.5rem, the design-system placement for rail-anchored menus), above
+// everything in the editor shell (dialogs sit at 100; the menu never
+// coexists with them).
+.editor-toolbar__menu {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 0.5rem);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  min-width: 9rem;
+  padding: 0.25rem;
+  background-color: var(--tds-surface-raised);
+  border: 1px solid var(--tds-border-strong);
+  border-radius: var(--tds-radius-lg);
+  box-shadow: var(--tds-shadow-raised);
+}
+
+// Positioning context for a menu entry's submenu.
+.editor-toolbar__submenu-anchor {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+// A top-level menu entry (File/Edit/View/Help): label left, submenu
+// chevron right, vscode.dev-style.
+.editor-toolbar__menu-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  width: 100%;
+  border: none;
+  background-color: transparent;
+  border-radius: 0.25rem;
+  padding: 0.35rem 0.6rem;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--tds-ink);
+  text-align: left;
+  cursor: pointer;
+
+  &:hover,
+  &[aria-expanded='true'] {
+    background-color: var(--tds-hover-wash);
+  }
+}
+
+.editor-toolbar__menu-entry-chevron {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: var(--tds-ink-muted);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+// A submenu (File's New/Save/Upload): the same raised-list surface, flying
+// out to the right of its entry, slightly overlapping vscode.dev-style.
+.editor-toolbar__submenu {
+  position: absolute;
+  top: -0.25rem;
+  left: calc(100% + 0.25rem);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  min-width: 12rem;
+  padding: 0.25rem;
+  background-color: var(--tds-surface-raised);
+  border: 1px solid var(--tds-border-strong);
+  border-radius: var(--tds-radius-lg);
+  box-shadow: var(--tds-shadow-raised);
+}
+
+.editor-toolbar__menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  border: none;
+  background-color: transparent;
+  border-radius: 0.25rem;
+  padding: 0.35rem 0.6rem;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--tds-ink);
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--tds-hover-wash);
+  }
+}
+
+.editor-toolbar__menu-item-shortcut {
+  color: var(--tds-ink-muted);
+  font-size: 12px;
+}
+
 // Pins this group (the connection status indicator) to the bottom of the
 // rail, VS Code activity-bar style, the same way its account/settings
 // icons sit below the main navigation icons.

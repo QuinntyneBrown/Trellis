@@ -25,15 +25,7 @@
     <div class="ds-example ds-example--flush">
       <div style="display:flex;flex-direction:column;height:420px;min-width:640px">
         <div class="tds-title-bar" style="flex:0 0 35px">
-          <div class="tds-title-bar__left">
-            <svg class="tds-title-bar__logo" aria-hidden="true"><use href="#tds-icon-chrome-logo"/></svg>
-            <nav class="tds-title-bar__menus" aria-label="Application menu">
-              <button type="button" class="tds-title-bar__menu">File</button>
-              <button type="button" class="tds-title-bar__menu">Edit</button>
-              <button type="button" class="tds-title-bar__menu">View</button>
-              <button type="button" class="tds-title-bar__menu">Help</button>
-            </nav>
-          </div>
+          <div class="tds-title-bar__left"></div>
           <div class="tds-title-bar__center">
             <button type="button" class="tds-title-bar__command-center">
               <svg class="tds-title-bar__search-icon" aria-hidden="true"><use href="#tds-icon-chrome-search"/></svg>
@@ -56,8 +48,8 @@
         <div style="display:flex;flex:1;min-height:0">
           <div class="tds-rail" style="flex:0 0 48px">
             <div class="tds-rail__group">
-              <button type="button" class="tds-rail-button" aria-label="New"><svg class="tds-rail-button__icon" aria-hidden="true"><use href="#tds-icon-rail-new"/></svg></button>
-              <button type="button" class="tds-rail-button" aria-label="Save"><svg class="tds-rail-button__icon" aria-hidden="true"><use href="#tds-icon-rail-save"/></svg></button>
+              <button type="button" class="tds-rail-button" aria-haspopup="menu" aria-expanded="false" aria-label="Application Menu"><svg class="tds-rail-button__icon" aria-hidden="true"><use href="#tds-icon-rail-menu"/></svg></button>
+              <button type="button" class="tds-rail-button" aria-label="Templates"><svg class="tds-rail-button__icon" aria-hidden="true"><use href="#tds-icon-rail-templates"/></svg></button>
               <button type="button" class="tds-rail-button tds-rail-button--active" aria-pressed="true" aria-label="Documents"><svg class="tds-rail-button__icon" aria-hidden="true"><use href="#tds-icon-rail-documents"/></svg></button>
             </div>
             <div class="tds-rail__group tds-rail__group--bottom">
@@ -113,9 +105,11 @@ UI --&gt; User : confirmation
       </div>
     </div>
     <p class="ds-caption">
-      The full frame at reduced scale: 35px title bar; 48px rail with the
-      connection dot pinned low; a docked Documents panel; the dark editor;
-      the seam; the preview's placeholder state.
+      The full frame at reduced scale: 35px title bar (its left region an
+      empty spacer — the app menus live behind the rail's hamburger); 48px
+      rail topped by the hamburger, with the connection dot pinned low; a
+      docked Documents panel; the dark editor; the seam; the preview's
+      placeholder state.
     </p>
 
     <h2>Layout contract</h2>
@@ -133,6 +127,10 @@ UI --&gt; User : confirmation
 
     <h2>Shell behaviors</h2>
     <ul>
+      <li><strong>Application menu.</strong> The hamburger atop the rail
+        opens the app menus (File / Edit / View / Help) as a flyout to its
+        right, vscode.dev-style — see
+        <a href="../components/menus.html">Menus</a>.</li>
       <li><strong>Panel toggling.</strong> A rail button opens its panel or
         closes it if already active; the title bar's primary-sidebar toggle
         mirrors the same state with its filled band.</li>

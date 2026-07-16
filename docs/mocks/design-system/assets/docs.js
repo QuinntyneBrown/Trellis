@@ -26,6 +26,7 @@
 
   var RAIL_ICONS = {
     // rail-icons.ts — <app-rail-button> glyphs.
+    menu: ['M4 6h16M4 12h16M4 18h16'],
     new: ['M6 2h7l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM13 2v5h5', 'M12 14v6M9 17h6'],
     save: ['M5 3h11l3 3v15a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z', 'M8 3v5h7V3M7 13h10v8H7z'],
     upload: ['M12 15V4M8 8l4-4 4 4', 'M4 17v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3'],

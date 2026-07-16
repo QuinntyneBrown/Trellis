@@ -15,51 +15,75 @@
     <h1>Menus</h1>
     <p class="ds-lede">
       One raised-list idiom covers everything that floats from a trigger:
-      the title bar's app menus and the template picker's pop-out catalog.
-      A raised surface, strong hairline, soft shadow, and quiet hover rows.
+      the rail's hamburger application menu and the template picker's
+      pop-out catalog. A raised surface, strong hairline, soft shadow, and
+      quiet hover rows.
     </p>
 
     <h2>Menu surface</h2>
-    <p class="ds-source">Derived from: <code>templates/template-picker/</code> pop-out panel (the app's raised-list reference); adopted by the title-bar menus — <code>.tds-menu</code>.</p>
+    <p class="ds-source">Derived from: <code>templates/template-picker/</code> pop-out panel (the app's raised-list reference); adopted by the rail's application menu — <code>.tds-menu</code>.</p>
     <table class="ds-table">
       <thead><tr><th>Property</th><th>Spec</th></tr></thead>
       <tbody>
         <tr><td>Surface</td><td><code>--tds-surface-raised</code> + <code>--tds-border-strong</code> + <code>--tds-shadow-raised</code></td></tr>
         <tr><td>Size</td><td>min-width 14rem, max-height 20rem (scrolls), radius <code>--tds-radius-lg</code></td></tr>
-        <tr><td>Placement</td><td>Below its title-bar trigger; to the right (+0.5rem) of a rail trigger; z <code>--tds-z-popout</code></td></tr>
-        <tr><td>Item</td><td>0.8rem text, name medium-weight, optional uppercase hint right-aligned in muted 0.7rem</td></tr>
+        <tr><td>Placement</td><td>To the right (+0.5rem) of a rail trigger; a submenu flies out right of its entry (top-aligned, slight overlap); z <code>--tds-z-popout</code></td></tr>
+        <tr><td>Item</td><td>0.8rem text, name medium-weight, optional uppercase hint right-aligned in muted 0.7rem; entries with a submenu carry a right chevron instead</td></tr>
         <tr><td>Hover / focus</td><td><code>--tds-hover-wash</code> fill / 2px accent ring −2px</td></tr>
         <tr><td>Dismiss</td><td><span class="ds-kbd">Esc</span>, outside click, or item activation</td></tr>
         <tr><td>ARIA</td><td><code>role="menu"</code>/<code>menuitem</code>; trigger carries <code>aria-expanded</code> + <code>aria-haspopup</code>; arrow keys traverse</td></tr>
       </tbody>
     </table>
 
-    <h2>App menu</h2>
-    <p class="ds-source">Trigger from <code>title-bar__menu</code>; content is the File menu's command set.</p>
+    <h2>Application menu (rail hamburger)</h2>
+    <p class="ds-source">Trigger from the rail's hamburger button (<code>editor-toolbar</code>); a flyout of the app menus, vscode.dev-style — File's submenu carries its command set.</p>
     <div class="ds-example ds-example--chrome">
-      <div style="position:relative;display:inline-block">
-        <button type="button" class="tds-title-bar__menu tds-title-bar__menu--open" aria-haspopup="menu" aria-expanded="true">File</button>
-        <div class="tds-menu" role="menu" style="position:absolute;top:100%;left:0;margin-top:2px;z-index:var(--tds-z-popout)">
-          <button type="button" class="tds-menu__item" role="menuitem">
-            <span class="tds-menu__item-name">New Diagram</span>
-            <span class="tds-menu__item-hint">Ctrl+N</span>
-          </button>
-          <button type="button" class="tds-menu__item" role="menuitem" style="background-color:var(--tds-hover-wash)">
-            <span class="tds-menu__item-name">Save</span>
-            <span class="tds-menu__item-hint">Ctrl+S</span>
-          </button>
-          <button type="button" class="tds-menu__item" role="menuitem">
-            <span class="tds-menu__item-name">Upload…</span>
-          </button>
-          <div class="tds-menu__separator" role="separator"></div>
-          <button type="button" class="tds-menu__item" role="menuitem">
-            <span class="tds-menu__item-name">Export Folder…</span>
-          </button>
+      <div style="display:flex;align-items:flex-start;gap:.5rem">
+        <button type="button" class="tds-rail-button" aria-haspopup="menu" aria-expanded="true" aria-label="Application Menu">
+          <svg class="tds-rail-button__icon" aria-hidden="true"><use href="#tds-icon-rail-menu"/></svg>
+        </button>
+        <div style="position:relative;display:flex;align-items:flex-start;gap:.25rem">
+          <div class="tds-menu" role="menu" aria-label="Application menu" style="min-width:9rem">
+            <button type="button" class="tds-menu__item tds-menu__item--open" role="menuitem" aria-haspopup="menu" aria-expanded="true">
+              <span class="tds-menu__item-name">File</span>
+              <svg class="tds-menu__item-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg>
+            </button>
+            <button type="button" class="tds-menu__item" role="menuitem" aria-haspopup="menu" aria-expanded="false">
+              <span class="tds-menu__item-name">Edit</span>
+              <svg class="tds-menu__item-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg>
+            </button>
+            <button type="button" class="tds-menu__item" role="menuitem" aria-haspopup="menu" aria-expanded="false">
+              <span class="tds-menu__item-name">View</span>
+              <svg class="tds-menu__item-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg>
+            </button>
+            <button type="button" class="tds-menu__item" role="menuitem" aria-haspopup="menu" aria-expanded="false">
+              <span class="tds-menu__item-name">Help</span>
+              <svg class="tds-menu__item-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg>
+            </button>
+          </div>
+          <div class="tds-menu" role="menu" aria-label="File menu" style="margin-top:-0.25rem">
+            <button type="button" class="tds-menu__item" role="menuitem">
+              <span class="tds-menu__item-name">New</span>
+              <span class="tds-menu__item-hint">Alt+N</span>
+            </button>
+            <button type="button" class="tds-menu__item" role="menuitem" style="background-color:var(--tds-hover-wash)">
+              <span class="tds-menu__item-name">Save</span>
+              <span class="tds-menu__item-hint">Ctrl+S</span>
+            </button>
+            <button type="button" class="tds-menu__item" role="menuitem">
+              <span class="tds-menu__item-name">Upload</span>
+              <span class="tds-menu__item-hint">Ctrl+U</span>
+            </button>
+          </div>
         </div>
       </div>
-      <div style="height:11rem"></div>
     </div>
-    <p class="ds-caption">Open File menu; the trigger keeps its hover fill while its menu is open. Second item shown hovered.</p>
+    <p class="ds-caption">
+      The hamburger stays filled while its menu is open; File's entry keeps
+      its hover fill while its submenu is expanded (second submenu item
+      shown hovered). The submenu opens on hover or click; hovering another
+      entry collapses it. Edit/View/Help are chevroned but inert today.
+    </p>
 
     <h2>Template picker pop-out</h2>
     <p class="ds-source">Derived from: <code>template-picker__panel/__option</code> — the catalog flying out from the rail's Templates button.</p>
@@ -119,11 +143,14 @@
       </div>
       <div class="ds-guidance__item ds-guidance__item--dont">
         <span class="ds-guidance__title">Don't</span>
-        Nest submenus — Trellis menus are one level deep by design.
+        Nest beyond one submenu level — only the application menu's
+        top-level entries (File ▸ …) open submenus; everything else stays
+        one level deep.
       </div>
       <div class="ds-guidance__item ds-guidance__item--dont">
         <span class="ds-guidance__title">Don't</span>
-        Put icons in menu items; the raised list is a text idiom.
+        Put icons in menu items; the raised list is a text idiom (the
+        submenu chevron is the one navigational affordance allowed).
       </div>
     </div>
 

@@ -32,81 +32,11 @@ describe('TitleBarComponent', () => {
     expect(byTestId('title-bar-title').textContent).toBe('order-flow.puml — Trellis');
   });
 
-  it('renders the app menu entries', () => {
-    const labels = Array.from(fixture.nativeElement.querySelectorAll('.title-bar__menu')).map(
-      (button) => (button as HTMLElement).textContent?.trim(),
-    );
-    expect(labels).toEqual(['File', 'Edit', 'View', 'Help']);
-  });
-
-  describe('File menu (D-012)', () => {
-    function fileTrigger(): HTMLButtonElement {
-      return byTestId('title-bar-menu-file') as HTMLButtonElement;
-    }
-
-    it('is closed by default and opens on File click with the three commands and honest shortcuts', () => {
-      expect(byTestId('title-bar-menu-item-new')).toBeNull();
-      expect(fileTrigger().getAttribute('aria-expanded')).toBe('false');
-
-      fileTrigger().click();
-      fixture.detectChanges();
-
-      expect(fileTrigger().getAttribute('aria-expanded')).toBe('true');
-      expect(byTestId('title-bar-menu-item-new').textContent).toContain('Alt+N');
-      expect(byTestId('title-bar-menu-item-save').textContent).toContain('Ctrl+S');
-      expect(byTestId('title-bar-menu-item-upload').textContent).toContain('Ctrl+U');
-    });
-
-    it('emits the matching output and closes on each item click', () => {
-      const newSpy = jest.fn();
-      const saveSpy = jest.fn();
-      const uploadSpy = jest.fn();
-      component.newDocument.subscribe(newSpy);
-      component.save.subscribe(saveSpy);
-      component.uploadRequested.subscribe(uploadSpy);
-
-      for (const [testId, spy] of [
-        ['title-bar-menu-item-new', newSpy],
-        ['title-bar-menu-item-save', saveSpy],
-        ['title-bar-menu-item-upload', uploadSpy],
-      ] as const) {
-        fileTrigger().click();
-        fixture.detectChanges();
-
-        (byTestId(testId) as HTMLButtonElement).click();
-        fixture.detectChanges();
-
-        expect(spy).toHaveBeenCalledTimes(1);
-        expect(byTestId(testId)).toBeNull();
-      }
-    });
-
-    it('closes on Escape and on a click outside the title bar', () => {
-      fileTrigger().click();
-      fixture.detectChanges();
-      expect(byTestId('title-bar-menu-item-new')).toBeTruthy();
-
-      component.onEscape();
-      fixture.detectChanges();
-      expect(byTestId('title-bar-menu-item-new')).toBeNull();
-
-      fileTrigger().click();
-      fixture.detectChanges();
-
-      document.body.click();
-      fixture.detectChanges();
-      expect(byTestId('title-bar-menu-item-new')).toBeNull();
-    });
-
-    it('toggles closed when File is clicked again', () => {
-      fileTrigger().click();
-      fixture.detectChanges();
-      fileTrigger().click();
-      fixture.detectChanges();
-
-      expect(byTestId('title-bar-menu-item-new')).toBeNull();
-      expect(fileTrigger().getAttribute('aria-expanded')).toBe('false');
-    });
+  it('renders no app menus or logo -- they live behind the rail hamburger, vscode.dev-style', () => {
+    expect(fixture.nativeElement.querySelector('.title-bar__menu')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.title-bar__menus')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.title-bar__logo')).toBeNull();
+    expect(byTestId('title-bar-menu-file')).toBeNull();
   });
 
   describe('copy document contents', () => {

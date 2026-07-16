@@ -140,7 +140,7 @@
   --tds-text-body: 0.85rem;  /* tree rows, buttons, banners */
   --tds-text-md: 0.9rem;     /* inputs, preview placeholder */
   --tds-text-lg: 1rem;       /* dialog titles */
-  --tds-text-chrome: 13px;   /* title-bar menus */
+  --tds-text-chrome: 13px;   /* chrome text (title bar) */
   --tds-text-chrome-sm: 12px;/* command center */
   --tds-text-code: 14px;     /* Monaco */
   --tds-line-code: 19px;     /* Monaco */

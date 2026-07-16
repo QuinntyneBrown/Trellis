@@ -4,6 +4,8 @@
   [class.rail-button--active]="active"
   [attr.data-testid]="testId"
   [attr.aria-label]="tooltipText"
+  [attr.aria-haspopup]="menuExpanded === null ? null : 'menu'"
+  [attr.aria-expanded]="menuExpanded"
   (click)="clicked.emit()"
 >
   <svg class="rail-button__icon" viewBox="0 0 24 24" aria-hidden="true">

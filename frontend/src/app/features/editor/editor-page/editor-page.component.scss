@@ -12,8 +12,9 @@
 
 // Sticky (on top of the host's overflow: hidden) pins the title bar: even if
 // stray overflow ever made this shell scrollable, the bar stays at the top.
-// z-index keeps it above the panes; its own File dropdown (z-index 50) still
-// stacks above it, and the save-error toast (20) stays below it.
+// z-index keeps it above the panes; the rail's application-menu flyout
+// (z-index 50) still stacks above it, and the save-error toast (20) stays
+// below it.
 app-title-bar {
   position: sticky;
   top: 0;
