@@ -21,13 +21,13 @@
   z-index: 1;
   flex: 0 0 auto;
   width: 1px;
-  background-color: #e5e7eb;
+  background-color: var(--tds-border);
   cursor: col-resize;
   touch-action: none;
 
   &:hover,
   &.resize-divider--active {
-    background-color: #3b82f6;
+    background-color: var(--tds-accent);
   }
 }
 

@@ -14,8 +14,8 @@
 // Folder row currently hovered by a document drag. The inset dashed outline
 // (not a border) keeps the row from shifting layout while highlighted.
 .document-tree-node__row--drop-target {
-  background-color: rgba(59, 130, 246, 0.12);
-  outline: 1px dashed #3b82f6;
+  background-color: var(--tds-accent-tint-12);
+  outline: 1px dashed var(--tds-accent);
   outline-offset: -1px;
 }
 
@@ -25,8 +25,8 @@
   flex: 0 0 auto;
   padding: 0 0.25rem;
   border-radius: 0.2rem;
-  background-color: #eef2ff;
-  color: #4338ca;
+  background-color: var(--tds-badge-surface);
+  color: var(--tds-badge-ink);
   font-size: 0.6rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -39,8 +39,8 @@
   flex: 0 0 auto;
   padding: 0 0.25rem;
   border-radius: 0.2rem;
-  background-color: #f3f4f6;
-  color: #6b7280;
+  background-color: var(--tds-surface-raised);
+  color: var(--tds-ink-muted);
   font-size: 0.6rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -50,22 +50,22 @@
 
 .document-tree-node__row--excluded {
   .document-tree-node__name {
-    color: #9ca3af;
+    color: var(--tds-ink-disabled);
   }
 }
 
 // The document currently open in the editor -- the VS Code active-file
-// idiom: a steady tint (using the app's #3b82f6 accent) plus a slightly
-// emphasized name, so the user always sees their place in the tree.
+// idiom: a steady tint (using the app's accent) plus a slightly emphasized
+// name, so the user always sees their place in the tree.
 .document-tree-node__row--active {
-  background-color: rgba(59, 130, 246, 0.15);
+  background-color: var(--tds-accent-tint-15);
 
   .document-tree-node__name {
-    color: #1d4ed8;
+    color: var(--tds-accent);
     font-weight: 600;
   }
 
   &:hover {
-    background-color: rgba(59, 130, 246, 0.2);
+    background-color: var(--tds-accent-tint-20);
   }
 }

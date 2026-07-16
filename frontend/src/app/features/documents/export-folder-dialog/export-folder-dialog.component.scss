@@ -11,7 +11,7 @@
 .export-folder-dialog__backdrop {
   position: absolute;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.4);
+  background-color: var(--tds-scrim);
 }
 
 .export-folder-dialog__panel {
@@ -22,9 +22,11 @@
   gap: 0.5rem;
   min-width: 20rem;
   padding: 1.25rem;
-  border-radius: 0.5rem;
-  background-color: #ffffff;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  border-radius: var(--tds-radius-xl);
+  background-color: var(--tds-surface-overlay);
+  border: 1px solid var(--tds-border-strong);
+  box-shadow: var(--tds-shadow-overlay);
+  color: var(--tds-ink);
 }
 
 .export-folder-dialog__title {
@@ -39,7 +41,7 @@
   gap: 0.4rem;
   margin-top: 0.25rem;
   font-size: 0.85rem;
-  color: #374151;
+  color: var(--tds-ink-secondary);
   cursor: pointer;
 }
 
@@ -53,25 +55,26 @@
 .export-folder-dialog__button {
   padding: 0.35rem 0.85rem;
   border-radius: 0.25rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--tds-border-strong);
+  color: var(--tds-ink);
   cursor: pointer;
   font-size: 0.85rem;
 }
 
 .export-folder-dialog__button--confirm {
-  background-color: #2563eb;
-  border-color: #2563eb;
+  background-color: var(--tds-accent-strong);
+  border-color: var(--tds-accent-strong);
   color: #ffffff;
 
   &:hover {
-    background-color: #1d4ed8;
+    background-color: var(--tds-accent-hover);
   }
 }
 
 .export-folder-dialog__button--cancel {
-  background-color: #ffffff;
+  background-color: var(--tds-surface-overlay);
 
   &:hover {
-    background-color: #f3f4f6;
+    background-color: var(--tds-hover-wash);
   }
 }

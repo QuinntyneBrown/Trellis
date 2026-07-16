@@ -4,11 +4,11 @@
   height: 100%;
   width: 100%;
   overflow: auto;
-  background-color: #ffffff;
+  background-color: var(--tds-surface-editor);
 }
 
 .diagram-preview__placeholder {
-  color: #6b7280;
+  color: var(--tds-ink-muted);
   font-size: 0.9rem;
   text-align: center;
   padding: 1rem;
@@ -18,9 +18,9 @@
   margin: 1rem;
   padding: 0.75rem 1rem;
   border-radius: 0.25rem;
-  background-color: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #991b1b;
+  background-color: var(--tds-status-error-surface);
+  border: 1px solid var(--tds-status-error-border);
+  color: var(--tds-status-error-ink);
   white-space: pre-wrap;
   font-size: 0.85rem;
 }
@@ -32,6 +32,12 @@
   // Centering via the scroll container itself clips the far edge of
   // overflowing content in most browsers.
   margin: auto;
+  // The rendered PlantUML plate intentionally stays white -- unlike the
+  // rest of the dark surface -- so exported diagrams keep the same
+  // background they'll have outside the app.
+  background-color: #ffffff;
+  border-radius: var(--tds-radius-md);
+  box-shadow: var(--tds-shadow-raised);
 }
 
 .diagram-preview__spinner-overlay {
@@ -52,10 +58,10 @@
   display: flex;
   gap: 0.25rem;
   padding: 0.25rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--tds-border-strong);
   border-radius: 0.35rem;
-  background-color: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  background-color: var(--tds-surface-raised);
+  box-shadow: var(--tds-shadow-raised);
   opacity: 0;
   visibility: hidden;
   transition:
@@ -81,7 +87,7 @@
   align-self: flex-start;
   font-size: 0.95rem;
   line-height: 1.6;
-  color: #111827;
+  color: var(--tds-ink);
 
   h1,
   h2,
@@ -95,13 +101,13 @@
   h1 {
     font-size: 1.6rem;
     padding-bottom: 0.3em;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--tds-border);
   }
 
   h2 {
     font-size: 1.3rem;
     padding-bottom: 0.2em;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--tds-border);
   }
 
   h3 {
@@ -137,16 +143,16 @@
   }
 
   code {
-    background-color: #f3f4f6;
+    background-color: var(--tds-surface-raised);
     border-radius: 0.25rem;
     padding: 0.1em 0.35em;
-    font-family: Consolas, 'Courier New', monospace;
+    font-family: var(--tds-font-mono);
     font-size: 0.85em;
   }
 
   pre {
-    background-color: #f9fafb;
-    border: 1px solid #e5e7eb;
+    background-color: var(--tds-surface-raised);
+    border: 1px solid var(--tds-border);
     border-radius: 0.35rem;
     padding: 0.75rem 1rem;
     overflow-x: auto;
@@ -160,8 +166,8 @@
   blockquote {
     margin: 0.75em 0;
     padding: 0.25em 1em;
-    border-left: 0.25rem solid #d1d5db;
-    color: #6b7280;
+    border-left: 0.25rem solid var(--tds-border-strong);
+    color: var(--tds-ink-muted);
   }
 
   table {
@@ -174,23 +180,23 @@
 
   th,
   td {
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--tds-border-strong);
     padding: 0.35em 0.75em;
   }
 
   th {
-    background-color: #f9fafb;
+    background-color: var(--tds-surface-raised);
     font-weight: 600;
   }
 
   hr {
     border: none;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--tds-border);
     margin: 1.5em 0;
   }
 
   a {
-    color: #2563eb;
+    color: var(--tds-accent);
 
     &:hover {
       text-decoration: underline;

@@ -5,11 +5,11 @@
 .title-bar {
   display: flex;
   align-items: center;
-  height: 35px;
-  background-color: #f3f4f6;
-  border-bottom: 1px solid #e5e7eb;
-  color: #4b5563;
-  font-size: 13px;
+  height: var(--tds-metric-titlebar-h);
+  background-color: var(--tds-surface-chrome);
+  border-bottom: 1px solid var(--tds-border);
+  color: var(--tds-ink-secondary);
+  font-size: var(--tds-text-chrome);
   user-select: none;
 }
 
@@ -28,7 +28,7 @@
   flex: 0 0 auto;
   margin-right: 4px;
   fill: none;
-  stroke: #3b82f6;
+  stroke: var(--tds-accent);
   stroke-width: 1.75;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -47,20 +47,20 @@
   border: none;
   background-color: transparent;
   padding: 3px 8px;
-  border-radius: 5px;
+  border-radius: var(--tds-radius-chrome);
   font-family: inherit;
-  font-size: 13px;
-  color: #374151;
+  font-size: var(--tds-text-chrome);
+  color: var(--tds-ink);
   cursor: pointer;
 
   &:hover,
   &[aria-expanded='true'] {
-    background-color: rgba(17, 24, 39, 0.08);
+    background-color: var(--tds-hover-wash-strong);
   }
 }
 
-// The File dropdown: white panel below the trigger, above everything in the
-// editor shell (dialogs sit at 100; the menu never coexists with them).
+// The File dropdown: raised panel below the trigger, above everything in
+// the editor shell (dialogs sit at 100; the menu never coexists with them).
 .title-bar__menu-dropdown {
   position: absolute;
   top: calc(100% + 2px);
@@ -70,10 +70,10 @@
   flex-direction: column;
   min-width: 12rem;
   padding: 0.25rem;
-  background-color: #ffffff;
-  border: 1px solid #d1d5db;
-  border-radius: 0.35rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  background-color: var(--tds-surface-raised);
+  border: 1px solid var(--tds-border-strong);
+  border-radius: var(--tds-radius-lg);
+  box-shadow: var(--tds-shadow-raised);
 }
 
 .title-bar__menu-item {
@@ -87,17 +87,17 @@
   padding: 0.35rem 0.6rem;
   font-family: inherit;
   font-size: 13px;
-  color: #111827;
+  color: var(--tds-ink);
   text-align: left;
   cursor: pointer;
 
   &:hover {
-    background-color: rgba(17, 24, 39, 0.08);
+    background-color: var(--tds-hover-wash);
   }
 }
 
 .title-bar__menu-item-shortcut {
-  color: #6b7280;
+  color: var(--tds-ink-muted);
   font-size: 12px;
 }
 
@@ -115,20 +115,20 @@
   gap: 6px;
   width: 100%;
   max-width: 38rem;
-  height: 24px;
+  height: var(--tds-metric-command-center-h);
   padding: 0 10px;
   min-width: 0;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  background-color: #ffffff;
-  color: #6b7280;
+  border: 1px solid var(--tds-border-strong);
+  border-radius: var(--tds-radius-pill);
+  background-color: var(--tds-surface-raised);
+  color: var(--tds-ink-muted);
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--tds-text-chrome-sm);
   cursor: pointer;
 
   &:hover {
-    background-color: #f9fafb;
-    color: #374151;
+    background-color: var(--tds-surface-overlay);
+    color: var(--tds-ink);
   }
 }
 
@@ -159,13 +159,13 @@
   height: 24px;
   margin-left: 4px;
   border: none;
-  border-radius: 5px;
+  border-radius: var(--tds-radius-chrome);
   background-color: transparent;
-  color: #4b5563;
+  color: var(--tds-ink-secondary);
   cursor: pointer;
 
   &:hover {
-    background-color: rgba(17, 24, 39, 0.08);
+    background-color: var(--tds-hover-wash-strong);
   }
 
   svg {
@@ -201,13 +201,13 @@
   width: 26px;
   height: 24px;
   border: none;
-  border-radius: 5px;
+  border-radius: var(--tds-radius-chrome);
   background-color: transparent;
-  color: #4b5563;
+  color: var(--tds-ink-secondary);
   cursor: pointer;
 
   &:hover {
-    background-color: rgba(17, 24, 39, 0.08);
+    background-color: var(--tds-hover-wash-strong);
   }
 
   svg {
@@ -236,11 +236,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 46px;
+  width: var(--tds-metric-window-control-w);
   height: 100%;
   border: none;
   background-color: transparent;
-  color: #374151;
+  color: var(--tds-ink);
   cursor: default;
 
   svg {
@@ -252,12 +252,12 @@
   }
 
   &:hover {
-    background-color: rgba(17, 24, 39, 0.08);
+    background-color: var(--tds-hover-wash-strong);
   }
 }
 
 // Windows convention: close is the one destructive-red hover.
 .title-bar__window-control--close:hover {
-  background-color: #c42b1c;
+  background-color: var(--tds-window-close);
   color: #ffffff;
 }

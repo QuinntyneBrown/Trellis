@@ -52,6 +52,7 @@ export class MonacoEditorComponent implements AfterViewInit, OnChanges, OnDestro
         // Reads the input at creation time, so a language set before the
         // async load resolves is picked up here without a separate call.
         language: this.language,
+        theme: 'vs-dark',
         automaticLayout: true,
         minimap: { enabled: false },
         scrollBeyondLastLine: false,

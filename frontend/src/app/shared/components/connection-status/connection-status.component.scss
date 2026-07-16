@@ -17,19 +17,19 @@
   width: 0.65rem;
   height: 0.65rem;
   border-radius: 50%;
-  background-color: #9ca3af;
+  background-color: var(--tds-status-unknown);
 }
 
 .connection-status-indicator--connected::before {
-  background-color: #22c55e;
+  background-color: var(--tds-status-ok);
 }
 
 .connection-status-indicator--disconnected::before {
-  background-color: #ef4444;
+  background-color: var(--tds-status-error);
 }
 
 .connection-status-indicator--reconnecting::before {
-  background-color: #eab308;
+  background-color: var(--tds-status-warn);
 }
 
 // Visually hidden ("sr-only") but still present for the DOM/accessibility

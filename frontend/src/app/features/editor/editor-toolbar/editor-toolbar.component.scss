@@ -18,8 +18,8 @@
   height: 100%;
   gap: 0.5rem;
   padding: 0.5rem 0;
-  background-color: #f9fafb;
-  border-right: 1px solid #e5e7eb;
+  background-color: var(--tds-surface-chrome);
+  border-right: 1px solid var(--tds-border);
 }
 
 .editor-toolbar__group {

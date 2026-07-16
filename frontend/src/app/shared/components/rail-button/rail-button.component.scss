@@ -18,28 +18,28 @@
   border: none;
   border-radius: 0.35rem;
   background-color: transparent;
-  color: #4b5563;
+  color: var(--tds-ink-secondary);
   cursor: pointer;
 
   &:hover,
   &.rail-button--active {
-    background-color: rgba(17, 24, 39, 0.08);
+    background-color: var(--tds-hover-wash-strong);
   }
 
   &:focus-visible {
-    background-color: rgba(17, 24, 39, 0.08);
-    outline: 2px solid #3b82f6;
+    background-color: var(--tds-hover-wash-strong);
+    outline: 2px solid var(--tds-focus-ring);
     outline-offset: -2px;
   }
 
   // VS Code activity-bar selected-state indicator: a left-edge accent bar
-  // (the same #3b82f6 accent already used for this app's other "active"
+  // (the same accent already used for this app's other "active"
   // affordances -- the resize-divider's active/hover state and this same
   // button's own focus-visible outline) plus a brighter icon color than the
-  // resting #4b5563, so the selected rail icon reads as visually emphasized
-  // even when the mouse isn't hovering it.
+  // resting secondary ink, so the selected rail icon reads as visually
+  // emphasized even when the mouse isn't hovering it.
   &.rail-button--active {
-    color: #3b82f6;
+    color: var(--tds-accent);
 
     &::before {
       content: '';
@@ -49,7 +49,7 @@
       width: 3px;
       height: 100%;
       border-radius: 0.35rem 0 0 0.35rem;
-      background-color: #3b82f6;
+      background-color: var(--tds-accent);
     }
   }
 }
@@ -77,14 +77,15 @@
   transform: translateY(-50%);
   z-index: 5;
   padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  background-color: #111827;
-  color: #ffffff;
-  font-size: 0.75rem;
+  border-radius: var(--tds-radius-md);
+  background-color: var(--tds-surface-raised);
+  border: 1px solid var(--tds-border-strong);
+  color: var(--tds-ink);
+  font-size: var(--tds-text-tooltip);
   white-space: nowrap;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.12s ease, visibility 0.12s ease;
+  transition: opacity var(--tds-motion-tooltip), visibility var(--tds-motion-tooltip);
   pointer-events: none;
 }
 

@@ -5,8 +5,9 @@
   width: 100%;
   height: 100%;
   overflow-y: auto;
-  background-color: #ffffff;
-  border-left: 1px solid #e5e7eb;
+  background-color: var(--tds-surface-chrome);
+  border-left: 1px solid var(--tds-border);
+  color: var(--tds-ink);
   display: flex;
   flex-direction: column;
 }
@@ -17,7 +18,7 @@
   justify-content: space-between;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--tds-border);
 }
 
 .templates-panel__header-title {
@@ -25,12 +26,12 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #6b7280;
+  color: var(--tds-ink-muted);
 }
 
 .templates-panel__empty {
   padding: 1rem;
-  color: #6b7280;
+  color: var(--tds-ink-muted);
   font-size: 0.85rem;
 }
 
@@ -47,12 +48,12 @@
   gap: 0.35rem;
   padding: 0.15rem 0.5rem 0.15rem 0.75rem;
   font-size: 0.85rem;
-  color: #111827;
+  color: var(--tds-ink);
   cursor: pointer;
   user-select: none;
 
   &:hover {
-    background-color: rgba(17, 24, 39, 0.06);
+    background-color: var(--tds-hover-wash);
   }
 }
 
@@ -68,8 +69,8 @@
   flex: 0 0 auto;
   padding: 0 0.25rem;
   border-radius: 0.2rem;
-  background-color: #eef2ff;
-  color: #4338ca;
+  background-color: var(--tds-badge-surface);
+  color: var(--tds-badge-ink);
   font-size: 0.6rem;
   font-weight: 700;
   letter-spacing: 0.04em;
