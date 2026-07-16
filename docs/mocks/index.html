@@ -128,6 +128,54 @@
       </a>
     </div>
 
+    <h2>Diagram Wizard (proposed)</h2>
+    <p class="gallery__intro">
+      Forward-looking design mocks for a feature that is <em>not in the app yet</em>: a wizard side
+      panel that builds C4 or sequence diagrams one guided step at a time, writing PlantUML into the
+      editor and re-rendering the preview after every action (one-way: wizard → diagram; the editor
+      stays hand-editable throughout). Unlike the pages above, these nine mirror the app's
+      <em>current</em> shell — hamburger rail, Explain This toggle, title-bar copy button — plus the
+      proposed wizard rail icon; the older pages intentionally do not carry it.
+    </p>
+    <div class="cards">
+      <a class="card" href="editor-wizard-choose-type.html">
+        <div class="card__thumb"><iframe src="editor-wizard-choose-type.html" tabindex="-1" loading="lazy" title="Diagram Wizard, choose type"></iframe></div>
+        <div class="card__caption"><p class="card__title">Wizard — choose type</p><p class="card__desc">Step 1: pick C4 Model or Sequence Diagram; nothing selected yet, so Back and Next are disabled.</p></div>
+      </a>
+      <a class="card" href="editor-wizard-c4-type.html">
+        <div class="card__thumb"><iframe src="editor-wizard-c4-type.html" tabindex="-1" loading="lazy" title="Diagram Wizard, C4 type"></iframe></div>
+        <div class="card__caption"><p class="card__title">Wizard — C4 diagram type</p><p class="card__desc">All five vendored C4 views; selecting Container seeds the !include skeleton into the editor.</p></div>
+      </a>
+      <a class="card" href="editor-wizard-c4-elements-empty.html">
+        <div class="card__thumb"><iframe src="editor-wizard-c4-elements-empty.html" tabindex="-1" loading="lazy" title="Diagram Wizard, C4 elements empty"></iframe></div>
+        <div class="card__caption"><p class="card__title">Wizard — elements, empty</p><p class="card__desc">Validation idiom: Add Element and Next stay disabled until the first element exists.</p></div>
+      </a>
+      <a class="card" href="editor-wizard-c4-elements.html">
+        <div class="card__thumb"><iframe src="editor-wizard-c4-elements.html" tabindex="-1" loading="lazy" title="Diagram Wizard, C4 elements added"></iframe></div>
+        <div class="card__caption"><p class="card__title">Wizard — elements added</p><p class="card__desc">Five elements appended and auto-rendered (render-seq 5); the C4 boxes preview before any relationships.</p></div>
+      </a>
+      <a class="card" href="editor-wizard-c4-relationships.html">
+        <div class="card__thumb"><iframe src="editor-wizard-c4-relationships.html" tabindex="-1" loading="lazy" title="Diagram Wizard, C4 relationships"></iframe></div>
+        <div class="card__caption"><p class="card__title">Wizard — relationships</p><p class="card__desc">Rel(...) lines appended per add; the finished container diagram renders and the primary action becomes Finish.</p></div>
+      </a>
+      <a class="card" href="editor-wizard-c4-finish.html">
+        <div class="card__thumb"><iframe src="editor-wizard-c4-finish.html" tabindex="-1" loading="lazy" title="Diagram Wizard, C4 complete"></iframe></div>
+        <div class="card__caption"><p class="card__title">Wizard — C4 complete</p><p class="card__desc">Summary counts; the document stays in the editor for hand edits, Ctrl+S and Ctrl+Enter.</p></div>
+      </a>
+      <a class="card" href="editor-wizard-sequence-participants.html">
+        <div class="card__thumb"><iframe src="editor-wizard-sequence-participants.html" tabindex="-1" loading="lazy" title="Diagram Wizard, sequence participants"></iframe></div>
+        <div class="card__caption"><p class="card__title">Wizard — participants</p><p class="card__desc">Sequence track: four participants written and rendered as heads and lifelines, no messages yet.</p></div>
+      </a>
+      <a class="card" href="editor-wizard-sequence-messages.html">
+        <div class="card__thumb"><iframe src="editor-wizard-sequence-messages.html" tabindex="-1" loading="lazy" title="Diagram Wizard, sequence messages"></iframe></div>
+        <div class="card__caption"><p class="card__title">Wizard — messages</p><p class="card__desc">From/To/arrow/message form; six messages complete the sequence-starter-equivalent document.</p></div>
+      </a>
+      <a class="card" href="editor-wizard-sequence-finish.html">
+        <div class="card__thumb"><iframe src="editor-wizard-sequence-finish.html" tabindex="-1" loading="lazy" title="Diagram Wizard, sequence complete"></iframe></div>
+        <div class="card__caption"><p class="card__title">Wizard — sequence complete</p><p class="card__desc">Summary counts with the options to start another diagram or close the wizard.</p></div>
+      </a>
+    </div>
+
     <h2>Reference</h2>
     <div class="cards">
       <a class="card" href="components.html">

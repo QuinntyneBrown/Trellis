@@ -81,6 +81,15 @@ directory/file pickers are described in the page header comments instead.
 | [editor-explorer-open-folder.html](editor-explorer-open-folder.html) | `/editor` — Explorer before any folder is connected | + `explorer-panel` open-folder branch |
 | [editor-explorer-reconnect.html](editor-explorer-reconnect.html) | `/editor` — restored handle needs a permission re-grant | + `explorer-panel` reconnect branch |
 | [editor-disk-save-error.html](editor-disk-save-error.html) | `/editor` — disk write failed, fixed error toast | + `error-banner` as `.editor-page__disk-save-error` |
+| [editor-wizard-choose-type.html](editor-wizard-choose-type.html) | `/editor` — Diagram Wizard step 1: choose C4 Model or Sequence Diagram (proposed) | + `wizard-panel` (proposed) |
+| [editor-wizard-c4-type.html](editor-wizard-c4-type.html) | `/editor` — wizard step 2 (C4): five C4 types, Container selected, skeleton seeded (proposed) | + `wizard-panel` (proposed) |
+| [editor-wizard-c4-elements-empty.html](editor-wizard-c4-elements-empty.html) | `/editor` — wizard step 3 (C4): pristine element form, empty list, Next disabled (proposed) | + `wizard-panel` (proposed) |
+| [editor-wizard-c4-elements.html](editor-wizard-c4-elements.html) | `/editor` — wizard step 3 (C4): five elements added and rendered (proposed) | + `wizard-panel` (proposed), `tree-action-button` |
+| [editor-wizard-c4-relationships.html](editor-wizard-c4-relationships.html) | `/editor` — wizard step 4 (C4): three relationships added, full diagram rendered (proposed) | + `wizard-panel` (proposed), `tree-action-button` |
+| [editor-wizard-c4-finish.html](editor-wizard-c4-finish.html) | `/editor` — wizard C4 track complete: summary, restart/close (proposed) | + `wizard-panel` (proposed) |
+| [editor-wizard-sequence-participants.html](editor-wizard-sequence-participants.html) | `/editor` — wizard step 2 (sequence): four participants added and rendered (proposed) | + `wizard-panel` (proposed), `tree-action-button` |
+| [editor-wizard-sequence-messages.html](editor-wizard-sequence-messages.html) | `/editor` — wizard step 3 (sequence): six messages, sequence-starter equivalent rendered (proposed) | + `wizard-panel` (proposed), `tree-action-button` |
+| [editor-wizard-sequence-finish.html](editor-wizard-sequence-finish.html) | `/editor` — wizard sequence track complete: summary, restart/close (proposed) | + `wizard-panel` (proposed) |
 | [components.html](components.html) | Style guide: color tokens + every atom/molecule with states | all shared components |
 | [index.html](index.html) | Gallery of the above (25% live previews) | — |
 
@@ -127,6 +136,51 @@ The previous flat-list Documents panel mock and the `/documents` route's
 page mocks were removed when this shipped: the panel is now always the
 tree, and the routed page no longer exists in the app.
 
+### Diagram Wizard (proposed feature)
+
+The nine `editor-wizard-*` pages are **design mocks for a feature that is
+not implemented yet** — there is no `frontend/src/app/features/wizard/`
+today. They propose a fifth docked side panel (opened by a new "Diagram
+Wizard" rail icon, a magic wand that would join `rail-icons.ts`) that
+builds a diagram through guided steps. Key design facts:
+
+- **One-way append model (wizard → diagram).** Every wizard action —
+  picking a C4 type, adding an element/participant/relationship/message —
+  writes PlantUML into the open editor and immediately re-renders the
+  preview. The wizard never parses the editor back, the document stays
+  hand-editable throughout, and the wizard only ever appends. Because
+  `data-render-seq` counts completed renders (one per append; the first
+  render is deferred until the diagram has content), the mocks carry true
+  cumulative values: 0 → 5 → 8 across the C4 track, 0 → 4 → 10 across the
+  sequence track.
+- **Two tracks.** C4: diagram type (all five vendored C4-PlantUML views:
+  Context, Container, Component, Dynamic, Deployment) → elements →
+  relationships → finish. Sequence: participants → messages → finish. The
+  progress pips show a generic Type · Build · Finish trio until a track is
+  chosen, then expand to the track's own step count.
+- **Content reproduces the seeded starters.** The C4 track rebuilds the
+  "C4 - Container" starter and the sequence track the "Sequence Diagram"
+  starter (both seeded by the `AddTemplates` migration), so generated C4
+  code opens with the real `!define RELATIVE_INCLUDE` / `!include
+  C4_Container.puml` idiom and the sequence track's final preview is the
+  same known-good facsimile `editor-rendered.html` uses. Mid-flow
+  facsimiles (C4 elements without relationships, participants without
+  messages) keep final element positions for step-to-step continuity — a
+  real render would pack unlinked elements differently.
+- **Current shell, newer than the other mocks.** These pages mirror the
+  app as it is today: empty title-bar left region, copy-contents button in
+  the title-bar center, page-owned upload input, and the hamburger-first
+  rail (Application Menu, Explorer, Templates, Documents, Explain This)
+  plus the proposed wizard toggle. The older mocks above predate that
+  shell and intentionally do not carry the wizard icon.
+- **Panel anatomy.** `wizard-panel` copies the Explain panel's form-column
+  idiom in the shared panel chrome: uppercase header, dot-pip progress
+  with caption, hint, option cards (`role="radiogroup"`/`radio`), labeled
+  inputs/selects, a primary Add button per step, an "added" divider over
+  the running list (rows: kind badge, name, context, mono arrow, and a
+  `tree-action-button` remove), and a pinned Back/Next footer that becomes
+  Finish on the last build step and Restart/Close when done.
+
 ## Component map
 
 Where each piece of mock markup comes from (paths relative to
@@ -167,6 +221,10 @@ Where each piece of mock markup comes from (paths relative to
 - `features/editor/save-dialog/` — modal name prompt.
 - `features/documents/…` — Documents side panel and its recursive folder-tree rows.
 - `features/explorer/…` — explorer panel states and recursive tree nodes.
+- `features/wizard/wizard-panel/` — **proposed, not yet implemented**: the
+  Diagram Wizard side panel (`editor-wizard-*` pages); its mock styles are
+  hand-authored in the panels' idiom and `rail-icons.ts` would gain a
+  `wizard` entry (see the annotated block at the end of `mock.css`).
 - `shared/components/…` — connection-status, error-banner, loading-spinner.
 - `styles.scss` — global font stack, `#111827` text, border-box sizing.
 

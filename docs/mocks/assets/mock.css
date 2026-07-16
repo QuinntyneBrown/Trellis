@@ -1152,3 +1152,406 @@ app-title-bar {
   background-color: #c42b1c;
   color: #ffffff;
 }
+
+/* == title-bar.component.scss (copy-contents button) ===================== */
+/* Postdates the original mocks: the current title bar centers a copy
+   -document-contents button beside the command center (and its left region
+   is an empty spacer -- the menus moved behind the rail hamburger). Only
+   the wizard pages carry this newer chrome. */
+
+.title-bar__copy-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 26px;
+  height: 24px;
+  margin-left: 4px;
+  border: none;
+  border-radius: 5px;
+  background-color: transparent;
+  color: #4b5563;
+  cursor: pointer;
+}
+
+.title-bar__copy-button:hover {
+  background-color: rgba(17, 24, 39, 0.08);
+}
+
+.title-bar__copy-button svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* == editor-toolbar.component.scss (hamburger menu anchor) =============== */
+/* Postdates the original mocks: New/Save/Upload moved into an application
+   menu behind the rail's hamburger button. Only the closed state appears
+   in the wizard mocks, so just the anchor is compiled here. */
+
+.editor-toolbar__menu-anchor {
+  position: relative;
+  display: flex;
+}
+
+/* == editor-page.component.scss (relocated upload input) ================= */
+/* Postdates the original mocks: the hidden file input moved from the
+   toolbar to the editor page, which owns the upload flow. */
+
+.editor-page__upload-input {
+  display: none;
+}
+
+/* == wizard-panel.component.scss (PROPOSED) ============================== */
+/* Diagram Wizard -- design mocks for a feature that is NOT implemented yet
+   (there is no frontend/src/app/features/wizard/ today). Hand-authored in
+   the idiom the real panels compile to: documents/explorer panel chrome,
+   the Explain panel's form column, and the shared dialog form controls,
+   translated to the light-theme palette used across this file. */
+
+app-wizard-panel {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* The newer side panels stack in the same wrapper as the two originals
+   (see the explorer/documents rule near the top of this file). */
+.editor-page__side-panel app-templates-panel,
+.editor-page__side-panel app-explain-panel,
+.editor-page__side-panel app-wizard-panel {
+  position: absolute;
+  inset: 0;
+}
+
+.wizard-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #ffffff;
+  border-left: 1px solid #e5e7eb;
+}
+
+.wizard-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.wizard-panel__header-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+/* Dot pips with hairline connectors; the caption below carries the step
+   words (labels don't fit at the 260px default width). */
+.wizard-panel__progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.6rem 0.75rem 0;
+}
+
+.wizard-panel__steps {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wizard-panel__step {
+  position: relative;
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 50%;
+  background-color: #ffffff;
+}
+
+.wizard-panel__step + .wizard-panel__step {
+  margin-left: 16px;
+}
+
+.wizard-panel__step + .wizard-panel__step::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -15px;
+  width: 13px;
+  height: 1px;
+  background-color: #e5e7eb;
+}
+
+.wizard-panel__step--done {
+  border-color: #2563eb;
+  background-color: #2563eb;
+}
+
+.wizard-panel__step--current {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+.wizard-panel__progress-caption {
+  margin: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.wizard-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0.75rem;
+}
+
+.wizard-panel__hint {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: #6b7280;
+}
+
+.wizard-panel__options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.wizard-panel__option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.35rem;
+  background-color: #f9fafb;
+  color: #111827;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.wizard-panel__option:hover {
+  background-color: rgba(17, 24, 39, 0.06);
+}
+
+.wizard-panel__option--selected {
+  border-color: #2563eb;
+  box-shadow: inset 0 0 0 1px #2563eb;
+  background-color: #eff6ff;
+}
+
+.wizard-panel__option--selected:hover {
+  background-color: #eff6ff;
+}
+
+.wizard-panel__option-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.wizard-panel__option-desc {
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: #6b7280;
+}
+
+.wizard-panel__label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.wizard-panel__input,
+.wizard-panel__select {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.35rem;
+  background-color: #ffffff;
+  color: #111827;
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+
+.wizard-panel__input:focus,
+.wizard-panel__select:focus {
+  outline: 1px solid #3b82f6;
+  outline-offset: -1px;
+}
+
+.wizard-panel__input::placeholder {
+  color: #6b7280;
+}
+
+/* Same chrome as the Explorer's Open Folder / Explain panel buttons. */
+.wizard-panel__button {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.35rem;
+  background-color: #f9fafb;
+  color: #111827;
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.wizard-panel__button:hover {
+  background-color: rgba(17, 24, 39, 0.06);
+}
+
+.wizard-panel__button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.wizard-panel__button:disabled:hover {
+  background-color: #f9fafb;
+}
+
+.wizard-panel__button--confirm {
+  border-color: #2563eb;
+  background-color: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.wizard-panel__button--confirm:hover {
+  background-color: #1d4ed8;
+}
+
+.wizard-panel__button--confirm:disabled:hover {
+  background-color: #2563eb;
+}
+
+.wizard-panel__divider {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.wizard-panel__divider::before,
+.wizard-panel__divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid #e5e7eb;
+}
+
+.wizard-panel__added {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Row actions stay visible (unlike the hover-revealed tree rows): the
+   running list is short and the delete affordance is part of the flow. */
+.wizard-panel__added-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.35rem;
+  border-radius: 0.25rem;
+  font-size: 0.85rem;
+  color: #111827;
+}
+
+.wizard-panel__added-item:hover {
+  background-color: rgba(17, 24, 39, 0.06);
+}
+
+.wizard-panel__added-kind {
+  flex: 0 0 auto;
+  padding: 0.1rem 0.3rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.25rem;
+  background-color: #f9fafb;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.wizard-panel__added-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wizard-panel__added-context {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.7rem;
+  color: #6b7280;
+}
+
+.wizard-panel__added-arrow {
+  flex: 0 0 auto;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.wizard-panel__empty {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.wizard-panel__summary {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.wizard-panel__summary-counts {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.wizard-panel__footer {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: auto;
+  padding: 0.75rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.wizard-panel__footer .wizard-panel__button {
+  flex: 1 1 0;
+}
