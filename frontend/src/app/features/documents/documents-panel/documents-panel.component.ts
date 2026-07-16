@@ -26,6 +26,11 @@ import {
   MoveDocumentDialogResult,
 } from '../move-document-dialog/move-document-dialog.component';
 import { TreeActionButtonComponent } from '../../../shared/components/tree-action-button/tree-action-button.component';
+import { TreeContextMenuComponent } from '../../../shared/components/tree-context-menu/tree-context-menu.component';
+import {
+  TreeContextMenuItem,
+  TreeContextMenuRequest,
+} from '../../../shared/components/tree-context-menu/tree-context-menu.model';
 
 /**
  * Slide-out panel for browsing saved documents from within the editor,
@@ -44,7 +49,13 @@ import { TreeActionButtonComponent } from '../../../shared/components/tree-actio
 @Component({
   selector: 'app-documents-panel',
   standalone: true,
-  imports: [DocumentTreeNodeComponent, ExportFolderDialogComponent, MoveDocumentDialogComponent, TreeActionButtonComponent],
+  imports: [
+    DocumentTreeNodeComponent,
+    ExportFolderDialogComponent,
+    MoveDocumentDialogComponent,
+    TreeActionButtonComponent,
+    TreeContextMenuComponent,
+  ],
   templateUrl: './documents-panel.component.html',
   styleUrl: './documents-panel.component.scss',
 })
@@ -97,6 +108,38 @@ export class DocumentsPanelComponent implements OnChanges {
   readonly movingDocument = signal<DocumentTreeNode | null>(null);
   /** The folder node whose export dialog is open, or null when it's closed. */
   readonly exportingFolder = signal<DocumentTreeNode | null>(null);
+  readonly contextMenuRequest = signal<TreeContextMenuRequest<DocumentTreeNode | null> | null>(null);
+
+  get contextMenuItems(): TreeContextMenuItem[] {
+    const request = this.contextMenuRequest();
+    if (!request) {
+      return [];
+    }
+    const node = request.target;
+    if (!node) {
+      return [{ id: 'new-folder', label: 'New Folder' }];
+    }
+    if (node.kind === 'folder') {
+      return [
+        { id: 'new-folder', label: 'New Folder' },
+        { id: 'scope', label: 'Scope to This Folder', separatorBefore: true },
+        { id: 'export', label: 'Export Folder as Markdown' },
+        { id: 'rename', label: 'Rename', separatorBefore: true },
+        { id: 'delete', label: 'Delete', danger: true },
+      ];
+    }
+    return [
+      { id: 'open', label: 'Open' },
+      { id: 'move', label: 'Move to Folder…' },
+      {
+        id: 'toggle-export',
+        label: node.document?.excludedFromExport ? 'Include in Export' : 'Exclude from Export',
+        separatorBefore: true,
+      },
+      { id: 'rename', label: 'Rename', separatorBefore: true },
+      { id: 'delete', label: 'Delete', danger: true },
+    ];
+  }
 
   /** True while a document drag hovers the tree's root space (not a folder row) -- drives the root drop-zone highlight. */
   isRootDragOver = false;
@@ -107,10 +150,13 @@ export class DocumentsPanelComponent implements OnChanges {
     if (changes['open']?.currentValue === true) {
       this.revealActiveOnNextRefresh = true;
       this.refresh();
+    } else if (changes['open']?.currentValue === false) {
+      this.closeContextMenu(false);
     }
   }
 
   refresh(): void {
+    this.closeContextMenu(false);
     const refreshToken = ++this.refreshSequence;
 
     forkJoin([this.foldersService.list(), this.documentsService.list()]).subscribe(([folders, documents]) => {
@@ -200,6 +246,86 @@ export class DocumentsPanelComponent implements OnChanges {
     this.documentOpened.emit(document);
   }
 
+  onContextMenuRequested(request: TreeContextMenuRequest<DocumentTreeNode | null>): void {
+    this.contextMenuRequest.set(request);
+  }
+
+  onTreeContextMenu(event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.contextMenuRequest.set({
+      target: null,
+      clientX: event.clientX,
+      clientY: event.clientY,
+      triggerElement: event.currentTarget as HTMLElement,
+    });
+  }
+
+  onTreeKeydown(event: KeyboardEvent): void {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+    if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
+      event.preventDefault();
+      const trigger = event.currentTarget as HTMLElement;
+      const rect = trigger.getBoundingClientRect();
+      this.contextMenuRequest.set({ target: null, clientX: rect.left + 24, clientY: rect.top + 24, triggerElement: trigger });
+    }
+  }
+
+  onContextMenuCommand(command: string): void {
+    const request = this.contextMenuRequest();
+    if (!request) {
+      return;
+    }
+    const node = request.target;
+    // A selected command takes over focus itself (for example, the move
+    // dialog or an opened document). Restoring focus while its menu button
+    // is still handling the click can leave browser automation -- and some
+    // assistive technology -- attached to a removed control. Escape remains
+    // the path that deliberately returns focus to the originating row.
+    this.closeContextMenu(false);
+
+    switch (command) {
+      case 'new-folder':
+        this.promptForFolder(node?.kind === 'folder' ? node.id : this.scopedFolderId);
+        break;
+      case 'open':
+        if (node?.kind === 'document') this.onOpenDocument(node.document!);
+        break;
+      case 'move':
+        if (node?.kind === 'document') this.onMoveRequested(node);
+        break;
+      case 'toggle-export':
+        if (node?.kind === 'document') this.onToggleExportExclusion(node);
+        break;
+      case 'scope':
+        if (node?.kind === 'folder') this.onScopeToFolder(node);
+        break;
+      case 'export':
+        if (node?.kind === 'folder') this.onExportFolder(node);
+        break;
+      case 'rename':
+        if (node) {
+          this.promptForRename(node);
+        }
+        break;
+      case 'delete':
+        if (node) {
+          this.confirmDelete(node);
+        }
+        break;
+    }
+  }
+
+  closeContextMenu(restoreFocus: boolean): void {
+    const trigger = this.contextMenuRequest()?.triggerElement;
+    this.contextMenuRequest.set(null);
+    if (restoreFocus) {
+      trigger?.focus();
+    }
+  }
+
   /**
    * The panel header's New Folder button creates at the visible root -- the
    * true root normally, the scoped folder while a scope is active (creating
@@ -207,10 +333,7 @@ export class DocumentsPanelComponent implements OnChanges {
    * create subfolders.
    */
   onHeaderNewFolderClicked(): void {
-    const name = window.prompt('New folder name')?.trim();
-    if (name) {
-      this.createFolder(this.scopedFolderId, name);
-    }
+    this.promptForFolder(this.scopedFolderId);
   }
 
   /** A folder row's "Scope to this folder" button: that folder becomes the tree's temporary root. */
@@ -294,6 +417,31 @@ export class DocumentsPanelComponent implements OnChanges {
       node.kind === 'folder' ? this.foldersService.delete(node.id) : this.documentsService.delete(node.id);
 
     delete$.subscribe(() => this.refresh());
+  }
+
+  private promptForFolder(parentFolderId: string | null): void {
+    const name = window.prompt('New folder name')?.trim();
+    if (name) {
+      this.createFolder(parentFolderId, name);
+    }
+  }
+
+  private promptForRename(node: DocumentTreeNode): void {
+    const label = node.kind === 'folder' ? 'Rename folder' : 'Rename document';
+    const newName = window.prompt(label, node.name)?.trim();
+    if (newName && newName !== node.name) {
+      this.onRenameNode({ node, newName });
+    }
+  }
+
+  private confirmDelete(node: DocumentTreeNode): void {
+    const message =
+      node.kind === 'folder'
+        ? `Delete "${node.name}" and everything inside it? This cannot be undone.`
+        : `Delete "${node.name}"? This cannot be undone.`;
+    if (window.confirm(message)) {
+      this.onDeleteNode(node);
+    }
   }
 
   /**

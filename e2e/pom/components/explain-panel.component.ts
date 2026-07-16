@@ -6,7 +6,7 @@ import { byTestId } from '../base.page';
  * [data-testid="explain-panel-toggle"] (owned by the toolbar), panel root
  * at [data-testid="explain-panel"], native picker buttons, a repository
  * URL input, the Confirm button, and (after a successful generation) the
- * result block with its copy-to-clipboard button.
+ * result block with copy-prompt and download-attachment buttons.
  *
  * The panel element itself is always mounted inside the editor page (its
  * host is display-toggled), so visibility assertions -- not existence
@@ -23,6 +23,7 @@ export class ExplainPanelComponent {
   readonly error: Locator;
   readonly result: Locator;
   readonly copyPromptButton: Locator;
+  readonly downloadAttachmentButton: Locator;
 
   constructor(page: Page) {
     this.root = byTestId(page, 'explain-panel');
@@ -35,6 +36,7 @@ export class ExplainPanelComponent {
     this.error = byTestId(page, 'explain-error');
     this.result = byTestId(page, 'explain-result');
     this.copyPromptButton = byTestId(page, 'explain-copy-prompt');
+    this.downloadAttachmentButton = byTestId(page, 'explain-download-attachment');
   }
 
   /** Opens the Explain This panel via its toolbar toggle. */

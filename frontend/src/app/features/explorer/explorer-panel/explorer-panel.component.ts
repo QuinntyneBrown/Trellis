@@ -6,9 +6,15 @@ import { OpenedDiskFile } from '../../../core/models/opened-disk-file.model';
 import { FileSystemAccessService } from '../../../core/services/file-system-access.service';
 import { ErrorBannerComponent } from '../../../shared/components/error-banner/error-banner.component';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
+import { TreeContextMenuComponent } from '../../../shared/components/tree-context-menu/tree-context-menu.component';
+import {
+  TreeContextMenuItem,
+  TreeContextMenuRequest,
+} from '../../../shared/components/tree-context-menu/tree-context-menu.model';
 import {
   CreateEntryEvent,
   DeleteEntryEvent,
+  ExplorerContextTarget,
   FileTreeNodeComponent,
 } from '../file-tree-node/file-tree-node.component';
 
@@ -36,7 +42,7 @@ function sameNameCaseInsensitive(a: string, b: string): boolean {
 @Component({
   selector: 'app-explorer-panel',
   standalone: true,
-  imports: [ErrorBannerComponent, LoadingSpinnerComponent, FileTreeNodeComponent],
+  imports: [ErrorBannerComponent, LoadingSpinnerComponent, FileTreeNodeComponent, TreeContextMenuComponent],
   templateUrl: './explorer-panel.component.html',
   styleUrl: './explorer-panel.component.scss',
 })
@@ -60,6 +66,27 @@ export class ExplorerPanelComponent implements OnInit {
   readonly errorMessage = signal<string | null>(null);
   /** True when a previously-opened root was restored from IndexedDB but its permission has lapsed to 'prompt'. */
   readonly needsReconnect = signal(false);
+  readonly contextMenuRequest = signal<TreeContextMenuRequest<ExplorerContextTarget> | null>(null);
+
+  get contextMenuItems(): TreeContextMenuItem[] {
+    const target = this.contextMenuRequest()?.target;
+    if (!target) {
+      return [];
+    }
+    if (target.node.kind === 'directory') {
+      return [
+        { id: 'new-file', label: 'New File' },
+        { id: 'new-folder', label: 'New Folder' },
+        ...(target.parentNode
+          ? [{ id: 'delete', label: 'Delete', separatorBefore: true, danger: true } satisfies TreeContextMenuItem]
+          : []),
+      ];
+    }
+    return [
+      { id: 'open', label: 'Open' },
+      { id: 'delete', label: 'Delete', separatorBefore: true, danger: true },
+    ];
+  }
 
   ngOnInit(): void {
     if (!this.isSupported) {
@@ -157,12 +184,101 @@ export class ExplorerPanelComponent implements OnInit {
     void this.openFile(node);
   }
 
+  onContextMenuRequested(request: TreeContextMenuRequest<ExplorerContextTarget>): void {
+    this.contextMenuRequest.set(request);
+  }
+
+  onTreeContextMenu(event: MouseEvent): void {
+    if (!this.rootNode || event.target !== event.currentTarget) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    this.contextMenuRequest.set({
+      target: { node: this.rootNode, parentNode: null },
+      clientX: event.clientX,
+      clientY: event.clientY,
+      triggerElement: event.currentTarget as HTMLElement,
+    });
+  }
+
+  onTreeKeydown(event: KeyboardEvent): void {
+    if (!this.rootNode || event.target !== event.currentTarget) {
+      return;
+    }
+    if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
+      event.preventDefault();
+      const trigger = event.currentTarget as HTMLElement;
+      const rect = trigger.getBoundingClientRect();
+      this.contextMenuRequest.set({
+        target: { node: this.rootNode, parentNode: null },
+        clientX: rect.left + 24,
+        clientY: rect.top + 24,
+        triggerElement: trigger,
+      });
+    }
+  }
+
+  onContextMenuCommand(command: string): void {
+    const request = this.contextMenuRequest();
+    if (!request) {
+      return;
+    }
+    const { node, parentNode } = request.target;
+    // Commands either open a prompt, mutate the tree, or activate a file;
+    // none should restore focus while the clicked menu item is being removed.
+    // Escape is the explicit focus-restoration path.
+    this.closeContextMenu(false);
+
+    switch (command) {
+      case 'open':
+        this.onFileClicked(node);
+        break;
+      case 'new-file':
+        this.promptForEntry(node, 'file');
+        break;
+      case 'new-folder':
+        this.promptForEntry(node, 'directory');
+        break;
+      case 'delete':
+        if (parentNode) {
+          this.confirmDelete(node, parentNode);
+        }
+        break;
+    }
+  }
+
+  closeContextMenu(restoreFocus: boolean): void {
+    const trigger = this.contextMenuRequest()?.triggerElement;
+    this.contextMenuRequest.set(null);
+    if (restoreFocus) {
+      trigger?.focus();
+    }
+  }
+
   onCreateEntry(event: CreateEntryEvent): void {
     void this.createEntry(event.parent, event.name, event.kind);
   }
 
   onDeleteEntry(event: DeleteEntryEvent): void {
     void this.deleteEntry(event);
+  }
+
+  private promptForEntry(parent: ExplorerTreeNode, kind: 'file' | 'directory'): void {
+    const name = window.prompt(kind === 'file' ? 'New file name' : 'New folder name')?.trim();
+    if (name) {
+      this.onCreateEntry({ parent, name, kind });
+    }
+  }
+
+  private confirmDelete(node: ExplorerTreeNode, parentNode: ExplorerTreeNode): void {
+    const message =
+      node.kind === 'directory'
+        ? `Delete "${node.name}" and everything inside it? This cannot be undone.`
+        : `Delete "${node.name}"? This cannot be undone.`;
+    if (window.confirm(message)) {
+      this.onDeleteEntry({ node, parentNode });
+    }
   }
 
   /** Fetches `handle`'s children and sets up the fully-loaded, expanded root node. */

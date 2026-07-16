@@ -7,8 +7,14 @@
     [style.padding-left.px]="indentPx"
     [class.file-tree-node__row--directory]="node.kind === 'directory'"
     [class.file-tree-node__row--file]="node.kind === 'file'"
+    [class.file-tree-node__row--context-target]="contextMenuTarget === node"
     [attr.aria-expanded]="node.kind === 'directory' ? node.expanded : null"
+    aria-haspopup="menu"
+    role="treeitem"
+    tabindex="0"
     (click)="onRowClick()"
+    (contextmenu)="onContextMenu($event)"
+    (keydown)="onRowKeydown($event)"
   >
     @if (node.kind === 'directory') {
       <span
@@ -26,45 +32,19 @@
     @if (node.loadState === 'loading') {
       <span class="file-tree-node__spinner" data-testid="file-tree-node-spinner" aria-hidden="true"></span>
     }
-
-    <div class="file-tree-node__actions">
-      @if (node.kind === 'directory') {
-        <app-tree-action-button
-          icon="new-file"
-          label="New File"
-          testId="file-tree-node-new-file"
-          (clicked)="onNewFileClicked($event)"
-        />
-        <app-tree-action-button
-          icon="new-folder"
-          label="New Folder"
-          testId="file-tree-node-new-folder"
-          (clicked)="onNewFolderClicked($event)"
-        />
-      }
-      @if (parentNode) {
-        <app-tree-action-button
-          icon="delete"
-          label="Delete"
-          testId="file-tree-node-delete"
-          [danger]="true"
-          (clicked)="onDeleteClicked($event)"
-        />
-      }
-    </div>
   </div>
 
   @if (node.kind === 'directory' && node.expanded && node.children) {
-    <div class="file-tree-node__children">
+    <div class="file-tree-node__children" role="group">
       @for (child of node.children; track child.name) {
         <app-file-tree-node
           [node]="child"
           [depth]="depth + 1"
           [parentNode]="node"
+          [contextMenuTarget]="contextMenuTarget"
           (toggleExpand)="toggleExpand.emit($event)"
           (fileClicked)="fileClicked.emit($event)"
-          (createEntry)="createEntry.emit($event)"
-          (deleteEntry)="deleteEntry.emit($event)"
+          (contextMenuRequested)="contextMenuRequested.emit($event)"
         ></app-file-tree-node>
       }
     </div>

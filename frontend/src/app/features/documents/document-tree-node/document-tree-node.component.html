@@ -7,7 +7,13 @@
       [style.padding-left.px]="indentPx"
       [attr.aria-expanded]="node.expanded"
       [class.document-tree-node__row--drop-target]="isDragOver"
+      [class.document-tree-node__row--context-target]="contextMenuTarget === node"
+      aria-haspopup="menu"
+      role="treeitem"
+      tabindex="0"
       (click)="onRowClick()"
+      (contextmenu)="onContextMenu($event)"
+      (keydown)="onRowKeydown($event)"
       (dragenter)="onDragEnter($event)"
       (dragover)="onDragOver($event)"
       (dragleave)="onDragLeave($event)"
@@ -21,40 +27,6 @@
       ></span>
 
       <span class="document-tree-node__name">{{ node.name }}</span>
-
-      <div class="document-tree-node__actions">
-        <app-tree-action-button
-          icon="scope"
-          label="Scope to this folder"
-          testId="document-folder-scope"
-          (clicked)="onScopeClicked($event)"
-        />
-        <app-tree-action-button
-          icon="export"
-          label="Export folder as Markdown"
-          testId="document-folder-export"
-          (clicked)="onExportClicked($event)"
-        />
-        <app-tree-action-button
-          icon="new-folder"
-          label="New Folder"
-          testId="document-folder-new-folder"
-          (clicked)="onNewFolderClicked($event)"
-        />
-        <app-tree-action-button
-          icon="rename"
-          label="Rename"
-          testId="document-folder-rename"
-          (clicked)="onRenameClicked($event)"
-        />
-        <app-tree-action-button
-          icon="delete"
-          label="Delete folder and contents"
-          testId="document-folder-delete"
-          [danger]="true"
-          (clicked)="onDeleteClicked($event)"
-        />
-      </div>
     </div>
   } @else {
     <div
@@ -66,8 +38,14 @@
       draggable="true"
       [class.document-tree-node__row--active]="isActive"
       [class.document-tree-node__row--excluded]="node.document!.excludedFromExport"
+      [class.document-tree-node__row--context-target]="contextMenuTarget === node"
       [attr.aria-current]="isActive ? 'true' : null"
+      aria-haspopup="menu"
+      role="treeitem"
+      tabindex="0"
       (click)="onRowClick()"
+      (contextmenu)="onContextMenu($event)"
+      (keydown)="onRowKeydown($event)"
       (dragstart)="onDragStart($event)"
     >
       <span class="document-tree-node__chevron-spacer" aria-hidden="true"></span>
@@ -81,60 +59,21 @@
       @if (node.document!.excludedFromExport) {
         <span class="document-tree-node__excluded-badge" data-testid="document-excluded-badge" aria-label="Excluded from export">no export</span>
       }
-
-      <div class="document-tree-node__actions">
-        <app-tree-action-button
-          icon="move"
-          label="Move to Folder…"
-          testId="document-item-move"
-          (clicked)="onMoveClicked($event)"
-        />
-        <app-tree-action-button
-          [icon]="node.document!.excludedFromExport ? 'export' : 'no-export'"
-          [label]="node.document!.excludedFromExport ? 'Include in export' : 'Exclude from export'"
-          testId="document-item-toggle-export"
-          (clicked)="onToggleExportExclusionClicked($event)"
-        />
-        <app-tree-action-button
-          icon="open"
-          label="Open"
-          testId="document-item-open"
-          (clicked)="onOpenClicked($event)"
-        />
-        <app-tree-action-button
-          icon="rename"
-          label="Rename"
-          testId="document-item-rename"
-          (clicked)="onRenameClicked($event)"
-        />
-        <app-tree-action-button
-          icon="delete"
-          label="Delete"
-          testId="document-item-delete"
-          [danger]="true"
-          (clicked)="onDeleteClicked($event)"
-        />
-      </div>
     </div>
   }
 
   @if (node.kind === 'folder' && node.expanded) {
-    <div class="document-tree-node__children">
+    <div class="document-tree-node__children" role="group">
       @for (child of node.children; track child.id) {
         <app-document-tree-node
           [node]="child"
           [depth]="depth + 1"
           [activeDocumentId]="activeDocumentId"
+          [contextMenuTarget]="contextMenuTarget"
           (toggleExpand)="toggleExpand.emit($event)"
           (openDocument)="openDocument.emit($event)"
-          (createFolder)="createFolder.emit($event)"
-          (renameNode)="renameNode.emit($event)"
-          (deleteNode)="deleteNode.emit($event)"
           (moveDocument)="moveDocument.emit($event)"
-          (moveRequested)="moveRequested.emit($event)"
-          (scopeRequested)="scopeRequested.emit($event)"
-          (exportRequested)="exportRequested.emit($event)"
-          (exportExclusionToggleRequested)="exportExclusionToggleRequested.emit($event)"
+          (contextMenuRequested)="contextMenuRequested.emit($event)"
         ></app-document-tree-node>
       }
     </div>

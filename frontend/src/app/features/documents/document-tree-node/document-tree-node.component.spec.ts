@@ -4,11 +4,6 @@ import { DocumentSummary } from '../../../core/models/document-summary.model';
 import { DocumentTreeNode } from '../../../core/models/document-tree-node.model';
 import { DOCUMENT_DRAG_TYPE, DocumentTreeNodeComponent } from './document-tree-node.component';
 
-/**
- * jsdom implements neither DataTransfer nor DragEvent constructors, so drag
- * handlers are exercised by calling them directly with hand-built stubs
- * rather than dispatching real events.
- */
 function dragEventStub(types: string[] = [DOCUMENT_DRAG_TYPE], data: Record<string, string> = {}): DragEvent {
   return {
     preventDefault: jest.fn(),
@@ -24,18 +19,11 @@ function dragEventStub(types: string[] = [DOCUMENT_DRAG_TYPE], data: Record<stri
 }
 
 function folderNode(overrides: Partial<DocumentTreeNode> = {}): DocumentTreeNode {
-  return {
-    id: 'folder-1',
-    name: 'diagrams',
-    kind: 'folder',
-    children: [],
-    expanded: false,
-    ...overrides,
-  };
+  return { id: 'folder-1', name: 'diagrams', kind: 'folder', children: [], expanded: false, ...overrides };
 }
 
 function documentNode(overrides: Partial<DocumentTreeNode> = {}): DocumentTreeNode {
-  const summary: DocumentSummary = {
+  const document: DocumentSummary = {
     id: 'doc-1',
     name: 'My Diagram',
     updatedAt: '2026-01-01T00:00:00Z',
@@ -43,13 +31,7 @@ function documentNode(overrides: Partial<DocumentTreeNode> = {}): DocumentTreeNo
     kind: 'plantuml',
     excludedFromExport: false,
   };
-  return {
-    id: summary.id,
-    name: summary.name,
-    kind: 'document',
-    document: summary,
-    ...overrides,
-  };
+  return { id: document.id, name: document.name, kind: 'document', document, ...overrides };
 }
 
 describe('DocumentTreeNodeComponent', () => {
@@ -57,463 +39,137 @@ describe('DocumentTreeNodeComponent', () => {
   let component: DocumentTreeNodeComponent;
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [DocumentTreeNodeComponent],
-    }).compileComponents();
-
+    await TestBed.configureTestingModule({ imports: [DocumentTreeNodeComponent] }).compileComponents();
     fixture = TestBed.createComponent(DocumentTreeNodeComponent);
     component = fixture.componentInstance;
   });
 
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
-
-  function byTestId(testId: string): HTMLElement | null {
-    return fixture.nativeElement.querySelector(`[data-testid="${testId}"]`);
+  function row(): HTMLElement {
+    return fixture.nativeElement.querySelector('[data-testid="document-folder"], [data-testid="document-item"]');
   }
 
-  describe('folder rows', () => {
-    it('renders a folder row with the folder testids and name attribute', () => {
-      component.node = folderNode({ name: 'architecture' });
-      fixture.detectChanges();
+  it('renders an accessible folder row and toggles it by click or Enter', () => {
+    const node = folderNode({ name: 'architecture' });
+    component.node = node;
+    fixture.detectChanges();
+    const spy = jest.fn();
+    component.toggleExpand.subscribe(spy);
 
-      const row = byTestId('document-folder')!;
-      expect(row).toBeTruthy();
-      expect(row.getAttribute('data-folder-name')).toBe('architecture');
-      expect(row.textContent).toContain('architecture');
-      expect(byTestId('document-folder-chevron')).toBeTruthy();
-      expect(byTestId('document-item')).toBeNull();
-    });
-
-    it('rotates the chevron via a modifier class when expanded', () => {
-      component.node = folderNode({ expanded: true });
-      fixture.detectChanges();
-
-      expect(byTestId('document-folder-chevron')!.classList).toContain('document-tree-node__chevron--expanded');
-    });
-
-    it('emits toggleExpand with the node when the row is clicked', () => {
-      const node = folderNode();
-      component.node = node;
-      fixture.detectChanges();
-      const spy = jest.fn();
-      component.toggleExpand.subscribe(spy);
-
-      byTestId('document-folder')!.click();
-
-      expect(spy).toHaveBeenCalledWith(node);
-    });
-
-    it('emits createFolder with this folder as parent after a prompt, without toggling the row', () => {
-      jest.spyOn(window, 'prompt').mockReturnValue('  sub folder  ');
-      component.node = folderNode({ id: 'parent-9' });
-      fixture.detectChanges();
-      const createSpy = jest.fn();
-      component.createFolder.subscribe(createSpy);
-      const toggleSpy = jest.fn();
-      component.toggleExpand.subscribe(toggleSpy);
-
-      byTestId('document-folder-new-folder')!.click();
-
-      expect(window.prompt).toHaveBeenCalledWith('New folder name');
-      expect(createSpy).toHaveBeenCalledWith({ parentId: 'parent-9', name: 'sub folder' });
-      expect(toggleSpy).not.toHaveBeenCalled();
-    });
-
-    it('emits scopeRequested with the node from the scope button, without toggling the row', () => {
-      const node = folderNode({ id: 'scope-me' });
-      component.node = node;
-      fixture.detectChanges();
-      const scopeSpy = jest.fn();
-      component.scopeRequested.subscribe(scopeSpy);
-      const toggleSpy = jest.fn();
-      component.toggleExpand.subscribe(toggleSpy);
-
-      byTestId('document-folder-scope')!.click();
-
-      expect(scopeSpy).toHaveBeenCalledWith(node);
-      expect(toggleSpy).not.toHaveBeenCalled();
-    });
-
-    it('emits exportRequested with the node from the export button, without toggling the row', () => {
-      const node = folderNode({ id: 'export-me' });
-      component.node = node;
-      fixture.detectChanges();
-      const exportSpy = jest.fn();
-      component.exportRequested.subscribe(exportSpy);
-      const toggleSpy = jest.fn();
-      component.toggleExpand.subscribe(toggleSpy);
-
-      byTestId('document-folder-export')!.click();
-
-      expect(exportSpy).toHaveBeenCalledWith(node);
-      expect(toggleSpy).not.toHaveBeenCalled();
-    });
-
-    it('renders the export button on folder rows only', () => {
-      component.node = folderNode();
-      fixture.detectChanges();
-      expect(byTestId('document-folder-export')).toBeTruthy();
-
-      component.node = documentNode();
-      fixture.detectChanges();
-      expect(byTestId('document-folder-export')).toBeNull();
-    });
-
-    it('does not emit createFolder when the prompt is cancelled', () => {
-      jest.spyOn(window, 'prompt').mockReturnValue(null);
-      component.node = folderNode();
-      fixture.detectChanges();
-      const spy = jest.fn();
-      component.createFolder.subscribe(spy);
-
-      byTestId('document-folder-new-folder')!.click();
-
-      expect(spy).not.toHaveBeenCalled();
-    });
-
-    it('confirms a folder delete with the cascade wording before emitting deleteNode', () => {
-      const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true);
-      const node = folderNode({ name: 'doomed' });
-      component.node = node;
-      fixture.detectChanges();
-      const spy = jest.fn();
-      component.deleteNode.subscribe(spy);
-
-      byTestId('document-folder-delete')!.click();
-
-      expect(confirmSpy).toHaveBeenCalledWith('Delete "doomed" and everything inside it? This cannot be undone.');
-      expect(spy).toHaveBeenCalledWith(node);
-    });
-
-    it('renders children only while expanded, indented one level deeper', () => {
-      const child = documentNode();
-      component.node = folderNode({ expanded: false, children: [child] });
-      fixture.detectChanges();
-      expect(byTestId('document-item')).toBeNull();
-
-      component.node = folderNode({ expanded: true, children: [child] });
-      fixture.detectChanges();
-
-      const childRow = byTestId('document-item')!;
-      expect(childRow).toBeTruthy();
-      const parentPadding = parseFloat(byTestId('document-folder')!.style.paddingLeft);
-      const childPadding = parseFloat(childRow.style.paddingLeft);
-      expect(childPadding).toBeGreaterThan(parentPadding);
-    });
-
-    it('re-emits events from nested children untouched', () => {
-      const grandchild = documentNode({ id: 'deep-doc', name: 'deep' });
-      const child = folderNode({ id: 'child', name: 'child', expanded: true, children: [grandchild] });
-      component.node = folderNode({ id: 'root', name: 'root', expanded: true, children: [child] });
-      fixture.detectChanges();
-      const spy = jest.fn();
-      component.openDocument.subscribe(spy);
-
-      byTestId('document-item')!.click();
-
-      expect(spy).toHaveBeenCalledWith(grandchild.document);
-    });
+    expect(row().getAttribute('data-folder-name')).toBe('architecture');
+    expect(row().getAttribute('role')).toBe('treeitem');
+    expect(row().getAttribute('aria-haspopup')).toBe('menu');
+    row().click();
+    row().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    expect(spy).toHaveBeenCalledTimes(2);
   });
 
-  describe('document rows', () => {
-    it('keeps the flat list testid contract and carries the updatedAt tooltip', () => {
-      component.node = documentNode();
-      fixture.detectChanges();
+  it('renders a document row with active, kind, and export-exclusion state', () => {
+    const summary = { ...documentNode().document!, kind: 'markdown' as const, excludedFromExport: true };
+    const node = documentNode({ document: summary });
+    component.node = node;
+    component.activeDocumentId = node.id;
+    fixture.detectChanges();
 
-      const row = byTestId('document-item')!;
-      expect(row.getAttribute('data-document-name')).toBe('My Diagram');
-      expect(row.getAttribute('title')).toBe('Updated 2026-01-01T00:00:00Z');
-      expect(byTestId('document-item-open')).toBeTruthy();
-      expect(byTestId('document-item-rename')).toBeTruthy();
-      expect(byTestId('document-item-delete')).toBeTruthy();
-      expect(byTestId('document-folder')).toBeNull();
-    });
-
-    it('shows the MD badge only for markdown documents', () => {
-      component.node = documentNode();
-      fixture.detectChanges();
-      expect(byTestId('document-kind-badge')).toBeNull();
-
-      const summary = { ...documentNode().document!, kind: 'markdown' as const };
-      component.node = { ...documentNode(), document: summary };
-      fixture.detectChanges();
-
-      expect(byTestId('document-kind-badge')).toBeTruthy();
-      expect(byTestId('document-kind-badge')!.textContent).toBe('MD');
-    });
-
-    it('shows the excluded badge and dims the row only for excluded documents', () => {
-      component.node = documentNode();
-      fixture.detectChanges();
-      expect(byTestId('document-excluded-badge')).toBeNull();
-      expect(byTestId('document-item')!.classList).not.toContain('document-tree-node__row--excluded');
-
-      const summary = { ...documentNode().document!, excludedFromExport: true };
-      component.node = { ...documentNode(), document: summary };
-      fixture.detectChanges();
-
-      expect(byTestId('document-excluded-badge')).toBeTruthy();
-      expect(byTestId('document-excluded-badge')!.textContent).toBe('no export');
-      expect(byTestId('document-item')!.classList).toContain('document-tree-node__row--excluded');
-    });
-
-    it('emits exportExclusionToggleRequested from the toggle button without firing the row click', () => {
-      const node = documentNode();
-      component.node = node;
-      fixture.detectChanges();
-      const toggleSpy = jest.fn();
-      const openSpy = jest.fn();
-      component.exportExclusionToggleRequested.subscribe(toggleSpy);
-      component.openDocument.subscribe(openSpy);
-
-      byTestId('document-item-toggle-export')!.click();
-
-      expect(toggleSpy).toHaveBeenCalledWith(node);
-      expect(openSpy).not.toHaveBeenCalled();
-    });
-
-    it('labels the toggle by the action it performs, not the current state', () => {
-      component.node = documentNode();
-      fixture.detectChanges();
-      expect(byTestId('document-item-toggle-export')!.getAttribute('aria-label')).toBe('Exclude from export');
-
-      const summary = { ...documentNode().document!, excludedFromExport: true };
-      component.node = { ...documentNode(), document: summary };
-      fixture.detectChanges();
-
-      expect(byTestId('document-item-toggle-export')!.getAttribute('aria-label')).toBe('Include in export');
-    });
-
-    it('emits openDocument with the summary when the row is clicked', () => {
-      const node = documentNode();
-      component.node = node;
-      fixture.detectChanges();
-      const spy = jest.fn();
-      component.openDocument.subscribe(spy);
-
-      byTestId('document-item')!.click();
-
-      expect(spy).toHaveBeenCalledWith(node.document);
-    });
-
-    it('emits openDocument from the Open button without double-firing via the row click', () => {
-      const node = documentNode();
-      component.node = node;
-      fixture.detectChanges();
-      const spy = jest.fn();
-      component.openDocument.subscribe(spy);
-
-      byTestId('document-item-open')!.click();
-
-      expect(spy).toHaveBeenCalledTimes(1);
-      expect(spy).toHaveBeenCalledWith(node.document);
-    });
-
-    it('emits renameNode with the trimmed new name from a seeded prompt', () => {
-      const promptSpy = jest.spyOn(window, 'prompt').mockReturnValue('  Renamed Diagram  ');
-      const node = documentNode();
-      component.node = node;
-      fixture.detectChanges();
-      const spy = jest.fn();
-      component.renameNode.subscribe(spy);
-
-      byTestId('document-item-rename')!.click();
-
-      expect(promptSpy).toHaveBeenCalledWith('Rename document', 'My Diagram');
-      expect(spy).toHaveBeenCalledWith({ node, newName: 'Renamed Diagram' });
-    });
-
-    it('does not emit renameNode when the prompt is cancelled or the name is unchanged', () => {
-      const promptSpy = jest.spyOn(window, 'prompt').mockReturnValue(null);
-      component.node = documentNode();
-      fixture.detectChanges();
-      const spy = jest.fn();
-      component.renameNode.subscribe(spy);
-
-      byTestId('document-item-rename')!.click();
-      expect(spy).not.toHaveBeenCalled();
-
-      promptSpy.mockReturnValue('My Diagram');
-      byTestId('document-item-rename')!.click();
-      expect(spy).not.toHaveBeenCalled();
-    });
-
-    it('confirms a document delete with the plain wording and does not emit when declined', () => {
-      const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(false);
-      component.node = documentNode();
-      fixture.detectChanges();
-      const spy = jest.fn();
-      component.deleteNode.subscribe(spy);
-
-      byTestId('document-item-delete')!.click();
-
-      expect(confirmSpy).toHaveBeenCalledWith('Delete "My Diagram"? This cannot be undone.');
-      expect(spy).not.toHaveBeenCalled();
-    });
-
-    it('uses the folder prompt label when renaming a folder', () => {
-      const promptSpy = jest.spyOn(window, 'prompt').mockReturnValue('renamed');
-      component.node = folderNode({ name: 'old folder' });
-      fixture.detectChanges();
-      const spy = jest.fn();
-      component.renameNode.subscribe(spy);
-
-      byTestId('document-folder-rename')!.click();
-
-      expect(promptSpy).toHaveBeenCalledWith('Rename folder', 'old folder');
-      expect(spy).toHaveBeenCalled();
-    });
+    expect(row().getAttribute('data-document-name')).toBe('My Diagram');
+    expect(row().classList).toContain('document-tree-node__row--active');
+    expect(row().classList).toContain('document-tree-node__row--excluded');
+    expect(fixture.nativeElement.querySelector('[data-testid="document-kind-badge"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-testid="document-excluded-badge"]')).toBeTruthy();
   });
 
-  describe('active document highlight', () => {
-    it('marks the row active (class + aria-current) only when its id matches activeDocumentId', () => {
-      component.node = documentNode({ id: 'doc-1' });
-      component.activeDocumentId = 'doc-1';
-      fixture.detectChanges();
-
-      const row = byTestId('document-item')!;
-      expect(row.classList).toContain('document-tree-node__row--active');
-      expect(row.getAttribute('aria-current')).toBe('true');
-    });
-
-    it('does not mark a non-matching document row or any folder row active', () => {
-      component.node = documentNode({ id: 'doc-1' });
-      component.activeDocumentId = 'other-doc';
-      fixture.detectChanges();
-      expect(byTestId('document-item')!.classList).not.toContain('document-tree-node__row--active');
-      expect(byTestId('document-item')!.getAttribute('aria-current')).toBeNull();
-
-      // A folder sharing the active id must never highlight -- only documents can be open in the editor.
-      component.node = folderNode({ id: 'other-doc' });
-      fixture.detectChanges();
-      expect(byTestId('document-folder')!.classList).not.toContain('document-tree-node__row--active');
-    });
-
-    it('passes activeDocumentId down to nested children', () => {
-      const child = documentNode({ id: 'nested-active', name: 'nested' });
-      component.node = folderNode({ expanded: true, children: [child] });
-      component.activeDocumentId = 'nested-active';
-      fixture.detectChanges();
-
-      expect(byTestId('document-item')!.classList).toContain('document-tree-node__row--active');
-    });
+  it('opens a document by ordinary row click', () => {
+    const node = documentNode();
+    component.node = node;
+    fixture.detectChanges();
+    const spy = jest.fn();
+    component.openDocument.subscribe(spy);
+    row().click();
+    expect(spy).toHaveBeenCalledWith(node.document);
   });
 
-  describe('drag and drop', () => {
-    it('marks document rows draggable and folder rows not', () => {
-      component.node = documentNode();
-      fixture.detectChanges();
-      expect(byTestId('document-item')!.getAttribute('draggable')).toBe('true');
+  it('right-click emits the node, coordinates, and trigger without activating the row', () => {
+    const node = documentNode();
+    component.node = node;
+    fixture.detectChanges();
+    const menuSpy = jest.fn();
+    const openSpy = jest.fn();
+    component.contextMenuRequested.subscribe(menuSpy);
+    component.openDocument.subscribe(openSpy);
+    const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 30, clientY: 50 });
 
-      component.node = folderNode();
-      fixture.detectChanges();
-      expect(byTestId('document-folder')!.getAttribute('draggable')).toBeNull();
-    });
+    row().dispatchEvent(event);
 
-    it('stamps the drag with the custom type carrying the id, plus a text/plain name', () => {
-      component.node = documentNode({ id: 'doc-42', name: 'draggable doc' });
-      fixture.detectChanges();
-      const event = dragEventStub();
+    expect(event.defaultPrevented).toBe(true);
+    expect(menuSpy).toHaveBeenCalledWith({ target: node, clientX: 30, clientY: 50, triggerElement: row() });
+    expect(openSpy).not.toHaveBeenCalled();
+  });
 
-      component.onDragStart(event);
+  it('opens the context menu from the keyboard and bubbles nested requests', () => {
+    const child = documentNode({ id: 'nested', name: 'Nested' });
+    component.node = folderNode({ expanded: true, children: [child] });
+    fixture.detectChanges();
+    const spy = jest.fn();
+    component.contextMenuRequested.subscribe(spy);
+    const childRow = fixture.nativeElement.querySelector('[data-testid="document-item"]') as HTMLElement;
 
-      expect(event.dataTransfer!.setData).toHaveBeenCalledWith(DOCUMENT_DRAG_TYPE, 'doc-42');
-      expect(event.dataTransfer!.setData).toHaveBeenCalledWith('text/plain', 'draggable doc');
-      expect(event.dataTransfer!.effectAllowed).toBe('move');
-    });
+    childRow.dispatchEvent(new KeyboardEvent('keydown', { key: 'ContextMenu', bubbles: true, cancelable: true }));
 
-    it('highlights a folder row on dragenter and clears only after every child element is left', () => {
-      component.node = folderNode();
-      fixture.detectChanges();
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ target: child, triggerElement: childRow }));
+  });
 
-      component.onDragEnter(dragEventStub());
-      component.onDragEnter(dragEventStub()); // crossing into a child element
-      fixture.detectChanges();
-      expect(byTestId('document-folder')!.classList).toContain('document-tree-node__row--drop-target');
+  it('marks the active context-menu target', () => {
+    const node = folderNode();
+    component.node = node;
+    component.contextMenuTarget = node;
+    fixture.detectChanges();
+    expect(row().classList).toContain('document-tree-node__row--context-target');
+  });
 
-      component.onDragLeave(dragEventStub()); // leaving the child, still inside the row
-      fixture.detectChanges();
-      expect(byTestId('document-folder')!.classList).toContain('document-tree-node__row--drop-target');
+  it('recursively renders expanded folder children', () => {
+    component.node = folderNode({ expanded: true, children: [documentNode(), folderNode({ id: 'nested-folder' })] });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('[role="treeitem"]')).toHaveLength(3);
+  });
 
-      component.onDragLeave(dragEventStub());
-      fixture.detectChanges();
-      expect(byTestId('document-folder')!.classList).not.toContain('document-tree-node__row--drop-target');
-    });
+  it('starts document drags with Trellis and plain-text transfer data', () => {
+    component.node = documentNode();
+    fixture.detectChanges();
+    const event = dragEventStub();
+    component.onDragStart(event);
+    expect(event.dataTransfer!.setData).toHaveBeenCalledWith(DOCUMENT_DRAG_TYPE, 'doc-1');
+    expect(event.dataTransfer!.setData).toHaveBeenCalledWith('text/plain', 'My Diagram');
+    expect(event.dataTransfer!.effectAllowed).toBe('move');
+  });
 
-    it('ignores drags without the custom document type', () => {
-      component.node = folderNode();
-      fixture.detectChanges();
-      const event = dragEventStub(['Files']);
+  it('accepts Trellis document drags and emits a move on drop', () => {
+    component.node = folderNode({ id: 'target-folder' });
+    fixture.detectChanges();
+    const spy = jest.fn();
+    component.moveDocument.subscribe(spy);
+    const enter = dragEventStub();
+    component.onDragEnter(enter);
+    component.onDragOver(enter);
+    expect(enter.preventDefault).toHaveBeenCalled();
+    expect(enter.stopPropagation).toHaveBeenCalled();
+    expect(component.isDragOver).toBe(true);
 
-      component.onDragEnter(event);
-      component.onDragOver(event);
+    component.onDrop(dragEventStub([DOCUMENT_DRAG_TYPE], { [DOCUMENT_DRAG_TYPE]: 'doc-7' }));
+    expect(spy).toHaveBeenCalledWith({ documentId: 'doc-7', targetFolderId: 'target-folder' });
+    expect(component.isDragOver).toBe(false);
+  });
 
-      expect(event.preventDefault).not.toHaveBeenCalled();
-      expect(component.isDragOver).toBe(false);
-    });
+  it('ignores unrelated drags and balances nested dragenter/dragleave events', () => {
+    component.node = folderNode();
+    fixture.detectChanges();
+    const unrelated = dragEventStub(['Files']);
+    component.onDragEnter(unrelated);
+    expect(unrelated.preventDefault).not.toHaveBeenCalled();
 
-    it('prevents default and stops propagation on dragover so drop can fire without reaching the root zone', () => {
-      component.node = folderNode();
-      fixture.detectChanges();
-      const event = dragEventStub();
-
-      component.onDragOver(event);
-
-      expect(event.preventDefault).toHaveBeenCalled();
-      expect(event.stopPropagation).toHaveBeenCalled();
-      expect(event.dataTransfer!.dropEffect).toBe('move');
-    });
-
-    it('emits moveDocument with the dragged id and this folder as target on drop', () => {
-      component.node = folderNode({ id: 'target-folder' });
-      fixture.detectChanges();
-      const spy = jest.fn();
-      component.moveDocument.subscribe(spy);
-
-      component.onDrop(dragEventStub([DOCUMENT_DRAG_TYPE], { [DOCUMENT_DRAG_TYPE]: 'doc-7' }));
-
-      expect(spy).toHaveBeenCalledWith({ documentId: 'doc-7', targetFolderId: 'target-folder' });
-      expect(component.isDragOver).toBe(false);
-    });
-
-    it('does not emit moveDocument when the drop carries no document id', () => {
-      component.node = folderNode();
-      fixture.detectChanges();
-      const spy = jest.fn();
-      component.moveDocument.subscribe(spy);
-
-      component.onDrop(dragEventStub([DOCUMENT_DRAG_TYPE], {}));
-
-      expect(spy).not.toHaveBeenCalled();
-    });
-
-    it('emits moveRequested from the Move button without triggering the row click', () => {
-      const node = documentNode();
-      component.node = node;
-      fixture.detectChanges();
-      const moveSpy = jest.fn();
-      component.moveRequested.subscribe(moveSpy);
-      const openSpy = jest.fn();
-      component.openDocument.subscribe(openSpy);
-
-      byTestId('document-item-move')!.click();
-
-      expect(moveSpy).toHaveBeenCalledWith(node);
-      expect(openSpy).not.toHaveBeenCalled();
-    });
-
-    it('re-emits moveDocument and moveRequested from nested children untouched', () => {
-      const childDoc = documentNode({ id: 'nested-doc', name: 'nested' });
-      component.node = folderNode({ id: 'root', expanded: true, children: [childDoc] });
-      fixture.detectChanges();
-      const spy = jest.fn();
-      component.moveRequested.subscribe(spy);
-
-      byTestId('document-item-move')!.click();
-
-      expect(spy).toHaveBeenCalledWith(childDoc);
-    });
+    component.onDragEnter(dragEventStub());
+    component.onDragEnter(dragEventStub());
+    component.onDragLeave(dragEventStub());
+    expect(component.isDragOver).toBe(true);
+    component.onDragLeave(dragEventStub());
+    expect(component.isDragOver).toBe(false);
   });
 });

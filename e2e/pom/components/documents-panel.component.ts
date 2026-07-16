@@ -6,19 +6,18 @@ import { byTestId } from '../base.page';
  * toggle at [data-testid="documents-panel-toggle"] (owned by the
  * toolbar), panel root at [data-testid="documents-panel"], and one
  * [data-testid="document-item"] per document, each carrying a
- * data-document-name attribute and nested
- * [data-testid="document-item-open" | "document-item-delete" | "document-item-rename"]
- * action buttons scoped within that item.
+ * data-document-name attribute. Row actions are text commands in the shared
+ * context menu opened by right-clicking a row.
  *
  * INTEGRATION NOTE: the shared contract does not define a data-testid
  * for whatever confirmation surface appears when deleting/renaming
  * (only for the buttons that trigger those actions). The real
  * implementation uses native `window.confirm` / `window.prompt`
- * dialogs rather than an inline DOM affordance, so `deleteDocument`
- * and `renameDocument` below register a one-shot Playwright `dialog`
- * handler (which otherwise auto-dismisses with no listener attached,
- * silently no-op'ing the action) instead of querying for an in-row
- * `<input>`.
+ * dialogs rather than an inline DOM affordance. Chromium pauses the input
+ * protocol while one opens from a context-menu click, so the helpers below
+ * replace those native functions in the page before selecting the command.
+ * This still drives the real right-click menu and application handlers while
+ * keeping native browser UI outside the assertion surface.
  */
 export class DocumentsPanelComponent {
   readonly root: Locator;
@@ -31,7 +30,9 @@ export class DocumentsPanelComponent {
 
   /** Opens the documents panel via its toolbar toggle. */
   async open(): Promise<void> {
-    await this.toggle.click();
+    if (!(await this.root.isVisible())) {
+      await this.toggle.click();
+    }
     await expect(this.root).toBeVisible();
   }
 
@@ -54,8 +55,7 @@ export class DocumentsPanelComponent {
 
   /** Clicks the "open" action for the document with the given name. */
   async openDocument(name: string): Promise<void> {
-    const row = this.item(name);
-    await byTestId(row, 'document-item-open').click();
+    await this.runContextCommand(this.item(name), 'open');
   }
 
   /**
@@ -73,30 +73,24 @@ export class DocumentsPanelComponent {
    */
   async deleteDocument(name: string): Promise<void> {
     const row = this.item(name);
-    const page = this.root.page();
-    page.once('dialog', (dialog) => void dialog.accept());
-    await byTestId(row, 'document-item-delete').click();
+    await this.runConfirmCommand(row, 'delete', true);
   }
 
   /**
    * Renames the document currently named `oldName` to `newName` by
-   * accepting the native `window.prompt` dialog triggered by
+   * answering the native `window.prompt` dialog triggered by
    * document-item-rename with the new name. See the class-level
    * INTEGRATION NOTE above.
    */
   async renameDocument(oldName: string, newName: string): Promise<void> {
     const row = this.item(oldName);
-    const page = this.root.page();
-    page.once('dialog', (dialog) => void dialog.accept(newName));
-    await byTestId(row, 'document-item-rename').click();
+    await this.runPromptCommand(row, 'rename', newName);
   }
 
   // ---- Virtual folder tree -------------------------------------------------
   // Folder rows live at [data-testid="document-folder"] with a
-  // data-folder-name attribute and nested
-  // [data-testid="document-folder-new-folder" | "document-folder-rename" |
-  // "document-folder-delete"] action buttons; the panel header hosts the
-  // root-level [data-testid="documents-new-folder"] button. All folder
+  // data-folder-name attribute. The tree background hosts root-level
+  // commands. All folder
   // create/rename/delete flows use the same native window.prompt/confirm
   // convention documented in the INTEGRATION NOTE above.
 
@@ -122,9 +116,7 @@ export class DocumentsPanelComponent {
    * answering the native window.prompt with the given name.
    */
   async createRootFolder(name: string): Promise<void> {
-    const page = this.root.page();
-    page.once('dialog', (dialog) => void dialog.accept(name));
-    await byTestId(this.root, 'documents-new-folder').click();
+    await this.runPromptCommand(byTestId(this.root, 'documents-tree'), 'new-folder', name);
   }
 
   /**
@@ -133,9 +125,7 @@ export class DocumentsPanelComponent {
    */
   async createSubfolder(parentName: string, name: string): Promise<void> {
     const row = this.folder(parentName);
-    const page = this.root.page();
-    page.once('dialog', (dialog) => void dialog.accept(name));
-    await byTestId(row, 'document-folder-new-folder').click();
+    await this.runPromptCommand(row, 'new-folder', name);
   }
 
   /**
@@ -151,9 +141,7 @@ export class DocumentsPanelComponent {
   /** Renames the folder currently named `oldName` to `newName` via its prompt. */
   async renameFolder(oldName: string, newName: string): Promise<void> {
     const row = this.folder(oldName);
-    const page = this.root.page();
-    page.once('dialog', (dialog) => void dialog.accept(newName));
-    await byTestId(row, 'document-folder-rename').click();
+    await this.runPromptCommand(row, 'rename', newName);
   }
 
   /**
@@ -164,12 +152,8 @@ export class DocumentsPanelComponent {
    */
   async deleteFolder(name: string): Promise<void> {
     const row = this.folder(name);
-    const page = this.root.page();
-    page.once('dialog', (dialog) => {
-      expect(dialog.message()).toContain('and everything inside it');
-      void dialog.accept();
-    });
-    await byTestId(row, 'document-folder-delete').click();
+    const message = await this.runConfirmCommand(row, 'delete', true);
+    expect(message).toContain('and everything inside it');
   }
 
   /**
@@ -183,7 +167,7 @@ export class DocumentsPanelComponent {
    */
   async exportFolder(name: string, options: { includeExcluded?: boolean } = {}): Promise<Download> {
     const page = this.root.page();
-    await byTestId(this.folder(name), 'document-folder-export').click();
+    await this.runContextCommand(this.folder(name), 'export');
 
     const dialog = byTestId(page, 'export-folder-dialog');
     await expect(dialog).toBeVisible();
@@ -203,7 +187,7 @@ export class DocumentsPanelComponent {
    * [data-testid="document-excluded-badge"] chip on the row.
    */
   async toggleExportExclusion(name: string): Promise<void> {
-    await byTestId(this.item(name), 'document-item-toggle-export').click();
+    await this.runContextCommand(this.item(name), 'toggle-export');
   }
 
   /** Asserts the document row carries the "no export" badge. */
@@ -225,7 +209,7 @@ export class DocumentsPanelComponent {
 
   /** Scopes the tree to the folder with the given name via its row button. */
   async scopeToFolder(name: string): Promise<void> {
-    await byTestId(this.folder(name), 'document-folder-scope').click();
+    await this.runContextCommand(this.folder(name), 'scope');
     await expect(this.scopeBar).toBeVisible();
   }
 
@@ -292,7 +276,7 @@ export class DocumentsPanelComponent {
    */
   async moveDocumentViaDialog(docName: string, folderName: string | null): Promise<void> {
     const page = this.root.page();
-    await byTestId(this.item(docName), 'document-item-move').click();
+    await this.runContextCommand(this.item(docName), 'move');
 
     const dialog = byTestId(page, 'move-document-dialog');
     await expect(dialog).toBeVisible();
@@ -314,5 +298,39 @@ export class DocumentsPanelComponent {
 
     await byTestId(dialog, 'move-document-dialog-confirm').click();
     await expect(dialog).toBeHidden();
+  }
+
+  private async runContextCommand(target: Locator, command: string): Promise<void> {
+    const page = this.root.page();
+    await target.click({ button: 'right' });
+    const menu = byTestId(page, 'tree-context-menu');
+    await expect(menu).toBeVisible();
+    await menu.locator(`[data-command="${command}"]`).dispatchEvent('click');
+  }
+
+  private async runPromptCommand(target: Locator, command: string, value: string): Promise<void> {
+    const page = this.root.page();
+    await page.evaluate((answer) => {
+      window.prompt = () => answer;
+    }, value);
+    await this.runContextCommand(target, command);
+  }
+
+  private async runConfirmCommand(target: Locator, command: string, answer: boolean): Promise<string> {
+    const page = this.root.page();
+    await page.evaluate((shouldConfirm) => {
+      (window as Window & { trellisContextConfirmMessage?: string }).trellisContextConfirmMessage = undefined;
+      window.confirm = (message) => {
+        (window as Window & { trellisContextConfirmMessage?: string }).trellisContextConfirmMessage = message;
+        return shouldConfirm;
+      };
+    }, answer);
+    await this.runContextCommand(target, command);
+    await page.waitForFunction(() => {
+      return (window as Window & { trellisContextConfirmMessage?: string }).trellisContextConfirmMessage !== undefined;
+    });
+    return page.evaluate(() => {
+      return (window as Window & { trellisContextConfirmMessage?: string }).trellisContextConfirmMessage ?? '';
+    });
   }
 }

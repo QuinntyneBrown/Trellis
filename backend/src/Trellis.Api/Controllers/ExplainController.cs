@@ -15,6 +15,8 @@ namespace Trellis.Api.Controllers;
 [Route("api/explain")]
 public class ExplainController : ControllerBase
 {
+    private const string AttachmentFileName = "explain-this-files.md";
+
     private readonly IFileAggregator aggregator;
     private readonly IExplainPromptBuilder promptBuilder;
     private readonly IGitRepositoryFetcher repositoryFetcher;
@@ -33,7 +35,7 @@ public class ExplainController : ControllerBase
     }
 
     /// <summary>
-    /// Builds the prompt from files the client read off the local file system.
+    /// Builds the prompt and attachment from files the client read off the local file system.
     /// </summary>
     /// <param name="request">The files to aggregate.</param>
     /// <returns>The prompt.</returns>
@@ -45,7 +47,7 @@ public class ExplainController : ControllerBase
     }
 
     /// <summary>
-    /// Builds the prompt from a GitHub/GitLab repository, folder or file URL.
+    /// Builds the prompt and attachment from a GitHub/GitLab repository, folder or file URL.
     /// </summary>
     /// <param name="request">The URL to fetch and aggregate.</param>
     /// <param name="cancellationToken">A token used to observe cancellation requests.</param>
@@ -95,8 +97,10 @@ public class ExplainController : ControllerBase
 
         return this.Ok(new ExplainPromptDto
         {
-            Prompt = this.promptBuilder.Build(aggregation),
+            Prompt = this.promptBuilder.Build(aggregation, AttachmentFileName),
             FileCount = aggregation.FileCount,
+            AttachmentFileName = AttachmentFileName,
+            AttachmentContent = aggregation.Content,
         });
     }
 

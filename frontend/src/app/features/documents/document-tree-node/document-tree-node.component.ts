@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 import { DocumentSummary } from '../../../core/models/document-summary.model';
 import { DocumentTreeNode } from '../../../core/models/document-tree-node.model';
-import { TreeActionButtonComponent } from '../../../shared/components/tree-action-button/tree-action-button.component';
+import { TreeContextMenuRequest } from '../../../shared/components/tree-context-menu/tree-context-menu.model';
 
 /** Fixed per-level indent, in px, applied via [style.padding-left.px]. */
 const INDENT_STEP_PX = 16;
@@ -18,14 +18,14 @@ const BASE_PADDING_PX = 8;
  */
 export const DOCUMENT_DRAG_TYPE = 'application/x-trellis-document-id';
 
-/** Emitted by DocumentTreeNodeComponent's New Folder row button. */
+/** Command payload used by DocumentsPanelComponent when creating a nested folder. */
 export interface CreateFolderEvent {
   /** The parent folder's id -- always this row's own id (root creation lives on the panel header). */
   parentId: string;
   name: string;
 }
 
-/** Emitted by DocumentTreeNodeComponent's Rename row button, for folders and documents alike. */
+/** Command payload used by DocumentsPanelComponent when renaming either node kind. */
 export interface RenameNodeEvent {
   node: DocumentTreeNode;
   newName: string;
@@ -52,18 +52,16 @@ export interface MoveDocumentEvent {
  * toggleExpand/openDocument/createFolder/renameNode/deleteNode event is
  * simply bubbled up (directly, or re-emitted from a nested child instance)
  * to DocumentsPanelComponent, which centralizes all folder/document API
- * calls and owns the tree state. Row actions use native
- * window.prompt()/window.confirm() -- the app-wide convention.
+ * calls, owns the tree state, and handles the commands selected from the
+ * panel's single context menu.
  *
- * Document rows keep the flat list's data-testid contract (`document-item`,
- * `data-document-name`, `document-item-open/rename/delete`) so the existing
- * e2e suite keeps passing; folder rows introduce the `document-folder`
- * testids.
+ * Document and folder rows expose stable row test ids and contextual data
+ * attributes; command test ids live on the shared context menu.
  */
 @Component({
   selector: 'app-document-tree-node',
   standalone: true,
-  imports: [DocumentTreeNodeComponent, TreeActionButtonComponent],
+  imports: [DocumentTreeNodeComponent],
   templateUrl: './document-tree-node.component.html',
   styleUrl: './document-tree-node.component.scss',
 })
@@ -72,27 +70,15 @@ export class DocumentTreeNodeComponent {
   @Input() depth = 0;
   /** The id of the document currently open in the editor, or null -- this row highlights itself when it matches. */
   @Input() activeDocumentId: string | null = null;
+  @Input() contextMenuTarget: DocumentTreeNode | null = null;
 
   /** Fires for this row (folder) or is re-emitted, untouched, from a descendant row. */
   @Output() readonly toggleExpand = new EventEmitter<DocumentTreeNode>();
   /** Fires for this row (document) or is re-emitted, untouched, from a descendant row. */
   @Output() readonly openDocument = new EventEmitter<DocumentSummary>();
-  /** Fires when this row's "New Folder" button is used, or is re-emitted, untouched, from a descendant row. */
-  @Output() readonly createFolder = new EventEmitter<CreateFolderEvent>();
-  /** Fires when this row's "Rename" button is used, or is re-emitted, untouched, from a descendant row. */
-  @Output() readonly renameNode = new EventEmitter<RenameNodeEvent>();
-  /** Fires when this row's "Delete" button is used, or is re-emitted, untouched, from a descendant row. */
-  @Output() readonly deleteNode = new EventEmitter<DocumentTreeNode>();
   /** Fires when a document row is dropped onto this folder row, or is re-emitted, untouched, from a descendant row. */
   @Output() readonly moveDocument = new EventEmitter<MoveDocumentEvent>();
-  /** Fires when this document row's "Move to Folder…" button is used (the panel owns the dialog), or is re-emitted from a descendant row. */
-  @Output() readonly moveRequested = new EventEmitter<DocumentTreeNode>();
-  /** Fires when this folder row's "Scope to this folder" button is used (the panel owns the scope state), or is re-emitted from a descendant row. */
-  @Output() readonly scopeRequested = new EventEmitter<DocumentTreeNode>();
-  /** Fires when this folder row's "Export folder as Markdown" button is used (the panel owns the fetch + download), or is re-emitted from a descendant row. */
-  @Output() readonly exportRequested = new EventEmitter<DocumentTreeNode>();
-  /** Fires when this document row's export-exclusion toggle is used (the panel owns the API call), or is re-emitted from a descendant row. */
-  @Output() readonly exportExclusionToggleRequested = new EventEmitter<DocumentTreeNode>();
+  @Output() readonly contextMenuRequested = new EventEmitter<TreeContextMenuRequest<DocumentTreeNode>>();
 
   /** True while a document drag hovers this folder row -- drives the drop-target highlight. */
   isDragOver = false;
@@ -120,53 +106,28 @@ export class DocumentTreeNodeComponent {
     }
   }
 
-  /** event.stopPropagation() runs first so the button click never also triggers the row's own (click). */
-  onOpenClicked(event: MouseEvent): void {
+  onContextMenu(event: MouseEvent): void {
+    event.preventDefault();
     event.stopPropagation();
-    this.openDocument.emit(this.node.document!);
+    this.emitContextMenu(event.clientX, event.clientY, event.currentTarget as HTMLElement);
   }
 
-  /** Prompts for a subfolder name via the native window.prompt -- the app-wide convention. */
-  onNewFolderClicked(event: MouseEvent): void {
-    event.stopPropagation();
-    const name = window.prompt('New folder name')?.trim();
-    if (name) {
-      this.createFolder.emit({ parentId: this.node.id, name });
+  onRowKeydown(event: KeyboardEvent): void {
+    if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
+      event.preventDefault();
+      event.stopPropagation();
+      const trigger = event.currentTarget as HTMLElement;
+      const rect = trigger.getBoundingClientRect();
+      this.emitContextMenu(rect.left + 24, rect.bottom, trigger);
+    } else if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      event.stopPropagation();
+      this.onRowClick();
     }
   }
 
-  /** Seeds the prompt with the current name; a blank or unchanged answer is a no-op. */
-  onRenameClicked(event: MouseEvent): void {
-    event.stopPropagation();
-    const label = this.node.kind === 'folder' ? 'Rename folder' : 'Rename document';
-    const newName = window.prompt(label, this.node.name)?.trim();
-    if (newName && newName !== this.node.name) {
-      this.renameNode.emit({ node: this.node, newName });
-    }
-  }
-
-  /** Opens the panel-owned "Move to Folder…" dialog -- the keyboard-accessible fallback to drag-and-drop. */
-  onMoveClicked(event: MouseEvent): void {
-    event.stopPropagation();
-    this.moveRequested.emit(this.node);
-  }
-
-  /** Asks the panel to make this folder the tree's temporary root. */
-  onScopeClicked(event: MouseEvent): void {
-    event.stopPropagation();
-    this.scopeRequested.emit(this.node);
-  }
-
-  /** Asks the panel to export this folder's subtree as one downloaded markdown file. */
-  onExportClicked(event: MouseEvent): void {
-    event.stopPropagation();
-    this.exportRequested.emit(this.node);
-  }
-
-  /** Asks the panel to flip whether folder exports omit this document. */
-  onToggleExportExclusionClicked(event: MouseEvent): void {
-    event.stopPropagation();
-    this.exportExclusionToggleRequested.emit(this.node);
+  private emitContextMenu(clientX: number, clientY: number, triggerElement: HTMLElement): void {
+    this.contextMenuRequested.emit({ target: this.node, clientX, clientY, triggerElement });
   }
 
   /** Document rows are drag sources: the custom type carries the id, text/plain carries a human-readable name. */
@@ -236,17 +197,4 @@ export class DocumentTreeNodeComponent {
     return event.dataTransfer?.types.includes(DOCUMENT_DRAG_TYPE) ?? false;
   }
 
-  /** Deleting a folder warns about the cascade -- everything inside goes with it. */
-  onDeleteClicked(event: MouseEvent): void {
-    event.stopPropagation();
-
-    const message =
-      this.node.kind === 'folder'
-        ? `Delete "${this.node.name}" and everything inside it? This cannot be undone.`
-        : `Delete "${this.node.name}"? This cannot be undone.`;
-
-    if (window.confirm(message)) {
-      this.deleteNode.emit(this.node);
-    }
-  }
 }

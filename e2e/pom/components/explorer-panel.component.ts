@@ -10,10 +10,8 @@ import { byTestId } from '../base.page';
  * [data-testid="explorer-reconnect"], and one
  * [data-testid="file-tree-node"] per tree row (root folder included), each
  * carrying a data-name attribute and, for directories only, a nested
- * [data-testid="file-tree-node-chevron"], plus per-row action buttons at
- * [data-testid="file-tree-node-new-file" | "file-tree-node-new-folder"]
- * (directories only, root included) and
- * [data-testid="file-tree-node-delete"] (every row except the true root).
+ * [data-testid="file-tree-node-chevron"]. Commands are exposed from the
+ * shared text context menu after right-clicking a row or the tree background.
  */
 export class ExplorerPanelComponent {
   readonly root: Locator;
@@ -33,7 +31,9 @@ export class ExplorerPanelComponent {
 
   /** Opens the Explorer panel via its toolbar rail icon. */
   async open(): Promise<void> {
-    await this.toggle.click();
+    if (!(await this.root.isVisible())) {
+      await this.toggle.click();
+    }
     await expect(this.root).toBeVisible();
   }
 
@@ -87,36 +87,48 @@ export class ExplorerPanelComponent {
   }
 
   /**
-   * Creates a new file inside the directory row named `rowName` by clicking
-   * its "New File" button and accepting the native `window.prompt` dialog it
-   * triggers with `entryName`. The dialog handler is registered *before* the
-   * click (Playwright requires the listener to already be in place before
-   * the action that opens the dialog fires) -- the same technique already
-   * used by DocumentsPanelComponent's renameDocument and by
-   * explorer-unsaved-changes-guard.spec.ts's own native-dialog handling.
+   * Creates a new file inside the directory row named `rowName` through its
+   * context-menu command.
    */
   async newFile(rowName: string, entryName: string): Promise<void> {
-    const page = this.root.page();
-    page.once('dialog', (dialog) => void dialog.accept(entryName));
-    await this.row(rowName).locator('[data-testid="file-tree-node-new-file"]').click();
+    await this.runPromptCommand(this.row(rowName), 'new-file', entryName);
   }
 
   /** Creates a new subdirectory inside the directory row named `rowName`. Analogous to newFile above. */
   async newFolder(rowName: string, entryName: string): Promise<void> {
-    const page = this.root.page();
-    page.once('dialog', (dialog) => void dialog.accept(entryName));
-    await this.row(rowName).locator('[data-testid="file-tree-node-new-folder"]').click();
+    await this.runPromptCommand(this.row(rowName), 'new-folder', entryName);
   }
 
   /**
-   * Deletes the row named `rowName` by clicking its "Delete" button and
-   * responding to the native `window.confirm` dialog it triggers --
+   * Deletes the row named `rowName` through its context-menu command,
    * accepting (the default) or dismissing depending on `options.accept`.
    */
   async deleteEntry(rowName: string, options?: { accept?: boolean }): Promise<void> {
     const accept = options?.accept ?? true;
+    await this.runConfirmCommand(this.row(rowName), 'delete', accept);
+  }
+
+  private async runContextCommand(target: Locator, command: string): Promise<void> {
     const page = this.root.page();
-    page.once('dialog', (dialog) => void (accept ? dialog.accept() : dialog.dismiss()));
-    await this.row(rowName).locator('[data-testid="file-tree-node-delete"]').click();
+    await target.click({ button: 'right' });
+    const menu = byTestId(page, 'tree-context-menu');
+    await expect(menu).toBeVisible();
+    await menu.locator(`[data-command="${command}"]`).dispatchEvent('click');
+  }
+
+  private async runPromptCommand(target: Locator, command: string, value: string): Promise<void> {
+    const page = this.root.page();
+    await page.evaluate((answer) => {
+      window.prompt = () => answer;
+    }, value);
+    await this.runContextCommand(target, command);
+  }
+
+  private async runConfirmCommand(target: Locator, command: string, answer: boolean): Promise<void> {
+    const page = this.root.page();
+    await page.evaluate((shouldConfirm) => {
+      window.confirm = () => shouldConfirm;
+    }, answer);
+    await this.runContextCommand(target, command);
   }
 }

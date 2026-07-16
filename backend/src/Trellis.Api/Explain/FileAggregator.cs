@@ -4,8 +4,8 @@ namespace Trellis.Api.Explain;
 
 /// <summary>
 /// Default <see cref="IFileAggregator"/>: GetFiles-style delimiters and
-/// deterministic ordering, plus fenced code blocks so the aggregate embeds
-/// cleanly in a markdown prompt. PlantUML files are fenced as
+/// deterministic ordering, plus fenced code blocks so the aggregate reads
+/// cleanly as a markdown attachment. PlantUML files are fenced as
 /// <c>```plantuml</c>; markdown and PlantUML content is included verbatim
 /// while everything else is comment/whitespace-stripped to save LLM tokens.
 /// </summary>

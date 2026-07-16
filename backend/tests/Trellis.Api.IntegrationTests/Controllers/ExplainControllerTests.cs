@@ -29,7 +29,7 @@ public class ExplainControllerTests : IClassFixture<ExplainControllerTests.Expla
     }
 
     [Fact]
-    public async Task Aggregate_ReturnsPrompt_WithInstructionsStyleGuideAndFencedFiles()
+    public async Task Aggregate_ReturnsCompactPrompt_AndMarkdownAttachmentWithFencedFiles()
     {
         var response = await this.client.PostAsJsonAsync("/api/explain/aggregate", new
         {
@@ -45,12 +45,24 @@ public class ExplainControllerTests : IClassFixture<ExplainControllerTests.Expla
         var dto = await response.Content.ReadFromJsonAsync<ExplainPromptDto>();
         Assert.NotNull(dto);
         Assert.Equal(3, dto!.FileCount);
-        Assert.StartsWith("# Explain This", dto.Prompt);
-        Assert.Contains("https://github.com/QuinntyneBrown/architecture-description-style-guide", dto.Prompt);
-        Assert.Contains("=== FILE: docs/context.puml ===\n```plantuml\n@startuml", dto.Prompt);
-        Assert.Contains("=== FILE: src/app.ts ===", dto.Prompt);
-        Assert.DoesNotContain("// comment", dto.Prompt);
-        Assert.Contains("## Files (3 files)", dto.Prompt);
+        Assert.StartsWith("# Explain This — Software Design Document", dto.Prompt);
+        Assert.Contains("enterprise Confluence knowledge base", dto.Prompt);
+        Assert.Contains("do not make HTTP calls", dto.Prompt);
+        Assert.Contains("`## 1. Document control`", dto.Prompt);
+        Assert.Contains("`## 15. Glossary`", dto.Prompt);
+        Assert.Contains("### Controlled architecture vocabulary", dto.Prompt);
+        Assert.Contains("| system of interest | entity of interest (EoI) |", dto.Prompt);
+        Assert.Contains("<TO SUPPLY: …>", dto.Prompt);
+        Assert.DoesNotContain("Quiz", dto.Prompt);
+        Assert.DoesNotContain("architecture-description-style-guide", dto.Prompt);
+        Assert.Contains("## Uploaded files", dto.Prompt);
+        Assert.Contains("`explain-this-files.md` (3 files)", dto.Prompt);
+        Assert.DoesNotMatch("(?m)^=== FILE:", dto.Prompt);
+        Assert.Equal("explain-this-files.md", dto.AttachmentFileName);
+        Assert.Contains("=== FILE: docs/context.puml ===\n```plantuml\n@startuml", dto.AttachmentContent);
+        Assert.Contains("=== FILE: src/app.ts ===", dto.AttachmentContent);
+        Assert.DoesNotContain("// comment", dto.AttachmentContent);
+        Assert.DoesNotContain("# Explain This", dto.AttachmentContent);
     }
 
     [Fact]
@@ -87,7 +99,10 @@ public class ExplainControllerTests : IClassFixture<ExplainControllerTests.Expla
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var dto = await response.Content.ReadFromJsonAsync<ExplainPromptDto>();
         Assert.Equal(1, dto!.FileCount);
-        Assert.Contains("=== FILE: src/main.cs ===", dto.Prompt);
+        Assert.Contains("`explain-this-files.md` (1 file)", dto.Prompt);
+        Assert.DoesNotMatch("(?m)^=== FILE:", dto.Prompt);
+        Assert.Equal("explain-this-files.md", dto.AttachmentFileName);
+        Assert.Contains("=== FILE: src/main.cs ===", dto.AttachmentContent);
 
         Assert.NotNull(this.fetcher.LastSelection);
         Assert.Equal("owner/repo", this.fetcher.LastSelection!.ProjectPath);
