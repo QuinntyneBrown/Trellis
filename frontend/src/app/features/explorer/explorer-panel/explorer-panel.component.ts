@@ -1,4 +1,4 @@
-import { Component, EventEmitter, OnInit, Output, inject, signal } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, computed, inject, signal } from '@angular/core';
 
 import { DirectoryChildEntry } from '../../../core/models/directory-child-entry.model';
 import { ExplorerTreeNode } from '../../../core/models/explorer-tree-node.model';
@@ -68,7 +68,12 @@ export class ExplorerPanelComponent implements OnInit {
   readonly needsReconnect = signal(false);
   readonly contextMenuRequest = signal<TreeContextMenuRequest<ExplorerContextTarget> | null>(null);
 
-  get contextMenuItems(): TreeContextMenuItem[] {
+  // A computed, not a getter: the menu's [items] binding needs a stable
+  // array reference for the lifetime of one open. A getter would mint a new
+  // array on every change-detection pass, which the menu's ngOnChanges sees
+  // as a fresh change each tick -- the feedback loop that used to wedge the
+  // tab (see TreeContextMenuComponent.ngOnChanges).
+  readonly contextMenuItems = computed<TreeContextMenuItem[]>(() => {
     const target = this.contextMenuRequest()?.target;
     if (!target) {
       return [];
@@ -86,7 +91,7 @@ export class ExplorerPanelComponent implements OnInit {
       { id: 'open', label: 'Open' },
       { id: 'delete', label: 'Delete', separatorBefore: true, danger: true },
     ];
-  }
+  });
 
   ngOnInit(): void {
     if (!this.isSupported) {

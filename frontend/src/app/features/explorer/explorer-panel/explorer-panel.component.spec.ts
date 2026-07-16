@@ -271,6 +271,20 @@ describe('ExplorerPanelComponent', () => {
       expect(fixture.nativeElement.querySelector('[data-testid="file-tree-node-new-file"]')).toBeNull();
     });
 
+    // Regression pin for the change-detection loop: the menu's [items]
+    // binding must see a stable array reference across reads while a
+    // request is open (a fresh-array-per-read getter wedged the tab).
+    it('returns the same items array across reads while a menu is open', async () => {
+      createFixture();
+      fixture.detectChanges();
+      await flush();
+      showTree();
+
+      openMenu(byTestId('explorer-tree')!);
+
+      expect(component.contextMenuItems()).toBe(component.contextMenuItems());
+    });
+
     it('offers Open and Delete for a file and runs Open through the existing file handler', async () => {
       fileSystemAccessServiceMock.readTextFile.mockResolvedValue('@startuml');
       createFixture();

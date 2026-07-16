@@ -6,13 +6,18 @@ import { byTestId } from '../base.page';
  * [data-testid="templates-panel-toggle"] (owned by the toolbar), panel root
  * at [data-testid="templates-panel"], and one
  * [data-testid="template-item"] per template carrying a data-template-name
- * attribute with nested apply/update/rename/delete action buttons.
+ * attribute. Rows have no inline action buttons: clicking a row applies it,
+ * and update/rename/delete live in the shared right-click context menu
+ * (plus New Template from a background right-click on the list), driven
+ * with the explorer POM's runContextCommand idiom.
  *
- * INTEGRATION NOTE: like the Documents panel, create/rename use native
- * `window.prompt` and update/delete use native `window.confirm`, so the
- * mutating helpers below register a one-shot Playwright `dialog` handler
- * (dialogs auto-dismiss with no listener attached, silently no-op'ing the
- * action).
+ * INTEGRATION NOTE: mutations use native `window.prompt`/`window.confirm`.
+ * The header createTemplate answers the real dialog via a one-shot
+ * Playwright `dialog` handler; the menu-driven helpers stub
+ * window.prompt/window.confirm on the page instead (explorer POM
+ * convention). The stubs persist for the page's lifetime, so call
+ * createTemplate BEFORE any menu-driven helper on the same page -- a
+ * stubbed prompt never raises the dialog event the handler waits for.
  */
 export class TemplatesPanelComponent {
   readonly root: Locator;
@@ -44,36 +49,84 @@ export class TemplatesPanelComponent {
     await expect(this.item(name)).toHaveCount(0);
   }
 
-  /** Applies the template into the editor via its row's Apply action. The panel stays open. */
+  /** Applies the template into the editor by clicking its row. The panel stays open. */
   async applyTemplate(name: string): Promise<void> {
-    await byTestId(this.item(name), 'template-item-apply').click();
+    await this.item(name).click();
   }
 
-  /** Creates a template from the current editor content, answering the name prompt. */
+  /** Applies the template into the editor via its row's context-menu Apply command. */
+  async applyTemplateViaMenu(name: string): Promise<void> {
+    await this.runContextCommand(this.item(name), 'apply');
+  }
+
+  /** Creates a template from the current editor content via the header button, answering the name prompt. */
   async createTemplate(name: string): Promise<void> {
     const page = this.root.page();
     page.once('dialog', (dialog) => void dialog.accept(name));
     await byTestId(this.root, 'templates-new-template').click();
   }
 
-  /** Overwrites the template's content with the current editor buffer, accepting the confirm. */
+  /** Overwrites the template with the current editor buffer via the context menu, accepting the confirm. */
   async updateFromEditor(name: string): Promise<void> {
-    const page = this.root.page();
-    page.once('dialog', (dialog) => void dialog.accept());
-    await byTestId(this.item(name), 'template-item-update').click();
+    await this.runConfirmCommand(this.item(name), 'update', true);
   }
 
-  /** Renames the template currently named `oldName` to `newName` via its prompt. */
+  /** Renames the template via the context menu, answering the seeded prompt with `newName`. */
   async renameTemplate(oldName: string, newName: string): Promise<void> {
-    const page = this.root.page();
-    page.once('dialog', (dialog) => void dialog.accept(newName));
-    await byTestId(this.item(oldName), 'template-item-rename').click();
+    await this.runPromptCommand(this.item(oldName), 'rename', newName);
   }
 
-  /** Deletes the template with the given name, accepting the confirm. */
+  /** Deletes the template via the context menu, accepting the confirm. */
   async deleteTemplate(name: string): Promise<void> {
+    await this.runConfirmCommand(this.item(name), 'delete', true);
+  }
+
+  /**
+   * Creates a template from the current editor content via the list
+   * background's context menu. Right-clicks near the list's bottom-left
+   * corner -- rows fill from the top, so that spot is reliably empty
+   * (the list container stretches to the panel's full height).
+   */
+  async createTemplateViaBackgroundMenu(name: string): Promise<void> {
+    const list = byTestId(this.root, 'templates-list');
+    const box = await list.boundingBox();
+    if (!box) {
+      throw new Error('templates-list is not visible');
+    }
+    const position = { x: Math.min(24, box.width / 2), y: box.height - 8 };
+    await this.runPromptCommand(list, 'new-template', name, position);
+  }
+
+  private async runContextCommand(
+    target: Locator,
+    command: string,
+    position?: { x: number; y: number },
+  ): Promise<void> {
     const page = this.root.page();
-    page.once('dialog', (dialog) => void dialog.accept());
-    await byTestId(this.item(name), 'template-item-delete').click();
+    await target.click({ button: 'right', position });
+    const menu = byTestId(page, 'tree-context-menu');
+    await expect(menu).toBeVisible();
+    await menu.locator(`[data-command="${command}"]`).dispatchEvent('click');
+  }
+
+  private async runPromptCommand(
+    target: Locator,
+    command: string,
+    value: string,
+    position?: { x: number; y: number },
+  ): Promise<void> {
+    const page = this.root.page();
+    await page.evaluate((answer) => {
+      window.prompt = () => answer;
+    }, value);
+    await this.runContextCommand(target, command, position);
+  }
+
+  private async runConfirmCommand(target: Locator, command: string, answer: boolean): Promise<void> {
+    const page = this.root.page();
+    await page.evaluate((shouldConfirm) => {
+      window.confirm = () => shouldConfirm;
+    }, answer);
+    await this.runContextCommand(target, command);
   }
 }

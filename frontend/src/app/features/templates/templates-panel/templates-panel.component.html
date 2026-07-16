@@ -1,5 +1,5 @@
 @if (open) {
-  <aside class="templates-panel" data-testid="templates-panel">
+  <aside class="templates-panel" data-testid="templates-panel" (scroll)="closeContextMenu(false)">
     <div class="templates-panel__header">
       <span class="templates-panel__header-title">Templates</span>
       <app-tree-action-button
@@ -10,54 +10,52 @@
       />
     </div>
 
-    @if (templates().length === 0) {
-      <p class="templates-panel__empty">No templates yet.</p>
-    } @else {
-      <div class="templates-panel__list" data-testid="templates-list">
+    <div
+      class="templates-panel__list"
+      data-testid="templates-list"
+      role="list"
+      aria-label="Templates"
+      aria-haspopup="menu"
+      tabindex="0"
+      (contextmenu)="onListContextMenu($event)"
+      (keydown)="onListKeydown($event)"
+    >
+      @if (templates().length === 0) {
+        <p class="templates-panel__empty">No templates yet.</p>
+      } @else {
         @for (template of templates(); track template.id) {
           <div
             class="templates-panel__row"
             data-testid="template-item"
+            role="listitem"
+            aria-haspopup="menu"
+            tabindex="0"
             [attr.data-template-name]="template.name"
             [title]="'Updated ' + template.updatedAt"
+            [class.templates-panel__row--context-target]="contextMenuRequest()?.target === template"
             (click)="onApplyRowClicked(template)"
+            (contextmenu)="onRowContextMenu($event, template)"
+            (keydown)="onRowKeydown($event, template)"
           >
             <span class="templates-panel__name">{{ template.name }}</span>
 
             @if (template.kind === 'markdown') {
               <span class="templates-panel__kind-badge" data-testid="template-kind-badge" aria-label="Markdown template">MD</span>
             }
-
-            <div class="templates-panel__actions">
-              <app-tree-action-button
-                icon="open"
-                label="Apply to editor"
-                testId="template-item-apply"
-                (clicked)="onApplyClicked($event, template)"
-              />
-              <app-tree-action-button
-                icon="update"
-                label="Update from editor"
-                testId="template-item-update"
-                (clicked)="onUpdateFromEditorClicked($event, template)"
-              />
-              <app-tree-action-button
-                icon="rename"
-                label="Rename"
-                testId="template-item-rename"
-                (clicked)="onRenameClicked($event, template)"
-              />
-              <app-tree-action-button
-                icon="delete"
-                label="Delete"
-                testId="template-item-delete"
-                [danger]="true"
-                (clicked)="onDeleteClicked($event, template)"
-              />
-            </div>
           </div>
         }
-      </div>
+      }
+    </div>
+
+    @if (contextMenuRequest(); as request) {
+      <app-tree-context-menu
+        ariaLabel="Templates commands"
+        [items]="contextMenuItems()"
+        [clientX]="request.clientX"
+        [clientY]="request.clientY"
+        (commandSelected)="onContextMenuCommand($event)"
+        (menuClosed)="closeContextMenu($event.restoreFocus)"
+      />
     }
   </aside>
 }

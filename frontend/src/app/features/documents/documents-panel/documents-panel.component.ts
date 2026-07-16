@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, computed, inject, signal } from '@angular/core';
 import { Observable, forkJoin } from 'rxjs';
 
 import { DocumentSummary } from '../../../core/models/document-summary.model';
@@ -110,7 +110,12 @@ export class DocumentsPanelComponent implements OnChanges {
   readonly exportingFolder = signal<DocumentTreeNode | null>(null);
   readonly contextMenuRequest = signal<TreeContextMenuRequest<DocumentTreeNode | null> | null>(null);
 
-  get contextMenuItems(): TreeContextMenuItem[] {
+  // A computed, not a getter: the menu's [items] binding needs a stable
+  // array reference for the lifetime of one open. A getter would mint a new
+  // array on every change-detection pass, which the menu's ngOnChanges sees
+  // as a fresh change each tick -- the feedback loop that used to wedge the
+  // tab (see TreeContextMenuComponent.ngOnChanges).
+  readonly contextMenuItems = computed<TreeContextMenuItem[]>(() => {
     const request = this.contextMenuRequest();
     if (!request) {
       return [];
@@ -139,7 +144,7 @@ export class DocumentsPanelComponent implements OnChanges {
       { id: 'rename', label: 'Rename', separatorBefore: true },
       { id: 'delete', label: 'Delete', danger: true },
     ];
-  }
+  });
 
   /** True while a document drag hovers the tree's root space (not a folder row) -- drives the root drop-zone highlight. */
   isRootDragOver = false;

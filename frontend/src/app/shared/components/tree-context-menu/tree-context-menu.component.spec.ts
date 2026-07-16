@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, fakeAsync, flushMicrotasks } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { TreeContextMenuComponent } from './tree-context-menu.component';
 
@@ -68,14 +68,48 @@ describe('TreeContextMenuComponent', () => {
     expect(spy).toHaveBeenLastCalledWith({ restoreFocus: false });
   });
 
-  it('clamps its coordinates to the viewport', fakeAsync(() => {
-    component.clientX = window.innerWidth + 500;
-    component.clientY = window.innerHeight + 500;
+  // setInput (not property assignment) so ngOnChanges genuinely fires --
+  // that's the code path the reposition scheduling lives on. The reposition
+  // runs in a real microtask (zone's fakeAsync does not capture
+  // queueMicrotask here), so queue one behind it and await that instead.
+  it('clamps its coordinates to the viewport when repositioned', async () => {
+    fixture.componentRef.setInput('clientX', window.innerWidth + 500);
+    fixture.componentRef.setInput('clientY', window.innerHeight + 500);
     fixture.detectChanges();
-    flushMicrotasks();
+    await new Promise<void>((resolve) => queueMicrotask(resolve));
     fixture.detectChanges();
     const menu = fixture.nativeElement.querySelector('[data-testid="tree-context-menu"]') as HTMLElement;
-    expect(parseFloat(menu.style.left)).toBeLessThanOrEqual(window.innerWidth - 4);
-    expect(parseFloat(menu.style.top)).toBeLessThanOrEqual(window.innerHeight - 4);
-  }));
+    const left = parseFloat(menu.style.left);
+    const top = parseFloat(menu.style.top);
+    // Greater than the initial (100, 120) position proves the reposition ran
+    // at all; the upper bounds prove the clamp pulled it back inside the
+    // viewport from the far-outside requested coordinates.
+    expect(left).toBeGreaterThan(100);
+    expect(left).toBeLessThanOrEqual(window.innerWidth - 4);
+    expect(top).toBeGreaterThan(120);
+    expect(top).toBeLessThanOrEqual(window.innerHeight - 4);
+  });
+
+  // Regression: an items binding that churns array references every
+  // change-detection pass (the pre-fix consumer getters) must not schedule
+  // reposition/focus work -- that microtask re-triggered zone change
+  // detection, which minted another reference, looping until the tab hung.
+  it('does not reposition or steal focus when only the items reference changes', async () => {
+    const spy = jest.spyOn(component as unknown as { positionAndFocus(): void }, 'positionAndFocus');
+    fixture.componentRef.setInput('items', [...component.items]);
+    fixture.detectChanges();
+    // Any microtask the component (wrongly) scheduled was queued before this
+    // one, so it has run by the time the await resolves.
+    await new Promise<void>((resolve) => queueMicrotask(resolve));
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('resets the active item to the first enabled item when the items input changes', () => {
+    fixture.componentRef.setInput('items', [
+      { id: 'disabled-first', label: 'Unavailable', disabled: true },
+      { id: 'open', label: 'Open' },
+    ]);
+    fixture.detectChanges();
+    expect(component.activeIndex()).toBe(1);
+  });
 });

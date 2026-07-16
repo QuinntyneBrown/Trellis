@@ -144,6 +144,20 @@ describe('DocumentsPanelComponent', () => {
     expect(labels).toEqual(['New Folder', 'Scope to This Folder', 'Export Folder as Markdown', 'Rename', 'Delete']);
   });
 
+  // Regression pin for the change-detection loop: the menu's [items]
+  // binding must see a stable array reference across reads while a
+  // request is open (a fresh-array-per-read getter wedged the tab).
+  it('returns the same items array across reads while a menu is open', () => {
+    openPanel();
+
+    byTestId('document-folder')!.dispatchEvent(
+      new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 40, clientY: 40 }),
+    );
+    fixture.detectChanges();
+
+    expect(component.contextMenuItems()).toBe(component.contextMenuItems());
+  });
+
   it('shows the empty message only when there are no folders and no documents', () => {
     documentsServiceMock.list.mockReturnValue(of([]));
     foldersServiceMock.list.mockReturnValue(of([]));

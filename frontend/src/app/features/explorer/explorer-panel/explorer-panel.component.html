@@ -51,7 +51,7 @@
   @if (contextMenuRequest(); as request) {
     <app-tree-context-menu
       ariaLabel="File Explorer commands"
-      [items]="contextMenuItems"
+      [items]="contextMenuItems()"
       [clientX]="request.clientX"
       [clientY]="request.clientY"
       (commandSelected)="onContextMenuCommand($event)"

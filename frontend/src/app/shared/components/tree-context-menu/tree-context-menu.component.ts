@@ -51,7 +51,13 @@ export class TreeContextMenuComponent implements AfterViewInit, OnChanges {
     if (changes['items']) {
       this.activeIndex.set(this.firstEnabledIndex());
     }
-    if (this.viewInitialized && (changes['items'] || changes['clientX'] || changes['clientY'])) {
+    // Reposition only on real coordinate changes -- deliberately NOT on
+    // changes['items']. A consumer whose [items] binding produces a new
+    // array reference on every change-detection pass would otherwise loop
+    // forever: the microtask scheduled here drains, zone.js fires
+    // onMicrotaskEmpty, another CD pass reads a new reference, ngOnChanges
+    // fires again, and the tab wedges at 100% CPU.
+    if (this.viewInitialized && (changes['clientX'] || changes['clientY'])) {
       queueMicrotask(() => this.positionAndFocus());
     }
   }

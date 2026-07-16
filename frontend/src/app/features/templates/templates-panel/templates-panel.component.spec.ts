@@ -82,8 +82,10 @@ describe('TemplatesPanelComponent', () => {
     templatesServiceMock.list.mockReturnValue(of([]));
     openPanel();
 
-    expect(byTestId('templates-panel')!.textContent).toContain('No templates yet.');
-    expect(byTestId('templates-list')).toBeNull();
+    // The list container always renders (it hosts the background context
+    // menu); only the rows disappear.
+    expect(byTestId('templates-list')!.textContent).toContain('No templates yet.');
+    expect(fixture.nativeElement.querySelectorAll('[data-testid="template-item"]').length).toBe(0);
   });
 
   it('shows the MD badge only on markdown templates', () => {
@@ -96,7 +98,7 @@ describe('TemplatesPanelComponent', () => {
     );
   });
 
-  it('emits templateApplied from a row click and from the Apply action, exactly once each', () => {
+  it('emits templateApplied from a row click, and rows carry no inline action icons', () => {
     openPanel();
     const spy = jest.fn();
     component.templateApplied.subscribe(spy);
@@ -105,8 +107,11 @@ describe('TemplatesPanelComponent', () => {
     expect(spy).toHaveBeenCalledTimes(1);
     expect(spy).toHaveBeenCalledWith(summaries[1]);
 
-    (byTestId('template-item-apply') as HTMLButtonElement).click();
-    expect(spy).toHaveBeenCalledTimes(2);
+    // Row actions live in the context menu now -- no per-row icon buttons.
+    expect(byTestId('template-item-apply')).toBeNull();
+    expect(byTestId('template-item-update')).toBeNull();
+    expect(byTestId('template-item-rename')).toBeNull();
+    expect(byTestId('template-item-delete')).toBeNull();
   });
 
   it('creates a template from the editor content and kind under the prompted name', () => {
@@ -134,84 +139,211 @@ describe('TemplatesPanelComponent', () => {
     expect(templatesServiceMock.create).not.toHaveBeenCalled();
   });
 
-  it('updates a template from the editor after a confirm, without applying it', () => {
-    jest.spyOn(window, 'confirm').mockReturnValue(true);
-    component.editorContent = '@startuml\nnew\n@enduml';
-    component.editorKind = 'plantuml';
-    openPanel();
-    const appliedSpy = jest.fn();
-    component.templateApplied.subscribe(appliedSpy);
+  describe('context menu', () => {
+    function row(name: string): HTMLElement {
+      return fixture.nativeElement.querySelector(`[data-template-name="${name}"]`) as HTMLElement;
+    }
 
-    (fixture.nativeElement.querySelector(
-      '[data-template-name="Blank"] [data-testid="template-item-update"]',
-    ) as HTMLButtonElement).click();
+    function openContextMenu(target: HTMLElement): void {
+      target.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 40, clientY: 40 }));
+      fixture.detectChanges();
+    }
 
-    expect(window.confirm).toHaveBeenCalledWith('Overwrite "Blank" with the current editor content?');
-    expect(templatesServiceMock.update).toHaveBeenCalledWith('t-blank', {
-      name: 'Blank',
-      content: '@startuml\nnew\n@enduml',
-      kind: 'plantuml',
+    function menuLabels(): (string | undefined)[] {
+      return Array.from(
+        fixture.nativeElement.querySelectorAll('[data-testid="tree-context-menu-item"]') as NodeListOf<HTMLElement>,
+      ).map((item) => item.textContent?.trim());
+    }
+
+    function runContextCommand(target: HTMLElement, command: string): void {
+      openContextMenu(target);
+      const item = fixture.nativeElement.querySelector(`[data-command="${command}"]`) as HTMLButtonElement | null;
+      expect(item).toBeTruthy();
+      item!.click();
+      fixture.detectChanges();
+    }
+
+    it('right-clicking a row offers the row commands and marks the row as the context target', () => {
+      openPanel();
+
+      openContextMenu(row('Blank'));
+
+      expect(menuLabels()).toEqual(['Apply to Editor', 'Update from Editor', 'Rename', 'Delete']);
+      expect(row('Blank').classList).toContain('templates-panel__row--context-target');
     });
-    expect(appliedSpy).not.toHaveBeenCalled();
-  });
 
-  it('does not update when the confirm is declined', () => {
-    jest.spyOn(window, 'confirm').mockReturnValue(false);
-    openPanel();
+    it('applies the row template via the menu and closes it', () => {
+      openPanel();
+      const spy = jest.fn();
+      component.templateApplied.subscribe(spy);
 
-    (byTestId('template-item-update') as HTMLButtonElement).click();
+      runContextCommand(row('Blank'), 'apply');
 
-    expect(templatesServiceMock.update).not.toHaveBeenCalled();
-  });
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy).toHaveBeenCalledWith(summaries[1]);
+      expect(byTestId('tree-context-menu')).toBeNull();
+    });
 
-  it('renames via a seeded prompt and refreshes', () => {
-    jest.spyOn(window, 'prompt').mockReturnValue('Renamed');
-    openPanel();
+    it('updates from the editor via the menu after a confirm, without applying it', () => {
+      jest.spyOn(window, 'confirm').mockReturnValue(true);
+      component.editorContent = '@startuml\nvia menu\n@enduml';
+      component.editorKind = 'plantuml';
+      openPanel();
+      const appliedSpy = jest.fn();
+      component.templateApplied.subscribe(appliedSpy);
 
-    (fixture.nativeElement.querySelector(
-      '[data-template-name="Sequence Diagram"] [data-testid="template-item-rename"]',
-    ) as HTMLButtonElement).click();
+      runContextCommand(row('Blank'), 'update');
 
-    expect(window.prompt).toHaveBeenCalledWith('Rename template', 'Sequence Diagram');
-    expect(templatesServiceMock.rename).toHaveBeenCalledWith('t-seq', 'Renamed');
-  });
+      expect(window.confirm).toHaveBeenCalledWith('Overwrite "Blank" with the current editor content?');
+      expect(templatesServiceMock.update).toHaveBeenCalledWith('t-blank', {
+        name: 'Blank',
+        content: '@startuml\nvia menu\n@enduml',
+        kind: 'plantuml',
+      });
+      expect(appliedSpy).not.toHaveBeenCalled();
+    });
 
-  it('does not rename on a cancelled or unchanged prompt', () => {
-    const promptSpy = jest.spyOn(window, 'prompt').mockReturnValue(null);
-    openPanel();
+    it('does not update when the confirm is declined', () => {
+      jest.spyOn(window, 'confirm').mockReturnValue(false);
+      openPanel();
 
-    (byTestId('template-item-rename') as HTMLButtonElement).click();
-    expect(templatesServiceMock.rename).not.toHaveBeenCalled();
+      runContextCommand(row('Blank'), 'update');
 
-    promptSpy.mockReturnValue('Blank');
-    (byTestId('template-item-rename') as HTMLButtonElement).click();
-    expect(templatesServiceMock.rename).not.toHaveBeenCalled();
-  });
+      expect(templatesServiceMock.update).not.toHaveBeenCalled();
+    });
 
-  it('deletes after a confirm and refreshes', () => {
-    jest.spyOn(window, 'confirm').mockReturnValue(true);
-    openPanel();
+    it('renames via the menu with the seeded prompt', () => {
+      jest.spyOn(window, 'prompt').mockReturnValue('Renamed');
+      openPanel();
 
-    (fixture.nativeElement.querySelector(
-      '[data-template-name="Meeting Notes"] [data-testid="template-item-delete"]',
-    ) as HTMLButtonElement).click();
+      runContextCommand(row('Sequence Diagram'), 'rename');
 
-    expect(window.confirm).toHaveBeenCalledWith('Delete "Meeting Notes"? This cannot be undone.');
-    expect(templatesServiceMock.delete).toHaveBeenCalledWith('t-notes');
-    expect(templatesServiceMock.list).toHaveBeenCalledTimes(2);
-  });
+      expect(window.prompt).toHaveBeenCalledWith('Rename template', 'Sequence Diagram');
+      expect(templatesServiceMock.rename).toHaveBeenCalledWith('t-seq', 'Renamed');
+    });
 
-  it('row action clicks never also apply the template (stopPropagation)', () => {
-    jest.spyOn(window, 'confirm').mockReturnValue(false);
-    jest.spyOn(window, 'prompt').mockReturnValue(null);
-    openPanel();
-    const spy = jest.fn();
-    component.templateApplied.subscribe(spy);
+    it('does not rename on a cancelled or unchanged prompt', () => {
+      const promptSpy = jest.spyOn(window, 'prompt').mockReturnValue(null);
+      openPanel();
 
-    (byTestId('template-item-update') as HTMLButtonElement).click();
-    (byTestId('template-item-rename') as HTMLButtonElement).click();
-    (byTestId('template-item-delete') as HTMLButtonElement).click();
+      runContextCommand(row('Blank'), 'rename');
+      expect(templatesServiceMock.rename).not.toHaveBeenCalled();
 
-    expect(spy).not.toHaveBeenCalled();
+      promptSpy.mockReturnValue('Blank');
+      runContextCommand(row('Blank'), 'rename');
+      expect(templatesServiceMock.rename).not.toHaveBeenCalled();
+    });
+
+    it('deletes via the menu after a confirm and refreshes', () => {
+      jest.spyOn(window, 'confirm').mockReturnValue(true);
+      openPanel();
+
+      runContextCommand(row('Meeting Notes'), 'delete');
+
+      expect(window.confirm).toHaveBeenCalledWith('Delete "Meeting Notes"? This cannot be undone.');
+      expect(templatesServiceMock.delete).toHaveBeenCalledWith('t-notes');
+      expect(templatesServiceMock.list).toHaveBeenCalledTimes(2);
+    });
+
+    it('right-clicking the list background offers only New Template from Editor and creates via the prompt', () => {
+      jest.spyOn(window, 'prompt').mockReturnValue('From Background');
+      component.editorContent = '# body';
+      component.editorKind = 'markdown';
+      openPanel();
+
+      openContextMenu(byTestId('templates-list')!);
+      expect(menuLabels()).toEqual(['New Template from Editor']);
+
+      (fixture.nativeElement.querySelector('[data-command="new-template"]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(templatesServiceMock.create).toHaveBeenCalledWith({
+        name: 'From Background',
+        content: '# body',
+        kind: 'markdown',
+      });
+    });
+
+    it('still offers New Template via the background menu when there are no templates', () => {
+      templatesServiceMock.list.mockReturnValue(of([]));
+      jest.spyOn(window, 'prompt').mockReturnValue('First Template');
+      openPanel();
+
+      runContextCommand(byTestId('templates-list')!, 'new-template');
+
+      expect(templatesServiceMock.create).toHaveBeenCalledWith({
+        name: 'First Template',
+        content: '',
+        kind: 'plantuml',
+      });
+    });
+
+    it('opens a row menu from the keyboard (Shift+F10 on a focused row)', () => {
+      openPanel();
+
+      row('Blank').dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'F10', shiftKey: true, bubbles: true, cancelable: true }),
+      );
+      fixture.detectChanges();
+
+      expect(menuLabels()).toEqual(['Apply to Editor', 'Update from Editor', 'Rename', 'Delete']);
+      expect(row('Blank').classList).toContain('templates-panel__row--context-target');
+    });
+
+    it('applies a focused row with Enter', () => {
+      openPanel();
+      const spy = jest.fn();
+      component.templateApplied.subscribe(spy);
+
+      row('Blank').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy).toHaveBeenCalledWith(summaries[1]);
+    });
+
+    it('opens the background menu from the keyboard (Shift+F10)', () => {
+      openPanel();
+
+      byTestId('templates-list')!.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'F10', shiftKey: true, bubbles: true, cancelable: true }),
+      );
+      fixture.detectChanges();
+
+      expect(byTestId('tree-context-menu')).toBeTruthy();
+      expect(menuLabels()).toEqual(['New Template from Editor']);
+    });
+
+    it('closes the menu when the panel scrolls', () => {
+      openPanel();
+      openContextMenu(row('Blank'));
+      expect(byTestId('tree-context-menu')).toBeTruthy();
+
+      byTestId('templates-panel')!.dispatchEvent(new Event('scroll'));
+      fixture.detectChanges();
+
+      expect(byTestId('tree-context-menu')).toBeNull();
+    });
+
+    it('drops a pending menu when the panel closes', () => {
+      openPanel();
+      openContextMenu(row('Blank'));
+
+      component.open = false;
+      component.ngOnChanges({ open: { currentValue: false } as never });
+      fixture.detectChanges();
+      openPanel();
+
+      expect(byTestId('tree-context-menu')).toBeNull();
+    });
+
+    // Regression pin for the change-detection loop: the menu's [items]
+    // binding must see a stable array reference across reads while a
+    // request is open (a fresh-array-per-read getter wedged the tab).
+    it('returns the same items array across reads while a menu is open', () => {
+      openPanel();
+      openContextMenu(row('Blank'));
+
+      expect(component.contextMenuItems()).toBe(component.contextMenuItems());
+    });
   });
 });

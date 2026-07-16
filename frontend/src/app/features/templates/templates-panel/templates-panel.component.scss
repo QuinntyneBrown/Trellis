@@ -40,8 +40,8 @@
   flex: 1;
 }
 
-// Row visuals follow the shared tree-row idiom (hover fill, always-visible
-// icon actions) without the mixin's chevron/indent parts.
+// Row visuals follow the shared tree-row idiom (hover fill; actions live in
+// the right-click context menu) without the mixin's chevron/indent parts.
 .templates-panel__row {
   display: flex;
   align-items: center;
@@ -55,6 +55,12 @@
   &:hover {
     background-color: var(--tds-hover-wash);
   }
+}
+
+// Same context-menu-target highlight as the shared tree-row mixin
+// (_tree-row.scss) -- marks the row the open right-click menu acts on.
+.templates-panel__row--context-target {
+  background-color: var(--tds-accent-tint-12);
 }
 
 .templates-panel__name {
@@ -75,11 +81,4 @@
   font-weight: 700;
   letter-spacing: 0.04em;
   line-height: 1.5;
-}
-
-.templates-panel__actions {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  flex: 0 0 auto;
 }
