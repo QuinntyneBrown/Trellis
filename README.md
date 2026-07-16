@@ -2,7 +2,8 @@
 
 Trellis is a browser-based diagram-as-code workspace with an Angular frontend and an
 ASP.NET Core backend. It provides a Monaco editor, live PlantUML and Markdown previews
-over SignalR, a SQLite-backed document library, templates, and a local file explorer.
+over SignalR, a SQLite-backed document library, reusable templates, local-file tools,
+and an "Explain This" workflow for preparing codebase context for an LLM.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-107C10.svg)](LICENSE)
 [![Angular](https://img.shields.io/badge/Angular-17-DD0031?logo=angular&logoColor=white)](https://angular.dev/)
@@ -13,7 +14,7 @@ over SignalR, a SQLite-backed document library, templates, and a local file expl
 
 ## About the project
 
-Trellis gives diagram-as-code teams a responsive workspace for authoring, rendering, and organizing PlantUML diagrams and Markdown documents. The Angular application combines a VS Code-inspired editor shell with saved documents, templates, a live preview, and a Chromium-based local file explorer; the ASP.NET Core API provides rendering, persistence, and real-time updates.
+Trellis gives diagram-as-code teams a responsive workspace for authoring, rendering, and organizing PlantUML diagrams and Markdown documents. The Angular application combines a VS Code-inspired editor shell with saved documents, templates, a live preview, local-file tools, and an "Explain This" panel. The ASP.NET Core API provides rendering, persistence, real-time updates, and source aggregation for public GitHub and GitLab repositories.
 
 The repository includes architecture and development guidance, decision records, UI mocks, and a deployed design-system reference to make the product and its visual language traceable.
 
@@ -23,8 +24,9 @@ The repository includes architecture and development guidance, decision records,
 - Work in a Monaco-powered, VS Code-inspired editor with resizable, persisted workspace panels.
 - Organize SQLite-backed documents in nested virtual folders, including drag-and-drop moves and folder exports to Markdown.
 - Create, update, apply, rename, and delete templates; six PlantUML starters cover blank, sequence, class, and C4 diagrams.
-- Upload `.puml`, `.txt`, `.md`, and `.markdown` files, and copy or download successful diagram previews as PNG.
+- Upload `.puml`, `.plantuml`, `.txt`, `.md`, and `.markdown` files, and copy or download successful diagram previews as PNG.
 - Browse, create, open, and save local files through the File System Access API in Chromium-based browsers.
+- Generate an LLM-ready "Explain This" prompt from a selected local file or folder, or from a public GitHub or GitLab repository, folder, or file URL. The app loads the prompt as Markdown and lets you copy it and download its filtered source attachment.
 - Run focused backend, frontend, and Playwright end-to-end test coverage.
 
 ## Getting started
@@ -70,6 +72,7 @@ The frontend proxy routes `/api` and `/hubs` traffic to the backend.
 | Backend | ASP.NET Core 8 Web API, SignalR |
 | Data layer | Entity Framework Core 8, SQLite |
 | Rendering | Vendored PlantUML and C4-PlantUML through Java; Markdig for Markdown |
+| Source context | Local File System Access API; GitHub and GitLab archive aggregation for "Explain This" |
 | Testing | xUnit, Jest, Playwright |
 
 ## Testing
