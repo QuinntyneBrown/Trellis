@@ -1,0 +1,175 @@
+// The host takes over the pill's old slot inside .title-bar__center's flex
+// row and is itself the dropdown's positioning anchor -- which is why the
+// title bar needed no layout change for this feature.
+:host {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  max-width: 38rem;
+  min-width: 0;
+}
+
+// The command-center pill, moved verbatim from title-bar.component.scss when
+// the pill markup moved into this component (class names kept -- the design
+// system documents the pill by them).
+.title-bar__command-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  max-width: 38rem;
+  height: var(--tds-metric-command-center-h);
+  padding: 0 10px;
+  min-width: 0;
+  border: 1px solid var(--tds-border-strong);
+  border-radius: var(--tds-radius-pill);
+  background-color: var(--tds-surface-raised);
+  color: var(--tds-ink-muted);
+  font-family: inherit;
+  font-size: var(--tds-text-chrome-sm);
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--tds-surface-overlay);
+    color: var(--tds-ink);
+  }
+}
+
+.title-bar__search-icon {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.title-bar__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// The activated state: the same box as the pill, but a real field surface
+// with primary ink.
+.quick-open__input {
+  width: 100%;
+  height: var(--tds-metric-command-center-h);
+  padding: 0 10px;
+  min-width: 0;
+  border: 1px solid var(--tds-border-strong);
+  border-radius: var(--tds-radius-pill);
+  background-color: var(--tds-surface-field);
+  color: var(--tds-ink);
+  font-family: inherit;
+  font-size: var(--tds-text-chrome-sm);
+
+  &:focus {
+    outline: 2px solid var(--tds-focus-ring);
+    outline-offset: -2px;
+  }
+
+  &::placeholder {
+    color: var(--tds-ink-muted);
+  }
+}
+
+// Anchored beneath the input, input-width. z-index uses the token -- the two
+// older menus hardcode 50; don't copy that.
+.quick-open__dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: var(--tds-z-popout);
+  padding: 0.25rem;
+  background-color: var(--tds-surface-raised);
+  border: 1px solid var(--tds-border-strong);
+  border-radius: var(--tds-radius-lg);
+  box-shadow: var(--tds-shadow-raised);
+  max-height: 20rem;
+  overflow-y: auto;
+}
+
+.quick-open__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.quick-open__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 0.25rem;
+  font-size: 13px;
+  color: var(--tds-ink);
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--tds-hover-wash);
+  }
+}
+
+.quick-open__row--active {
+  background-color: var(--tds-accent-tint-12);
+
+  &:hover {
+    background-color: var(--tds-accent-tint-12);
+  }
+}
+
+.quick-open__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quick-open__hit {
+  color: var(--tds-accent);
+  font-weight: 600;
+}
+
+// Same MD chip as the trees' kind badge.
+.quick-open__kind-badge {
+  flex: 0 0 auto;
+  padding: 0 0.25rem;
+  border-radius: 0.2rem;
+  background-color: var(--tds-badge-surface);
+  color: var(--tds-badge-ink);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+}
+
+// Right column: a document's folder path, or a command's shortcut hint (the
+// design system's uppercase-hint idiom applies to hints only -- a folder
+// path is a name and keeps its case).
+.quick-open__detail {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.7rem;
+  color: var(--tds-ink-muted);
+}
+
+.quick-open__detail--hint {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.quick-open__empty {
+  margin: 0;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.8rem;
+  color: var(--tds-ink-muted);
+}

@@ -25,6 +25,7 @@ import { MAX_EDITOR_PANE_RATIO, MIN_EDITOR_PANE_RATIO } from '../editor-pane-rat
 import { MonacoEditorComponent } from '../monaco-editor/monaco-editor.component';
 import { ResizeDividerComponent } from '../resize-divider/resize-divider.component';
 import { MAX_SIDE_PANEL_WIDTH_PX, MIN_SIDE_PANEL_WIDTH_PX } from '../side-panel-width.constants';
+import { TitleBarComponent } from '../title-bar/title-bar.component';
 import { EditorPageComponent } from './editor-page.component';
 
 function ctrlSEvent(): KeyboardEvent {
@@ -1485,6 +1486,125 @@ describe('EditorPageComponent', () => {
       expect(component.activeSidePanel()).toBe('wizard');
       wizard.closed.emit();
       expect(component.activeSidePanel()).toBeNull();
+    });
+  });
+
+  describe('Quick Open (the title bar\'s command-center search)', () => {
+    function ctrlPEvent(init: Partial<KeyboardEventInit> = {}): KeyboardEvent {
+      const event = new KeyboardEvent('keydown', { key: 'p', ctrlKey: true, cancelable: true, ...init });
+      jest.spyOn(event, 'preventDefault');
+      return event;
+    }
+
+    it('opens on Ctrl+P and always suppresses the browser print dialog', () => {
+      fixture.detectChanges();
+
+      const event = ctrlPEvent();
+      component.onKeyDown(event);
+
+      expect(event.preventDefault).toHaveBeenCalled();
+      expect(component.quickOpenOpen()).toBe(true);
+    });
+
+    it('ignores Ctrl+Shift+P and Ctrl+Alt+P', () => {
+      fixture.detectChanges();
+
+      component.onKeyDown(ctrlPEvent({ shiftKey: true }));
+      component.onKeyDown(ctrlPEvent({ altKey: true }));
+
+      expect(component.quickOpenOpen()).toBe(false);
+    });
+
+    it('stays closed while a dialog is open, but still swallows the print shortcut', () => {
+      fixture.detectChanges();
+      component.isSaveDialogOpen.set(true);
+
+      const event = ctrlPEvent();
+      component.onKeyDown(event);
+
+      expect(event.preventDefault).toHaveBeenCalled();
+      expect(component.quickOpenOpen()).toBe(false);
+    });
+
+    it('opens a selected document through the same path as the Documents panel, closing first', () => {
+      fixture.detectChanges();
+      component.quickOpenOpen.set(true);
+      documentsServiceMock.getById.mockReturnValue(
+        of({
+          id: 'doc-9',
+          name: 'Found via search',
+          content: '@startuml\n@enduml',
+          createdAt: null,
+          updatedAt: null,
+          folderId: null,
+          kind: 'plantuml',
+          excludedFromExport: false,
+        }),
+      );
+
+      component.onQuickOpenDocumentSelected({
+        id: 'doc-9',
+        name: 'Found via search',
+        updatedAt: '2026-07-01T00:00:00Z',
+        folderId: null,
+        kind: 'plantuml',
+        excludedFromExport: false,
+      });
+
+      expect(component.quickOpenOpen()).toBe(false);
+      expect(documentsServiceMock.getById).toHaveBeenCalledWith('doc-9');
+      expect(component.documentName()).toBe('Found via search');
+      expect(locationMock.go).toHaveBeenCalledWith('/editor/doc-9');
+    });
+
+    it('dispatches every command id to its existing handler, closing the search first', () => {
+      fixture.detectChanges();
+      const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true);
+
+      component.quickOpenOpen.set(true);
+      component.onQuickOpenCommand('toggle-wizard');
+      expect(component.quickOpenOpen()).toBe(false);
+      expect(component.activeSidePanel()).toBe('wizard');
+
+      component.onQuickOpenCommand('toggle-documents');
+      expect(component.activeSidePanel()).toBe('documents');
+
+      component.onQuickOpenCommand('render');
+      expect(hubServiceMock.render).toHaveBeenCalledWith(component.sourceCode(), component.documentKind());
+
+      component.onQuickOpenCommand('save-as');
+      expect(component.isSaveDialogOpen()).toBe(true);
+      component.closeSaveDialog();
+
+      component.onQuickOpenCommand('new-document');
+      expect(component.isNewDocumentDialogOpen()).toBe(true);
+
+      confirmSpy.mockRestore();
+    });
+
+    it('omits the Explorer toggle from the catalog when the API is unsupported, like the rail', () => {
+      // The default fileSystemAccessServiceMock reports supported; this build
+      // reflects it.
+      expect(component.quickOpenCommands.some((command) => command.id === 'toggle-explorer')).toBe(
+        component.explorerSupported,
+      );
+      const ids = component.quickOpenCommands.map((command) => command.id);
+      expect(ids).toEqual(expect.arrayContaining(['new-document', 'save', 'save-as', 'upload', 'render', 'copy-contents', 'toggle-documents', 'toggle-templates', 'toggle-explain', 'toggle-wizard']));
+    });
+
+    it('wires the title bar passthroughs to the page handlers (template binding)', () => {
+      fixture.detectChanges();
+
+      const titleBar = fixture.debugElement.query(By.directive(TitleBarComponent))
+        .componentInstance as TitleBarComponent;
+
+      titleBar.quickOpenRequested.emit();
+      expect(component.quickOpenOpen()).toBe(true);
+
+      titleBar.quickOpenDismissed.emit({ restoreFocus: true });
+      expect(component.quickOpenOpen()).toBe(false);
+
+      expect(titleBar.quickOpenCommands).toBe(component.quickOpenCommands);
     });
   });
 

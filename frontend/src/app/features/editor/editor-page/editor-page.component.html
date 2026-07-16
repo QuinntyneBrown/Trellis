@@ -2,8 +2,14 @@
   [documentName]="documentName()"
   [sidePanelOpen]="activeSidePanel() !== null"
   [copied]="documentCopied()"
+  [quickOpenOpen]="quickOpenOpen()"
+  [quickOpenCommands]="quickOpenCommands"
   (sidebarToggle)="onTitleBarSidebarToggle()"
   (copyContents)="onCopyDocumentContents()"
+  (quickOpenRequested)="onQuickOpenRequested()"
+  (quickOpenDismissed)="onQuickOpenDismissed()"
+  (quickOpenDocumentSelected)="onQuickOpenDocumentSelected($event)"
+  (quickOpenCommandSelected)="onQuickOpenCommand($event)"
 ></app-title-bar>
 <div class="editor-page" data-testid="editor-page">
   <app-editor-toolbar

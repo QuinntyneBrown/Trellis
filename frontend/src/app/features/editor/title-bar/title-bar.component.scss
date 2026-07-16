@@ -28,45 +28,9 @@
   min-width: 0;
 }
 
-.title-bar__command-center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-  max-width: 38rem;
-  height: var(--tds-metric-command-center-h);
-  padding: 0 10px;
-  min-width: 0;
-  border: 1px solid var(--tds-border-strong);
-  border-radius: var(--tds-radius-pill);
-  background-color: var(--tds-surface-raised);
-  color: var(--tds-ink-muted);
-  font-family: inherit;
-  font-size: var(--tds-text-chrome-sm);
-  cursor: pointer;
-
-  &:hover {
-    background-color: var(--tds-surface-overlay);
-    color: var(--tds-ink);
-  }
-}
-
-.title-bar__search-icon {
-  width: 12px;
-  height: 12px;
-  flex: 0 0 auto;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  stroke-linecap: round;
-}
-
-.title-bar__title {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+// The command-center pill's rules moved to quick-open.component.scss with the
+// pill markup (the Quick Open renders it as its at-rest state); this file
+// keeps only the bar chrome around it.
 
 // Sibling of the command-center pill (the pill is itself a <button>, so the
 // copy action cannot nest inside it). Sized/styled like a layout toggle.

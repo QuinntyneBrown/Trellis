@@ -29,6 +29,7 @@ import { applyWizardDiagram } from '../../wizard/wizard-panel/build-wizard-plant
 import { WizardDiagramChange } from '../../wizard/wizard-panel/wizard-model';
 import { WizardPanelComponent } from '../../wizard/wizard-panel/wizard-panel.component';
 import { DiagramPreviewComponent } from '../diagram-preview/diagram-preview.component';
+import { QuickOpenCommand } from '../quick-open/quick-open.model';
 import {
   DEFAULT_EDITOR_PANE_RATIO,
   EDITOR_PANE_RATIO_KEYBOARD_STEP,
@@ -155,6 +156,18 @@ export class EditorPageComponent implements OnInit {
 
   /** Computed once -- the browser either has the File System Access API or it doesn't, for the whole session. */
   readonly explorerSupported = this.fileSystemAccessService.isSupported();
+
+  /** Whether the title bar's Quick Open search is showing (Ctrl+P / the pill). */
+  readonly quickOpenOpen = signal(false);
+
+  /**
+   * The Quick Open '>'-mode catalog. A plain readonly field, not a computed
+   * and not a getter: everything it depends on (explorerSupported) is
+   * session-constant, and the stable reference is what the quick-open's
+   * change detection contract requires. Every entry dispatches to a handler
+   * this page already has -- the catalog adds no behavior of its own.
+   */
+  readonly quickOpenCommands: QuickOpenCommand[] = this.buildQuickOpenCommands();
 
   /**
    * The single shared selection behind both the Explorer and Documents rail
@@ -448,6 +461,17 @@ export class EditorPageComponent implements OnInit {
       return;
     }
 
+    // Ctrl/Cmd+P = Quick Open, the vscode.dev binding. preventDefault runs
+    // unconditionally -- even when the shortcut is gated off below, the
+    // browser's print dialog must never appear over the editor.
+    if (primary && !event.shiftKey && !event.altKey && key === 'p') {
+      event.preventDefault();
+      if (!this.isSaveDialogOpen() && !this.isNewDocumentDialogOpen()) {
+        this.quickOpenOpen.set(true);
+      }
+      return;
+    }
+
     if (!primary || key !== 's') {
       return;
     }
@@ -673,6 +697,88 @@ export class EditorPageComponent implements OnInit {
     if (change.renderable) {
       void this.hubService.render(next, 'plantuml');
     }
+  }
+
+  onQuickOpenRequested(): void {
+    this.quickOpenOpen.set(true);
+  }
+
+  onQuickOpenDismissed(): void {
+    this.quickOpenOpen.set(false);
+  }
+
+  /** Enter on a document result: same path as opening from the Documents panel. */
+  onQuickOpenDocumentSelected(summary: DocumentSummary): void {
+    this.quickOpenOpen.set(false);
+    this.onDocumentOpenedFromPanel(summary);
+  }
+
+  /**
+   * Enter on a '>' command. The search closes FIRST: onNewDocument's
+   * window.confirm blocks synchronously, and a dropdown frozen open behind a
+   * native dialog reads as a hang.
+   */
+  onQuickOpenCommand(commandId: string): void {
+    this.quickOpenOpen.set(false);
+
+    switch (commandId) {
+      case 'new-document':
+        this.onNewDocument();
+        return;
+      case 'save':
+        this.onSaveClicked();
+        return;
+      case 'save-as':
+        this.onSaveAsClicked();
+        return;
+      case 'upload':
+        this.onUploadRequested();
+        return;
+      case 'render':
+        void this.hubService.render(this.sourceCode(), this.documentKind());
+        return;
+      case 'copy-contents':
+        this.onCopyDocumentContents();
+        return;
+      case 'toggle-explorer':
+        this.toggleSidePanel('explorer');
+        return;
+      case 'toggle-documents':
+        this.toggleSidePanel('documents');
+        return;
+      case 'toggle-templates':
+        this.toggleSidePanel('templates');
+        return;
+      case 'toggle-explain':
+        this.toggleSidePanel('explain');
+        return;
+      case 'toggle-wizard':
+        this.toggleSidePanel('wizard');
+        return;
+      default:
+        return;
+    }
+  }
+
+  /**
+   * The '>'-mode catalog. Explorer follows the rail's hidden-not-disabled
+   * idiom: in a browser without the File System Access API the command is
+   * absent, not greyed.
+   */
+  private buildQuickOpenCommands(): QuickOpenCommand[] {
+    return [
+      { id: 'new-document', label: 'New Document', shortcutHint: 'Alt+N' },
+      { id: 'save', label: 'Save', shortcutHint: 'Ctrl+S' },
+      { id: 'save-as', label: 'Save As…', shortcutHint: 'Ctrl+Shift+S' },
+      { id: 'upload', label: 'Upload File', shortcutHint: 'Ctrl+U' },
+      { id: 'render', label: 'Render Diagram', shortcutHint: 'Ctrl+Enter' },
+      { id: 'copy-contents', label: 'Copy Document Contents' },
+      ...(this.explorerSupported ? [{ id: 'toggle-explorer', label: 'Toggle Explorer Panel' }] : []),
+      { id: 'toggle-documents', label: 'Toggle Documents Panel' },
+      { id: 'toggle-templates', label: 'Toggle Templates Panel' },
+      { id: 'toggle-explain', label: 'Toggle Explain This Panel' },
+      { id: 'toggle-wizard', label: 'Toggle Diagram Wizard Panel' },
+    ];
   }
 
   /**

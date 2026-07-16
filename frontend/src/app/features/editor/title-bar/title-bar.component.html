@@ -5,13 +5,15 @@
   <div class="title-bar__left"></div>
 
   <div class="title-bar__center">
-    <button type="button" class="title-bar__command-center" data-testid="title-bar-command-center" aria-label="Search documents">
-      <svg class="title-bar__search-icon" viewBox="0 0 16 16" aria-hidden="true">
-        <circle cx="7" cy="7" r="4.5" />
-        <path d="M10.6 10.6 14 14" />
-      </svg>
-      <span class="title-bar__title" data-testid="title-bar-title">{{ windowTitle }}</span>
-    </button>
+    <app-quick-open
+      [documentName]="documentName"
+      [open]="quickOpenOpen"
+      [commands]="quickOpenCommands"
+      (openRequested)="quickOpenRequested.emit()"
+      (dismissed)="quickOpenDismissed.emit($event)"
+      (documentSelected)="quickOpenDocumentSelected.emit($event)"
+      (commandSelected)="quickOpenCommandSelected.emit($event)"
+    ></app-quick-open>
     <button
       type="button"
       class="title-bar__copy-button"

@@ -1,0 +1,80 @@
+@if (!open) {
+  <!-- At rest: the command-center pill, exactly as before. The testids are
+       load-bearing continuity: title-bar specs and e2e read them. -->
+  <!-- The pill keeps its title-bar__* class names even though it now lives
+       here: the design system and the docs/mocks pages document the pill by
+       those classes, and its rendered look is unchanged. -->
+  <button
+    #pillButton
+    type="button"
+    class="title-bar__command-center"
+    data-testid="title-bar-command-center"
+    aria-label="Search documents"
+    (click)="onPillClicked()"
+  >
+    <svg class="title-bar__search-icon" viewBox="0 0 16 16" aria-hidden="true">
+      <circle cx="7" cy="7" r="4.5" />
+      <path d="M10.6 10.6 14 14" />
+    </svg>
+    <span class="title-bar__title" data-testid="title-bar-title">{{ windowTitle }}</span>
+  </button>
+} @else {
+  <input
+    #searchInput
+    type="text"
+    class="quick-open__input"
+    data-testid="quick-open-input"
+    role="combobox"
+    aria-expanded="true"
+    aria-controls="quick-open-listbox"
+    aria-autocomplete="list"
+    [attr.aria-activedescendant]="results().length > 0 ? 'quick-open-option-' + activeIndex() : null"
+    aria-label="Search documents"
+    placeholder="Search documents by name (type > for commands)"
+    autocomplete="off"
+    spellcheck="false"
+    [value]="query()"
+    (input)="onQueryInput($event)"
+    (keydown)="onInputKeydown($event)"
+  />
+
+  <div class="quick-open__dropdown" data-testid="quick-open-dropdown">
+    @if (emptyMessage(); as message) {
+      <p class="quick-open__empty" data-testid="quick-open-empty">{{ message }}</p>
+    } @else {
+      <ul id="quick-open-listbox" class="quick-open__list" role="listbox" aria-label="Quick Open results">
+        @for (row of results(); track row.type === 'document' ? row.document.id : row.command.id) {
+          <li
+            class="quick-open__row"
+            [class.quick-open__row--active]="$index === activeIndex()"
+            [id]="'quick-open-option-' + $index"
+            role="option"
+            [attr.aria-selected]="$index === activeIndex()"
+            data-testid="quick-open-row"
+            [attr.data-option-label]="row.type === 'document' ? row.document.name : row.command.label"
+            (mousedown)="onRowMousedown($event)"
+            (click)="onRowClicked(row)"
+            (mouseenter)="onRowMouseenter($index)"
+          >
+            <!-- Deliberately one line, and every segment is a <span>: block
+                 boundaries between segments would render as spaces INSIDE
+                 the name ("seq uence"). -->
+            <span class="quick-open__name">@for (segment of row.segments; track $index) {<span [class.quick-open__hit]="segment.hit">{{ segment.text }}</span>}</span>
+            @if (row.type === 'document') {
+              @if (row.document.kind === 'markdown') {
+                <span class="quick-open__kind-badge" data-testid="quick-open-kind-badge" aria-label="Markdown document">MD</span>
+              }
+              @if (row.folderPath) {
+                <span class="quick-open__detail">{{ row.folderPath }}</span>
+              }
+            } @else {
+              @if (row.command.shortcutHint) {
+                <span class="quick-open__detail quick-open__detail--hint">{{ row.command.shortcutHint }}</span>
+              }
+            }
+          </li>
+        }
+      </ul>
+    }
+  </div>
+}

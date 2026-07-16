@@ -1,5 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { of } from 'rxjs';
 
+import { DocumentsService } from '../../../core/services/documents.service';
+import { FoldersService } from '../../../core/services/folders.service';
+import { QuickOpenComponent } from '../quick-open/quick-open.component';
 import { TitleBarComponent } from './title-bar.component';
 
 describe('TitleBarComponent', () => {
@@ -9,6 +14,12 @@ describe('TitleBarComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [TitleBarComponent],
+      // The Quick Open command center is a real child; its injected list
+      // services must be faked or the whole suite fails on DI.
+      providers: [
+        { provide: DocumentsService, useValue: { list: jest.fn().mockReturnValue(of([])) } },
+        { provide: FoldersService, useValue: { list: jest.fn().mockReturnValue(of([])) } },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(TitleBarComponent);
@@ -88,5 +99,51 @@ describe('TitleBarComponent', () => {
     for (const button of Array.from(iconButtons)) {
       expect((button as HTMLElement).getAttribute('aria-label')).toBeTruthy();
     }
+  });
+
+  describe('Quick Open passthrough (the page owns every decision)', () => {
+    function quickOpen(): QuickOpenComponent {
+      return fixture.debugElement.query(By.directive(QuickOpenComponent)).componentInstance as QuickOpenComponent;
+    }
+
+    it('forwards its inputs to the command center', () => {
+      component.quickOpenOpen = true;
+      component.quickOpenCommands = [{ id: 'save', label: 'Save' }];
+      fixture.detectChanges();
+
+      expect(quickOpen().documentName).toBe('Untitled diagram');
+      expect(quickOpen().open).toBe(true);
+      expect(quickOpen().commands).toEqual([{ id: 'save', label: 'Save' }]);
+    });
+
+    it('re-emits each Quick Open output unchanged', () => {
+      const requested = jest.fn();
+      const dismissed = jest.fn();
+      const documentSelected = jest.fn();
+      const commandSelected = jest.fn();
+      component.quickOpenRequested.subscribe(requested);
+      component.quickOpenDismissed.subscribe(dismissed);
+      component.quickOpenDocumentSelected.subscribe(documentSelected);
+      component.quickOpenCommandSelected.subscribe(commandSelected);
+
+      const child = quickOpen();
+      child.openRequested.emit();
+      child.dismissed.emit({ restoreFocus: true });
+      const summary = {
+        id: '1',
+        name: 'Doc',
+        updatedAt: '2026-07-01T00:00:00Z',
+        folderId: null,
+        kind: 'plantuml' as const,
+        excludedFromExport: false,
+      };
+      child.documentSelected.emit(summary);
+      child.commandSelected.emit('save');
+
+      expect(requested).toHaveBeenCalledTimes(1);
+      expect(dismissed).toHaveBeenCalledWith({ restoreFocus: true });
+      expect(documentSelected).toHaveBeenCalledWith(summary);
+      expect(commandSelected).toHaveBeenCalledWith('save');
+    });
   });
 });

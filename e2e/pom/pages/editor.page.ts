@@ -10,6 +10,7 @@ import { DocumentsPanelComponent } from '../components/documents-panel.component
 import { DividerComponent } from '../components/divider.component';
 import { ExplainPanelComponent } from '../components/explain-panel.component';
 import { ExplorerPanelComponent } from '../components/explorer-panel.component';
+import { QuickOpenComponent } from '../components/quick-open.component';
 import { WizardPanelComponent } from '../components/wizard-panel.component';
 
 /**
@@ -36,6 +37,7 @@ export class EditorPage extends BasePage {
   readonly explorerPanel: ExplorerPanelComponent;
   readonly explainPanel: ExplainPanelComponent;
   readonly wizardPanel: WizardPanelComponent;
+  readonly quickOpen: QuickOpenComponent;
   readonly sidePanelDivider: DividerComponent;
 
   constructor(page: Page) {
@@ -51,6 +53,7 @@ export class EditorPage extends BasePage {
     this.explorerPanel = new ExplorerPanelComponent(page);
     this.explainPanel = new ExplainPanelComponent(page);
     this.wizardPanel = new WizardPanelComponent(page);
+    this.quickOpen = new QuickOpenComponent(page);
     this.sidePanelDivider = new DividerComponent(page, 'pixel-resize-divider');
   }
 
