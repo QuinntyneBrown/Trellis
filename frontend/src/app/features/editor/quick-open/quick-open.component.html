@@ -30,7 +30,7 @@
     aria-autocomplete="list"
     [attr.aria-activedescendant]="results().length > 0 ? 'quick-open-option-' + activeIndex() : null"
     aria-label="Search documents"
-    placeholder="Search documents by name (type > for commands)"
+    placeholder="Search documents by name or content (type > for commands)"
     autocomplete="off"
     spellcheck="false"
     [value]="query()"
@@ -56,21 +56,28 @@
             (click)="onRowClicked(row)"
             (mouseenter)="onRowMouseenter($index)"
           >
-            <!-- Deliberately one line, and every segment is a <span>: block
-                 boundaries between segments would render as spaces INSIDE
-                 the name ("seq uence"). -->
-            <span class="quick-open__name">@for (segment of row.segments; track $index) {<span [class.quick-open__hit]="segment.hit">{{ segment.text }}</span>}</span>
-            @if (row.type === 'document') {
-              @if (row.document.kind === 'markdown') {
-                <span class="quick-open__kind-badge" data-testid="quick-open-kind-badge" aria-label="Markdown document">MD</span>
+            <div class="quick-open__primary">
+              <!-- Deliberately one line, and every segment is a <span>: block
+                   boundaries between segments would render as spaces INSIDE
+                   the name ("seq uence"). -->
+              <span class="quick-open__name">@for (segment of row.segments; track $index) {<span [class.quick-open__hit]="segment.hit">{{ segment.text }}</span>}</span>
+              @if (row.type === 'document') {
+                @if (row.document.kind === 'markdown') {
+                  <span class="quick-open__kind-badge" data-testid="quick-open-kind-badge" aria-label="Markdown document">MD</span>
+                }
+                @if (row.folderPath) {
+                  <span class="quick-open__detail">{{ row.folderPath }}</span>
+                }
+              } @else {
+                @if (row.command.shortcutHint) {
+                  <span class="quick-open__detail quick-open__detail--hint">{{ row.command.shortcutHint }}</span>
+                }
               }
-              @if (row.folderPath) {
-                <span class="quick-open__detail">{{ row.folderPath }}</span>
-              }
-            } @else {
-              @if (row.command.shortcutHint) {
-                <span class="quick-open__detail quick-open__detail--hint">{{ row.command.shortcutHint }}</span>
-              }
+            </div>
+            <!-- Content-match excerpt: only present when the database search hit
+                 the body (name-only matches carry no snippet). -->
+            @if (row.type === 'document' && row.snippet) {
+              <span class="quick-open__snippet" data-testid="quick-open-snippet">@for (segment of row.snippet; track $index) {<span [class.quick-open__hit]="segment.hit">{{ segment.text }}</span>}</span>
             }
           </li>
         }

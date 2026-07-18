@@ -38,6 +38,29 @@ describe('DocumentsService', () => {
     req.flush(summaries);
   });
 
+  it('searches documents by passing the query as a request parameter', () => {
+    const hits = [
+      {
+        id: '1',
+        name: 'Doc 1',
+        updatedAt: '2026-01-01T00:00:00Z',
+        folderId: null,
+        kind: 'plantuml',
+        excludedFromExport: false,
+        snippet: '…the alpha flow…',
+      },
+    ];
+
+    service.search('alpha').subscribe((result) => {
+      expect(result).toEqual(hits);
+    });
+
+    const req = httpMock.expectOne((request) => request.url === `${baseUrl}/search`);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('query')).toBe('alpha');
+    req.flush(hits);
+  });
+
   it('gets a document by id', () => {
     const document: Document = {
       id: '1',

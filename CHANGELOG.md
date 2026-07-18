@@ -6,6 +6,11 @@ All notable changes to Trellis are recorded in this file.
 
 ### Added
 
+- Full-text document search from the title bar's Quick Open: typing a query
+  now also searches document *content* in the database (a new
+  `GET /api/documents/search` endpoint), not just names. Content-only hits
+  appear below the name matches, each with a snippet of the body around the
+  match; the request is debounced and name filtering stays instant.
 - Per-document export exclusion: a document row toggle marks a document as
   excluded from folder markdown exports (shown as a "no export" badge and
   a dimmed name in the tree). The folder export action now opens a dialog

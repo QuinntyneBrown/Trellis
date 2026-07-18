@@ -102,8 +102,8 @@
 
 .quick-open__row {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 0.15rem;
   padding: 0.35rem 0.6rem;
   border-radius: 0.25rem;
   font-size: 13px;
@@ -113,6 +113,15 @@
   &:hover {
     background-color: var(--tds-hover-wash);
   }
+}
+
+// The row's top line: name, MD badge and the right-aligned detail column --
+// the horizontal layout the row itself used to own before snippets added a
+// second line beneath it.
+.quick-open__primary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .quick-open__row--active {
@@ -165,6 +174,16 @@
 .quick-open__detail--hint {
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+// The content-match excerpt beneath a row's primary line: one clipped line of
+// body text with the matched term emphasized (via the shared .quick-open__hit).
+.quick-open__snippet {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.72rem;
+  color: var(--tds-ink-muted);
 }
 
 .quick-open__empty {

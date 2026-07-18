@@ -6,6 +6,7 @@ import { switchMap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { CreateDocumentRequest } from '../models/create-document-request.model';
 import { Document } from '../models/document.model';
+import { DocumentSearchResult } from '../models/document-search-result.model';
 import { DocumentSummary } from '../models/document-summary.model';
 import { UpdateDocumentRequest } from '../models/update-document-request.model';
 
@@ -18,6 +19,19 @@ export class DocumentsService {
 
   list(): Observable<DocumentSummary[]> {
     return this.http.get<DocumentSummary[]>(this.baseUrl);
+  }
+
+  /**
+   * Full-text searches saved documents by name and content in the database,
+   * returning each hit with a snippet of the content around the match (null
+   * when only the name matched). Unlike {@link list}, which the client filters
+   * by name in memory, this reaches the content column that the list view
+   * never fetches -- so a document can be found by what it says.
+   */
+  search(query: string): Observable<DocumentSearchResult[]> {
+    return this.http.get<DocumentSearchResult[]>(`${this.baseUrl}/search`, {
+      params: { query },
+    });
   }
 
   getById(id: string): Observable<Document> {
