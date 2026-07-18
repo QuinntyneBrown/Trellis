@@ -1,10 +1,13 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { DocumentSummary } from '../../../core/models/document-summary.model';
+import { ExplainPrompt } from '../../../core/models/explain-prompt.model';
 import { Folder } from '../../../core/models/folder.model';
 import { DocumentsService } from '../../../core/services/documents.service';
 import { EditorLayoutPreferencesService } from '../../../core/services/editor-layout-preferences.service';
+import { ExplainService } from '../../../core/services/explain.service';
 import { FileDownloadService } from '../../../core/services/file-download.service';
 import { FoldersService } from '../../../core/services/folders.service';
 import { DocumentsPanelComponent } from './documents-panel.component';
@@ -28,12 +31,20 @@ describe('DocumentsPanelComponent', () => {
     delete: jest.Mock;
     exportFolder: jest.Mock;
   };
+  let explainServiceMock: { aggregateFolder: jest.Mock };
   /** Mocked away entirely -- jsdom has no URL.createObjectURL and must never see a real anchor click. */
   let fileDownloadServiceMock: { downloadTextFile: jest.Mock };
   // Mocked so the component's persisted-scope seeding never touches the real
   // (root-provided) service's localStorage -- jsdom storage would silently
   // leak scope state between tests otherwise.
   let layoutPreferencesMock: { getDocumentsScopeFolderId: jest.Mock; setDocumentsScopeFolderId: jest.Mock };
+
+  const explainPrompt: ExplainPrompt = {
+    prompt: '# Explain This\n\nUpload `explain-this-files.md`.',
+    fileCount: 2,
+    attachmentFileName: 'explain-this-files.md',
+    attachmentContent: '=== FILE: Nested Doc.puml ===\n```plantuml\n@startuml\n```',
+  };
 
   const folders: Folder[] = [{ id: 'f1', name: 'Diagrams', parentFolderId: null }];
   const summaries: DocumentSummary[] = [
@@ -59,6 +70,9 @@ describe('DocumentsPanelComponent', () => {
       delete: jest.fn().mockReturnValue(of(undefined)),
       exportFolder: jest.fn().mockReturnValue(of('')),
     };
+    explainServiceMock = {
+      aggregateFolder: jest.fn().mockReturnValue(of(explainPrompt)),
+    };
     fileDownloadServiceMock = {
       downloadTextFile: jest.fn(),
     };
@@ -73,6 +87,7 @@ describe('DocumentsPanelComponent', () => {
         { provide: DocumentsService, useValue: documentsServiceMock },
         { provide: FoldersService, useValue: foldersServiceMock },
         { provide: EditorLayoutPreferencesService, useValue: layoutPreferencesMock },
+        { provide: ExplainService, useValue: explainServiceMock },
         { provide: FileDownloadService, useValue: fileDownloadServiceMock },
       ],
     }).compileComponents();
@@ -141,7 +156,14 @@ describe('DocumentsPanelComponent', () => {
     const labels = Array.from(
       fixture.nativeElement.querySelectorAll('[data-testid="tree-context-menu-item"]') as NodeListOf<HTMLElement>,
     ).map((item) => item.textContent?.trim());
-    expect(labels).toEqual(['New Folder', 'Scope to This Folder', 'Export Folder as Markdown', 'Rename', 'Delete']);
+    expect(labels).toEqual([
+      'New Folder',
+      'Scope to This Folder',
+      'Export Folder as Markdown',
+      'Explain This',
+      'Rename',
+      'Delete',
+    ]);
   });
 
   // Regression pin for the change-detection loop: the menu's [items]
@@ -211,6 +233,42 @@ describe('DocumentsPanelComponent', () => {
     expect(byTestId('export-folder-dialog')).toBeNull();
     expect(foldersServiceMock.exportFolder).not.toHaveBeenCalled();
     expect(fileDownloadServiceMock.downloadTextFile).not.toHaveBeenCalled();
+  });
+
+  it('explains a folder: aggregates it server-side, downloads the attachment, and emits the prompt', () => {
+    openPanel();
+    const emitted = jest.fn();
+    component.promptGenerated.subscribe(emitted);
+
+    runContextCommand(byTestId('document-folder')!, 'explain');
+
+    expect(explainServiceMock.aggregateFolder).toHaveBeenCalledWith('f1');
+    expect(fileDownloadServiceMock.downloadTextFile).toHaveBeenCalledWith(
+      explainPrompt.attachmentFileName,
+      explainPrompt.attachmentContent,
+    );
+    expect(emitted).toHaveBeenCalledWith(explainPrompt);
+    expect(component.explainError()).toBeNull();
+  });
+
+  it('surfaces the backend ProblemDetails title when explaining a folder fails, without downloading or emitting', () => {
+    explainServiceMock.aggregateFolder.mockReturnValue(
+      throwError(() => new HttpErrorResponse({
+        status: 400,
+        error: { title: 'This folder and its subfolders contain no documents to explain.' },
+      })),
+    );
+    openPanel();
+    const emitted = jest.fn();
+    component.promptGenerated.subscribe(emitted);
+
+    runContextCommand(byTestId('document-folder')!, 'explain');
+
+    expect(byTestId('documents-panel')!.querySelector('[role="alert"]')?.textContent).toContain(
+      'no documents to explain',
+    );
+    expect(fileDownloadServiceMock.downloadTextFile).not.toHaveBeenCalled();
+    expect(emitted).not.toHaveBeenCalled();
   });
 
   it('toggles a document\'s export exclusion and refreshes the tree', () => {

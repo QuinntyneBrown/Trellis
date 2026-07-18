@@ -11,6 +11,15 @@ All notable changes to Trellis are recorded in this file.
   `GET /api/documents/search` endpoint), not just names. Content-only hits
   appear below the name matches, each with a snippet of the body around the
   match; the request is debounced and name filtering stays instant.
+- Folder "Explain This": a Documents-explorer folder row command that
+  aggregates every document in the folder and its subfolders server-side
+  into an LLM-ready "Explain This" prompt, downloads the referenced source
+  attachment, and loads the prompt into the editor as an unsaved markdown
+  document. PlantUML documents map to `.puml` source files and markdown
+  documents to `.md`, so the prompt and attachment match a local-folder or
+  repository selection; every document is included regardless of its
+  export-exclusion flag (backed by a new `GET /api/explain/folder/{id}`
+  endpoint).
 - Per-document export exclusion: a document row toggle marks a document as
   excluded from folder markdown exports (shown as a "no export" badge and
   a dimmed name in the tree). The folder export action now opens a dialog

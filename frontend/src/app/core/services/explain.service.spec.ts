@@ -41,6 +41,23 @@ describe('ExplainService', () => {
     req.flush(response);
   });
 
+  it('gets the folder aggregate endpoint for a saved folder id', () => {
+    const response = {
+      prompt: '# Explain This',
+      fileCount: 4,
+      attachmentFileName: 'explain-this-files.md',
+      attachmentContent: '=== FILE: Overview.md ===',
+    };
+
+    service.aggregateFolder('f1').subscribe((result) => {
+      expect(result).toEqual(response);
+    });
+
+    const req = httpMock.expectOne(`${baseUrl}/folder/f1`);
+    expect(req.request.method).toBe('GET');
+    req.flush(response);
+  });
+
   it('posts a repository URL to the aggregate-url endpoint', () => {
     const response = {
       prompt: '# Explain This',

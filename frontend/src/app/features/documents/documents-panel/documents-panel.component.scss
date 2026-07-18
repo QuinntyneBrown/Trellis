@@ -32,6 +32,10 @@
   color: var(--tds-ink-muted);
 }
 
+.documents-panel__error {
+  margin: 0.5rem;
+}
+
 // Shown only while the tree is scoped to a folder: up/name/clear. Sits
 // between the header and the tree so the escape hatches stay reachable even
 // when the scoped folder is empty.
