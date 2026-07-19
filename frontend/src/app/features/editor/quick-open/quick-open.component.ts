@@ -12,15 +12,17 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, forkJoin, of } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 
+import { DocumentSearchResult } from '../../../core/models/document-search-result.model';
 import { DocumentSummary } from '../../../core/models/document-summary.model';
 import { Folder } from '../../../core/models/folder.model';
 import { DocumentsService } from '../../../core/services/documents.service';
 import { FoldersService } from '../../../core/services/folders.service';
 import { buildFolderPath } from './folder-path';
-import { fuzzyMatch, toHighlightSegments } from './fuzzy-match';
+import { fuzzyMatch, highlightTerm, toHighlightSegments } from './fuzzy-match';
 import { QuickOpenCommand, QuickOpenDismissedEvent, QuickOpenRow } from './quick-open.model';
 
 /**
@@ -31,11 +33,25 @@ import { QuickOpenCommand, QuickOpenDismissedEvent, QuickOpenRow } from './quick
 const MAX_RESULTS = 50;
 
 /**
+ * Waits this long after the last keystroke before hitting the content-search
+ * endpoint. Local name filtering stays instant (it is a synchronous computed
+ * over the already-loaded list); only the database round-trip is debounced, so
+ * a fast typist fires one request, not one per character.
+ */
+const SEARCH_DEBOUNCE_MS = 200;
+
+/**
  * The command center's Quick Open -- vscode.dev's idiom. At rest it is the
  * familiar pill naming the open document; activated (pill click, or the
  * page's Ctrl+P) it becomes a combobox: a text input over a results dropdown
- * anchored beneath. Plain text fuzzy-searches the saved documents; a '>'
- * prefix switches to the command list the editor page provides.
+ * anchored beneath. Plain text fuzzy-searches the saved documents by name AND
+ * runs a true database search over their content (debounced), so a document
+ * can be found by what it says, not only by what it is called; a '>' prefix
+ * switches to the command list the editor page provides.
+ *
+ * Names match locally and instantly against the list already loaded; content
+ * matches arrive from the search endpoint a beat later and are folded in below
+ * the name hits, each carrying a snippet of the body around the match.
  *
  * The open/closed choice is OWNED BY THE PAGE (the [open] input, like the
  * panels' [open]): the pill click only *requests* opening, and every way out
@@ -83,6 +99,10 @@ export class QuickOpenComponent implements OnChanges {
   readonly loadFailed = signal(false);
   private readonly documents = signal<readonly DocumentSummary[]>([]);
   private readonly folders = signal<readonly Folder[]>([]);
+  /** Content-search hits for the current term, folded into `results` below the name matches. */
+  private readonly contentMatches = signal<readonly DocumentSearchResult[]>([]);
+  /** Debounced feed of search terms; switchMap keeps only the latest request's result. */
+  private readonly searchTerm = new Subject<string>();
   /**
    * ngOnChanges mirror of the `commands` input: a computed() does not track
    * decorator-@Input mutation, so reading the input directly inside
@@ -94,6 +114,32 @@ export class QuickOpenComponent implements OnChanges {
   private fetchSequence = 0;
   /** Set by Escape so the close transition knows to put focus back on the pill. */
   private restoreFocusOnClose = false;
+
+  constructor() {
+    // One debounced pipeline for the whole component: every keystroke pushes a
+    // term (empty in command mode or when cleared), switchMap cancels any
+    // in-flight request so only the latest term's hits land, and a failed
+    // search degrades to "no content matches" rather than taking the picker
+    // down -- the name results are still there.
+    this.searchTerm
+      .pipe(
+        debounceTime(SEARCH_DEBOUNCE_MS),
+        distinctUntilChanged(),
+        switchMap((term) =>
+          term.length === 0
+            ? of<DocumentSearchResult[]>([])
+            : this.documentsService.search(term).pipe(catchError(() => of<DocumentSearchResult[]>([]))),
+        ),
+        takeUntilDestroyed(),
+      )
+      .subscribe((matches) => {
+        // Guard against a response arriving after the picker was closed: a
+        // stale set would flash on the next open before the reset lands.
+        if (this.open) {
+          this.contentMatches.set(matches);
+        }
+      });
+  }
 
   get windowTitle(): string {
     return `${this.documentName} — Trellis`;
@@ -125,12 +171,19 @@ export class QuickOpenComponent implements OnChanges {
 
     const term = this.query().trim();
     const foldersById = new Map(this.folders().map((folder) => [folder.id, folder]));
-    const toRow = (document: DocumentSummary, indices: readonly number[]): QuickOpenRow => ({
-      type: 'document',
-      document,
-      segments: toHighlightSegments(document.name, indices),
-      folderPath: buildFolderPath(document.folderId, foldersById),
-    });
+    // The server returns a snippet per content hit (null when only the name
+    // matched); keyed by id so a name row that also matches content can show it.
+    const snippetByDocId = new Map(this.contentMatches().map((match) => [match.id, match.snippet]));
+    const toRow = (document: DocumentSummary, indices: readonly number[]): QuickOpenRow => {
+      const snippet = snippetByDocId.get(document.id) ?? null;
+      return {
+        type: 'document',
+        document,
+        segments: toHighlightSegments(document.name, indices),
+        folderPath: buildFolderPath(document.folderId, foldersById),
+        snippet: snippet ? highlightTerm(snippet, term) : null,
+      };
+    };
 
     if (term.length === 0) {
       // No query yet: most recently updated first, the "recently opened"
@@ -141,7 +194,7 @@ export class QuickOpenComponent implements OnChanges {
         .map((document) => toRow(document, []));
     }
 
-    return this.documents()
+    const nameMatches = this.documents()
       .map((document) => ({ document, match: fuzzyMatch(term, document.name) }))
       .filter((entry) => entry.match !== null)
       .sort(
@@ -150,9 +203,18 @@ export class QuickOpenComponent implements OnChanges {
           b.document.updatedAt.localeCompare(a.document.updatedAt) ||
           a.document.name.localeCompare(b.document.name) ||
           a.document.id.localeCompare(b.document.id),
-      )
-      .slice(0, MAX_RESULTS)
-      .map(({ document, match }) => toRow(document, match!.indices));
+      );
+
+    // Name hits rank first (a title match is the stronger signal); the database
+    // then contributes documents found only by their content -- deduped against
+    // the name hits and kept in the server's recency order.
+    const nameIds = new Set(nameMatches.map((entry) => entry.document.id));
+    const nameRows = nameMatches.map(({ document, match }) => toRow(document, match!.indices));
+    const contentRows = this.contentMatches()
+      .filter((match) => !nameIds.has(match.id))
+      .map((match) => toRow(match, []));
+
+    return [...nameRows, ...contentRows].slice(0, MAX_RESULTS);
   });
 
   readonly emptyMessage = computed<string | null>(() => {
@@ -178,6 +240,8 @@ export class QuickOpenComponent implements OnChanges {
     if (changes['open']?.currentValue === true) {
       this.query.set('');
       this.activeIndex.set(0);
+      // Start each open with a clean slate: no query means no content hits yet.
+      this.contentMatches.set([]);
       this.fetchLists();
       // The @if (open) content renders during this change-detection pass;
       // the microtask lands just after, when the input exists.
@@ -195,6 +259,10 @@ export class QuickOpenComponent implements OnChanges {
   onQueryInput(event: Event): void {
     this.query.set((event.target as HTMLInputElement).value);
     this.activeIndex.set(0);
+    // Feed the debounced content search. Command mode ('>') and an empty box
+    // have nothing to look up, so push an empty term to cancel any in-flight
+    // request and clear stale hits.
+    this.searchTerm.next(this.mode() === 'documents' ? this.query().trim() : '');
   }
 
   onInputKeydown(event: KeyboardEvent): void {

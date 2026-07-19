@@ -587,4 +587,80 @@ public class DocumentsControllerTests : IClassFixture<CustomWebApplicationFactor
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
+
+    [Fact]
+    public async Task Search_MatchesContent_AndReturnsASnippetAroundTheHit()
+    {
+        // A unique token keeps this test's hit out of every other test's results
+        // in the class-shared database.
+        var token = "zetacontenttoken" + Guid.NewGuid().ToString("N");
+        await this.client.PostAsJsonAsync(
+            "/api/documents",
+            new { name = "Unrelated name", content = $"@startuml\nAlice -> Bob : {token} message\n@enduml" });
+
+        var response = await this.client.GetAsync($"/api/documents/search?query={token}");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var results = await response.Content.ReadFromJsonAsync<List<DocumentSearchResultDto>>();
+        Assert.NotNull(results);
+        var hit = Assert.Single(results!);
+        Assert.Equal("Unrelated name", hit.Name);
+        Assert.NotNull(hit.Snippet);
+        Assert.Contains(token, hit.Snippet!);
+    }
+
+    [Fact]
+    public async Task Search_MatchesName_WithoutASnippet()
+    {
+        var token = "namehittoken" + Guid.NewGuid().ToString("N");
+        await this.client.PostAsJsonAsync(
+            "/api/documents",
+            new { name = $"Design {token}", content = "nothing to see here" });
+
+        var results = await this.client.GetFromJsonAsync<List<DocumentSearchResultDto>>($"/api/documents/search?query={token}");
+
+        var hit = Assert.Single(results!);
+        Assert.Equal($"Design {token}", hit.Name);
+
+        // The query hit only the name, so there is no content excerpt to show.
+        Assert.Null(hit.Snippet);
+    }
+
+    [Fact]
+    public async Task Search_IsCaseInsensitive()
+    {
+        var token = "MixedCaseToken" + Guid.NewGuid().ToString("N");
+        await this.client.PostAsJsonAsync(
+            "/api/documents",
+            new { name = "Case doc", content = $"the {token} lives in the body" });
+
+        var results = await this.client.GetFromJsonAsync<List<DocumentSearchResultDto>>(
+            $"/api/documents/search?query={token.ToLowerInvariant()}");
+
+        Assert.NotNull(results);
+        Assert.Contains(results!, r => r.Name == "Case doc");
+    }
+
+    [Fact]
+    public async Task Search_ReturnsEmpty_ForBlankQuery()
+    {
+        var results = await this.client.GetFromJsonAsync<List<DocumentSearchResultDto>>("/api/documents/search?query=%20%20");
+
+        Assert.NotNull(results);
+        Assert.Empty(results!);
+    }
+
+    [Fact]
+    public async Task Search_ExcludesDocumentsThatMatchNeitherNameNorContent()
+    {
+        var token = "absentqueryneverstored" + Guid.NewGuid().ToString("N");
+        await this.client.PostAsJsonAsync(
+            "/api/documents",
+            new { name = "Just a document", content = "with ordinary content" });
+
+        var results = await this.client.GetFromJsonAsync<List<DocumentSearchResultDto>>($"/api/documents/search?query={token}");
+
+        Assert.NotNull(results);
+        Assert.Empty(results!);
+    }
 }

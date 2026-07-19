@@ -146,6 +146,38 @@ export function fuzzyMatch(query: string, target: string): FuzzyMatchResult | nu
 }
 
 /**
+ * Marks every case-insensitive occurrence of `term` within `text`, returning
+ * the runs for the template. Used for content snippets, where the server has
+ * already located the match and the client only needs to emphasize the literal
+ * term -- a plain substring highlight, not the fuzzy subsequence one names use.
+ * An empty term (or no occurrence) yields a single unmarked run.
+ */
+export function highlightTerm(text: string, term: string): HighlightSegment[] {
+  if (term.length === 0) {
+    return text.length === 0 ? [] : [{ text, hit: false }];
+  }
+
+  const haystack = text.toLowerCase();
+  const needle = term.toLowerCase();
+  const segments: HighlightSegment[] = [];
+  let cursor = 0;
+
+  for (let at = haystack.indexOf(needle); at !== -1; at = haystack.indexOf(needle, at + needle.length)) {
+    if (at > cursor) {
+      segments.push({ text: text.slice(cursor, at), hit: false });
+    }
+    segments.push({ text: text.slice(at, at + needle.length), hit: true });
+    cursor = at + needle.length;
+  }
+
+  if (cursor < text.length) {
+    segments.push({ text: text.slice(cursor), hit: false });
+  }
+
+  return segments;
+}
+
+/**
  * Splits `text` into runs for the template, marking the runs the match hit --
  * precomputed here so the row rendering needs no logic and no innerHTML.
  */

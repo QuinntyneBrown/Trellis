@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Trellis.Api.Contracts;
@@ -18,6 +19,12 @@ public class DocumentsController : ControllerBase
 {
     private const long MaxUploadSizeBytes = 1 * 1024 * 1024;
     private const int MaxNameLength = 200;
+
+    /// <summary>The most content-search hits any single query returns.</summary>
+    private const int MaxSearchResults = 50;
+
+    /// <summary>How many characters of context to keep on each side of a content match in a snippet.</summary>
+    private const int SnippetContext = 40;
 
     private static readonly string[] AllowedUploadExtensions = { ".puml", ".txt", ".md", ".markdown" };
 
@@ -59,6 +66,67 @@ public class DocumentsController : ControllerBase
             .ToListAsync(cancellationToken);
 
         return this.Ok(documents.OrderByDescending(d => d.UpdatedAt).ToList());
+    }
+
+    /// <summary>
+    /// Searches every document by name and content, returning the lightweight
+    /// matches (most recently touched first) with a snippet showing where the
+    /// query hit the body. Unlike <see cref="GetList"/> this is a true database
+    /// search: the query is matched against the (otherwise never-listed)
+    /// content column, so a document can be found by what it says, not only by
+    /// what it is called.
+    /// </summary>
+    /// <param name="query">The text to search for. Whitespace-only queries return nothing.</param>
+    /// <param name="cancellationToken">A token used to observe cancellation requests.</param>
+    /// <returns>The matching documents, capped and ordered by recency.</returns>
+    [HttpGet("search")]
+    public async Task<ActionResult<IReadOnlyList<DocumentSearchResultDto>>> Search(
+        [FromQuery] string? query,
+        CancellationToken cancellationToken)
+    {
+        var term = (query ?? string.Empty).Trim();
+        if (term.Length == 0)
+        {
+            return this.Ok(Array.Empty<DocumentSearchResultDto>());
+        }
+
+        // Lower-casing both sides makes the match case-insensitive in a form the
+        // SQLite provider can translate (LOWER + instr), and sidesteps having to
+        // escape LIKE wildcards in the user's query. Content is fetched only for
+        // the rows that already matched, so the large column never lands in a
+        // list-wide scan.
+        var lowered = term.ToLower();
+
+        var matches = await this.context.Documents
+            .Where(d => d.Name.ToLower().Contains(lowered) || d.Content.ToLower().Contains(lowered))
+            .Select(d => new
+            {
+                d.Id,
+                d.Name,
+                d.Content,
+                UpdatedAt = d.UpdatedAt ?? d.CreatedAt,
+                d.FolderId,
+                d.Kind,
+                d.ExcludedFromExport,
+            })
+            .ToListAsync(cancellationToken);
+
+        var results = matches
+            .OrderByDescending(d => d.UpdatedAt)
+            .Take(MaxSearchResults)
+            .Select(d => new DocumentSearchResultDto
+            {
+                Id = d.Id,
+                Name = d.Name,
+                UpdatedAt = d.UpdatedAt,
+                FolderId = d.FolderId,
+                Kind = d.Kind,
+                ExcludedFromExport = d.ExcludedFromExport,
+                Snippet = BuildSnippet(d.Content, term),
+            })
+            .ToList();
+
+        return this.Ok(results);
     }
 
     /// <summary>
@@ -322,5 +390,45 @@ public class DocumentsController : ControllerBase
         return documentId.HasValue
             ? this.Ok(document)
             : this.CreatedAtAction(nameof(this.GetById), new { id = document.Id }, document);
+    }
+
+    /// <summary>
+    /// Builds a one-line snippet of <paramref name="content"/> around the first
+    /// case-insensitive occurrence of <paramref name="term"/>, or null when the
+    /// term is not in the content (a name-only match). Newlines and runs of
+    /// whitespace are collapsed to single spaces so the excerpt reads on one
+    /// line, and ellipses mark either end that was clipped.
+    /// </summary>
+    /// <param name="content">The document's full content.</param>
+    /// <param name="term">The already-trimmed search term.</param>
+    /// <returns>A trimmed excerpt, or null when the content does not contain the term.</returns>
+    private static string? BuildSnippet(string content, string term)
+    {
+        var index = content.IndexOf(term, StringComparison.OrdinalIgnoreCase);
+        if (index < 0)
+        {
+            return null;
+        }
+
+        var start = Math.Max(0, index - SnippetContext);
+        var end = Math.Min(content.Length, index + term.Length + SnippetContext);
+
+        var excerpt = Regex.Replace(content[start..end], @"\s+", " ").Trim();
+        if (excerpt.Length == 0)
+        {
+            return null;
+        }
+
+        if (start > 0)
+        {
+            excerpt = "…" + excerpt;
+        }
+
+        if (end < content.Length)
+        {
+            excerpt += "…";
+        }
+
+        return excerpt;
     }
 }

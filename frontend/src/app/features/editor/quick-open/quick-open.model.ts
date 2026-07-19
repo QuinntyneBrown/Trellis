@@ -42,6 +42,11 @@ export type QuickOpenRow =
       readonly document: DocumentSummary;
       readonly segments: readonly HighlightSegment[];
       readonly folderPath: string;
+      /**
+       * Content-match excerpt with the matched term marked, or null when the
+       * document surfaced by its name alone (nothing to show a second line for).
+       */
+      readonly snippet: readonly HighlightSegment[] | null;
     }
   | {
       readonly type: 'command';
