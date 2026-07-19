@@ -4,6 +4,10 @@
       <span class="documents-panel__header-title">Documents</span>
     </div>
 
+    @if (explainError()) {
+      <app-error-banner class="documents-panel__error" [message]="explainError()"></app-error-banner>
+    }
+
     @if (scopedFolder(); as scoped) {
       <div class="documents-panel__scope-bar" data-testid="documents-scope-bar">
         <app-tree-action-button

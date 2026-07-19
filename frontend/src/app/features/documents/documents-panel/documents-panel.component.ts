@@ -1,13 +1,17 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, computed, inject, signal } from '@angular/core';
 import { Observable, forkJoin } from 'rxjs';
 
 import { DocumentSummary } from '../../../core/models/document-summary.model';
 import { DocumentTreeNode } from '../../../core/models/document-tree-node.model';
+import { ExplainPrompt } from '../../../core/models/explain-prompt.model';
 import { Folder } from '../../../core/models/folder.model';
 import { DocumentsService } from '../../../core/services/documents.service';
 import { EditorLayoutPreferencesService } from '../../../core/services/editor-layout-preferences.service';
+import { ExplainService } from '../../../core/services/explain.service';
 import { FileDownloadService } from '../../../core/services/file-download.service';
 import { FoldersService } from '../../../core/services/folders.service';
+import { ErrorBannerComponent } from '../../../shared/components/error-banner/error-banner.component';
 import { buildDocumentTree } from './build-document-tree';
 import { collectDescendantFolderIds } from './collect-descendant-folder-ids';
 import {
@@ -51,6 +55,7 @@ import {
   standalone: true,
   imports: [
     DocumentTreeNodeComponent,
+    ErrorBannerComponent,
     ExportFolderDialogComponent,
     MoveDocumentDialogComponent,
     TreeActionButtonComponent,
@@ -65,11 +70,14 @@ export class DocumentsPanelComponent implements OnChanges {
   @Input() activeDocumentId: string | null = null;
 
   @Output() readonly documentOpened = new EventEmitter<DocumentSummary>();
+  /** Fires when "Explain This" generated a prompt for a folder; the editor page loads it as an unsaved markdown document. */
+  @Output() readonly promptGenerated = new EventEmitter<ExplainPrompt>();
 
   private readonly documentsService = inject(DocumentsService);
   private readonly foldersService = inject(FoldersService);
   private readonly layoutPreferences = inject(EditorLayoutPreferencesService);
   private readonly fileDownloadService = inject(FileDownloadService);
+  private readonly explainService = inject(ExplainService);
 
   /** The two flat lists as last fetched -- the single source the tree is rebuilt from. */
   private folders: Folder[] = [];
@@ -108,6 +116,8 @@ export class DocumentsPanelComponent implements OnChanges {
   readonly movingDocument = signal<DocumentTreeNode | null>(null);
   /** The folder node whose export dialog is open, or null when it's closed. */
   readonly exportingFolder = signal<DocumentTreeNode | null>(null);
+  /** Surfaced through app-error-banner when a folder "Explain This" request fails (for example, an empty folder). */
+  readonly explainError = signal<string | null>(null);
   readonly contextMenuRequest = signal<TreeContextMenuRequest<DocumentTreeNode | null> | null>(null);
 
   // A computed, not a getter: the menu's [items] binding needs a stable
@@ -129,6 +139,7 @@ export class DocumentsPanelComponent implements OnChanges {
         { id: 'new-folder', label: 'New Folder' },
         { id: 'scope', label: 'Scope to This Folder', separatorBefore: true },
         { id: 'export', label: 'Export Folder as Markdown' },
+        { id: 'explain', label: 'Explain This' },
         { id: 'rename', label: 'Rename', separatorBefore: true },
         { id: 'delete', label: 'Delete', danger: true },
       ];
@@ -310,6 +321,9 @@ export class DocumentsPanelComponent implements OnChanges {
       case 'export':
         if (node?.kind === 'folder') this.onExportFolder(node);
         break;
+      case 'explain':
+        if (node?.kind === 'folder') this.onExplainFolder(node);
+        break;
       case 'rename':
         if (node) {
           this.promptForRename(node);
@@ -378,6 +392,25 @@ export class DocumentsPanelComponent implements OnChanges {
 
   onExportDialogCancel(): void {
     this.exportingFolder.set(null);
+  }
+
+  /**
+   * A folder row's "Explain This" command: aggregates every document in the
+   * folder and its subfolders server-side into an LLM "Explain This" prompt,
+   * then downloads the source attachment the prompt references and hands the
+   * prompt itself up to the editor page (which loads it as an unsaved markdown
+   * document) -- the same two-part result as the Explain This panel, but
+   * sourced from a saved folder instead of a picked file/folder or URL.
+   */
+  onExplainFolder(node: DocumentTreeNode): void {
+    this.explainError.set(null);
+    this.explainService.aggregateFolder(node.id).subscribe({
+      next: (prompt) => {
+        this.fileDownloadService.downloadTextFile(prompt.attachmentFileName, prompt.attachmentContent);
+        this.promptGenerated.emit(prompt);
+      },
+      error: (error: unknown) => this.explainError.set(explainErrorMessage(error)),
+    });
   }
 
   /** A document row's export-exclusion toggle: flip the flag, then refresh so the badge and future exports agree. */
@@ -580,4 +613,19 @@ export class DocumentsPanelComponent implements OnChanges {
     this.scopedFolder.set(this.folders.find((folder) => folder.id === scopeId) ?? null);
     this.tree.set(buildDocumentTree(folders, documents, this.expandedFolderIds));
   }
+}
+
+/**
+ * Prefers the ProblemDetails title the backend puts on a 400 (an empty folder
+ * has no documents to explain), falling back to a generic message.
+ */
+function explainErrorMessage(error: unknown): string {
+  if (error instanceof HttpErrorResponse) {
+    const problem = error.error as { title?: unknown } | null;
+    if (problem && typeof problem.title === 'string' && problem.title.trim() !== '') {
+      return problem.title;
+    }
+    return 'Generating the prompt failed. Check the server is running and try again.';
+  }
+  return 'Something went wrong generating the prompt.';
 }

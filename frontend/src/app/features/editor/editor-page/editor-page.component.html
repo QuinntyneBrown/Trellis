@@ -53,6 +53,7 @@
         [open]="activeSidePanel() === 'documents'"
         [activeDocumentId]="documentId()"
         (documentOpened)="onDocumentOpenedFromPanel($event)"
+        (promptGenerated)="onExplainPromptGenerated($event)"
       ></app-documents-panel>
       <app-templates-panel
         [style.display]="activeSidePanel() === 'templates' ? '' : 'none'"

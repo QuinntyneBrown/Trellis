@@ -26,7 +26,7 @@ The repository includes architecture and development guidance, decision records,
 - Create, update, apply, rename, and delete templates; six PlantUML starters cover blank, sequence, class, and C4 diagrams.
 - Upload `.puml`, `.plantuml`, `.txt`, `.md`, and `.markdown` files, and copy or download successful diagram previews as PNG.
 - Browse, create, open, and save local files through the File System Access API in Chromium-based browsers.
-- Generate an LLM-ready "Explain This" prompt from a selected local file or folder, or from a public GitHub or GitLab repository, folder, or file URL. The app loads the prompt as Markdown and lets you copy it and download its filtered source attachment.
+- Generate an LLM-ready "Explain This" prompt from a selected local file or folder, from a public GitHub or GitLab repository, folder, or file URL, or by right-clicking a saved document folder to aggregate every document in it and its subfolders. The app loads the prompt as Markdown and lets you copy it and download its filtered source attachment.
 - Run focused backend, frontend, and Playwright end-to-end test coverage.
 
 ## Getting started

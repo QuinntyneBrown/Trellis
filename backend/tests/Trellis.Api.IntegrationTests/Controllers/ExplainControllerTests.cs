@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Trellis.Api.Domain;
 using Trellis.Api.Explain;
 using Trellis.Api.IntegrationTests.Fakes;
 using Trellis.Api.Models;
@@ -126,6 +127,67 @@ public class ExplainControllerTests : IClassFixture<ExplainControllerTests.Expla
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
         Assert.Contains("was not found", problem!.Title);
+    }
+
+    [Fact]
+    public async Task AggregateFolder_AggregatesSubtreeDocuments_IntoPromptAndFencedAttachment()
+    {
+        // outer > Inner; a PlantUML document in outer and a markdown document in
+        // Inner. Documents map to .puml/.md source files whose paths are
+        // relative to the explained folder (the inner document sits under its
+        // subfolder name), and the aggregator sorts entries by path.
+        var outer = await this.CreateFolderAsync("Explain outer");
+        var inner = await this.CreateFolderAsync("Inner", outer.Id);
+        await this.CreateDocumentAsync("beta-diagram", "@startuml\nA -> B\n@enduml", outer.Id, "plantuml");
+        await this.CreateDocumentAsync("alpha-notes", "# Title\n\nBody *text*.", inner.Id, "markdown");
+
+        var response = await this.client.GetAsync($"/api/explain/folder/{outer.Id}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var dto = await response.Content.ReadFromJsonAsync<ExplainPromptDto>();
+        Assert.NotNull(dto);
+        Assert.Equal(2, dto!.FileCount);
+        Assert.StartsWith("# Explain This", dto.Prompt);
+        Assert.Contains("`explain-this-files.md` (2 files)", dto.Prompt);
+        Assert.Equal("explain-this-files.md", dto.AttachmentFileName);
+        Assert.Contains("=== FILE: beta-diagram.puml ===\n```plantuml\n@startuml", dto.AttachmentContent);
+        Assert.Contains("=== FILE: Inner/alpha-notes.md ===", dto.AttachmentContent);
+        Assert.Contains("# Title", dto.AttachmentContent);
+    }
+
+    [Fact]
+    public async Task AggregateFolder_ReturnsNotFound_ForUnknownId()
+    {
+        var response = await this.client.GetAsync($"/api/explain/folder/{Guid.NewGuid()}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AggregateFolder_ReturnsBadRequest_WhenFolderHasNoDocuments()
+    {
+        var folder = await this.CreateFolderAsync("Explain empty");
+        await this.CreateFolderAsync("Also empty", folder.Id);
+
+        var response = await this.client.GetAsync($"/api/explain/folder/{folder.Id}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        Assert.Contains("no documents to explain", problem!.Title);
+    }
+
+    private async Task<Folder> CreateFolderAsync(string name, Guid? parentFolderId = null)
+    {
+        var response = await this.client.PostAsJsonAsync("/api/folders", new { name, parentFolderId });
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<Folder>())!;
+    }
+
+    private async Task<PlantUmlDocument> CreateDocumentAsync(string name, string content, Guid folderId, string kind)
+    {
+        var response = await this.client.PostAsJsonAsync("/api/documents", new { name, content, folderId, kind });
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<PlantUmlDocument>())!;
     }
 
     /// <summary>
