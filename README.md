@@ -58,8 +58,12 @@ PlantUML rendering requires `java` to be resolvable from the terminal that start
 Render a local PlantUML file to an adjacent PNG:
 
 ```bash
-dotnet run --project backend/src/Trellis.Cli -- render path/to/diagram.puml
+dotnet tool install --global Trellis.Cli
+trellis render path/to/diagram.puml
 ```
+
+For development, run the tool directly from source with
+`dotnet run --project backend/src/Trellis.Cli -- render path/to/diagram.puml`.
 
 Start the frontend (`http://localhost:4200`) in a second terminal:
 

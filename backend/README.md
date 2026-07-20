@@ -26,14 +26,18 @@ dotnet run --project backend/src/Trellis.Api --urls=http://localhost:5000
 Render a PlantUML file to an adjacent PNG:
 
 ```powershell
-dotnet run --project src/Trellis.Cli -- render path/to/diagram.puml
+dotnet tool install --global Trellis.Cli
+trellis render path/to/diagram.puml
 ```
 
 Choose the output path explicitly:
 
 ```powershell
-dotnet run --project src/Trellis.Cli -- render path/to/diagram.puml --output path/to/diagram.png
+trellis render path/to/diagram.puml --output path/to/diagram.png
 ```
+
+During development, use `dotnet run --project src/Trellis.Cli -- render ...`
+to run the current source tree without installing the packaged tool.
 
 ## Test
 

@@ -54,6 +54,9 @@ Render a PlantUML file from the repository root:
 dotnet run --project backend/src/Trellis.Cli -- render diagrams/example.puml
 ```
 
+The released tool can instead be installed with
+`dotnet tool install --global Trellis.Cli` and invoked as `trellis`.
+
 The default output is `diagrams/example.png`. Use `--output` (or `-o`) to
 select another existing directory; an existing PNG is replaced after a
 successful render.

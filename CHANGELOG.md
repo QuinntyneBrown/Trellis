@@ -6,6 +6,8 @@ All notable changes to Trellis are recorded in this file.
 
 ### Added
 
+- Installable `Trellis.Cli` .NET tool for rendering local `.puml` files to
+  PNG with `trellis render`, backed by the shared `Trellis.Core` renderer.
 - Full-text document search from the title bar's Quick Open: typing a query
   now also searches document *content* in the database (a new
   `GET /api/documents/search` endpoint), not just names. Content-only hits
@@ -49,4 +51,3 @@ All notable changes to Trellis are recorded in this file.
 - The Templates rail icon now opens a side panel (VS Code-style, exclusive
   with the Explorer and Documents panels) instead of a pop-out picker; the
   panel stays open when a template is applied.
-
