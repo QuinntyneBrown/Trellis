@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Trellis.Core.PlantUml;
 using Trellis.Api.Hubs;
 using Trellis.Api.IntegrationTests.Fakes;
 using Trellis.Api.Markdown;
 using Trellis.Api.Models;
-using Trellis.Api.PlantUml;
 using Xunit;
 
 namespace Trellis.Api.IntegrationTests.Hubs;
@@ -52,18 +52,20 @@ public class PlantUmlHubTests
     [Fact]
     public async Task RenderDiagram_ReturnsTheRendererResult_ForValidSource()
     {
-        var hub = CreateHub(new FakePlantUmlRenderer());
+        var renderer = new FakePlantUmlRenderer();
+        var hub = CreateHub(renderer);
 
         var result = await hub.RenderDiagram("@startuml\nA -> B\n@enduml");
 
         Assert.True(result.IsSuccess);
         Assert.Equal(FakePlantUmlRenderer.CannedSvg, result.Svg);
+        Assert.Equal(PlantUmlOutputFormat.Svg, renderer.RequestedFormat);
     }
 
     [Fact]
     public async Task RenderDiagram_ReturnsGenericFailure_WhenRendererThrows()
     {
-        var hub = CreateHub(new ThrowingRenderer(new InvalidOperationException("boom")));
+        var hub = CreateHub(new ThrowingPlantUmlRenderer(new InvalidOperationException("boom")));
 
         var result = await hub.RenderDiagram("@startuml\n@enduml");
 
@@ -74,7 +76,7 @@ public class PlantUmlHubTests
     [Fact]
     public async Task RenderDiagram_ReturnsCancelledFailure_WhenRenderIsCancelled()
     {
-        var hub = CreateHub(new ThrowingRenderer(new OperationCanceledException()));
+        var hub = CreateHub(new ThrowingPlantUmlRenderer(new OperationCanceledException()));
 
         var result = await hub.RenderDiagram("@startuml\n@enduml");
 
@@ -149,28 +151,5 @@ public class PlantUmlHubTests
         {
             Context = context.Object,
         };
-    }
-
-    private sealed class ThrowingRenderer : IPlantUmlRenderer
-    {
-        private readonly Exception exception;
-
-        public ThrowingRenderer(Exception exception)
-        {
-            this.exception = exception;
-        }
-
-        public Task<RenderResult> RenderAsync(string source, CancellationToken cancellationToken)
-        {
-            return Task.FromException<RenderResult>(this.exception);
-        }
-    }
-
-    private sealed class ThrowingMarkdownRenderer : IMarkdownRenderer
-    {
-        public RenderResult Render(string source)
-        {
-            throw new InvalidOperationException("boom");
-        }
     }
 }

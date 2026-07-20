@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Trellis.Api.IntegrationTests.Fakes;
 using Trellis.Api.Persistence;
-using Trellis.Api.PlantUml;
+using Trellis.Core.PlantUml;
 
 namespace Trellis.Api.IntegrationTests;
 

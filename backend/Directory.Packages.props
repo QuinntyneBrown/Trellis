@@ -17,6 +17,11 @@
 
     <PackageVersion Include="Markdig" Version="1.3.2" />
 
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
+    <PackageVersion Include="System.CommandLine" Version="2.0.10" />
+
     <!--
       Pinned to the 1.2.0 beta line (rather than the older 1.1.118 stable release)
       because 1.1.118 has incomplete support for C# 10+ file-scoped namespace

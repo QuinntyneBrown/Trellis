@@ -1,20 +1,17 @@
 using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Trellis.Api.Models;
 
-namespace Trellis.Api.PlantUml;
+namespace Trellis.Core.PlantUml;
 
 /// <summary>
-/// Renders PlantUML source to SVG by shelling out to a local JVM running the
-/// vendored plantuml.jar. Bounds concurrency with a semaphore so a burst of render
-/// requests cannot spawn unbounded Java processes. Expected failures come back as
-/// failed <see cref="RenderResult"/>s; unexpected exceptions are allowed to
-/// propagate to the hub, which owns the single catch-all boundary on the render path.
+/// Renders PlantUML source by invoking the vendored PlantUML jar through Java.
 /// </summary>
-public class PlantUmlRenderer : IPlantUmlRenderer, IDisposable
+public sealed class PlantUmlRenderer : IPlantUmlRenderer, IDisposable
 {
+    private static readonly byte[] PngSignature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
     private static readonly Regex SvgRegex = new(@"<svg[\s\S]*?</svg>", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     private readonly PlantUmlOptions options;
@@ -26,7 +23,7 @@ public class PlantUmlRenderer : IPlantUmlRenderer, IDisposable
     /// <summary>
     /// Initializes a new instance of the <see cref="PlantUmlRenderer"/> class.
     /// </summary>
-    /// <param name="options">The PlantUML rendering options.</param>
+    /// <param name="options">The rendering options.</param>
     /// <param name="logger">The logger.</param>
     public PlantUmlRenderer(IOptions<PlantUmlOptions> options, ILogger<PlantUmlRenderer> logger)
     {
@@ -38,14 +35,15 @@ public class PlantUmlRenderer : IPlantUmlRenderer, IDisposable
     }
 
     /// <inheritdoc />
-    public async Task<RenderResult> RenderAsync(string source, CancellationToken cancellationToken)
+    public async Task<PlantUmlRenderResult> RenderAsync(
+        string source,
+        PlantUmlOutputFormat outputFormat,
+        CancellationToken cancellationToken)
     {
-        // The wait stays outside the try so Release only ever runs after a
-        // successful acquire.
         await this.concurrencyLimiter.WaitAsync(cancellationToken);
         try
         {
-            return await this.RenderCoreAsync(source, cancellationToken);
+            return await this.RenderCoreAsync(source, outputFormat, cancellationToken);
         }
         finally
         {
@@ -70,7 +68,20 @@ public class PlantUmlRenderer : IPlantUmlRenderer, IDisposable
         return Path.IsPathRooted(path) ? path : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, path));
     }
 
-    private static async Task<string?> SafeAwaitAsync(Task<string> task)
+    private static async Task<byte[]?> SafeReadOutputAsync(Task copyTask, MemoryStream stream)
+    {
+        try
+        {
+            await copyTask;
+            return stream.ToArray();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static async Task<string?> SafeReadErrorAsync(Task<string> task)
     {
         try
         {
@@ -82,27 +93,22 @@ public class PlantUmlRenderer : IPlantUmlRenderer, IDisposable
         }
     }
 
-    private static string BuildFriendlyErrorMessage(string? stderr)
+    private static string BuildFriendlyErrorMessage(string? standardError)
     {
         const string defaultMessage = "The diagram could not be rendered.";
 
-        if (string.IsNullOrWhiteSpace(stderr))
+        if (string.IsNullOrWhiteSpace(standardError))
         {
             return defaultMessage;
         }
 
-        var lines = stderr
+        var lines = standardError
             .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Where(line => line.Length > 0)
             .ToArray();
 
-        // PlantUML's stderr for a syntax error is conventionally three lines: a bare
-        // "ERROR" marker, the 1-based source line number, then a human-readable
-        // description (e.g. "Syntax Error? (Assumed diagram type: sequence)"). Prefer
-        // that description line; fall back to the first line for anything else.
         var descriptiveLine = lines.FirstOrDefault(line =>
             !string.Equals(line, "ERROR", StringComparison.OrdinalIgnoreCase) && !int.TryParse(line, out _));
-
         var chosenLine = descriptiveLine ?? lines.FirstOrDefault();
 
         if (string.IsNullOrWhiteSpace(chosenLine))
@@ -129,7 +135,27 @@ public class PlantUmlRenderer : IPlantUmlRenderer, IDisposable
         }
     }
 
-    private async Task<RenderResult> RenderCoreAsync(string source, CancellationToken cancellationToken)
+    private static byte[]? ValidateOutput(byte[]? output, PlantUmlOutputFormat outputFormat)
+    {
+        if (output is null)
+        {
+            return null;
+        }
+
+        if (outputFormat == PlantUmlOutputFormat.Png)
+        {
+            return output.AsSpan().StartsWith(PngSignature) ? output : null;
+        }
+
+        var svg = Encoding.UTF8.GetString(output);
+        var match = SvgRegex.Match(svg);
+        return match.Success ? Encoding.UTF8.GetBytes(match.Value) : null;
+    }
+
+    private async Task<PlantUmlRenderResult> RenderCoreAsync(
+        string source,
+        PlantUmlOutputFormat outputFormat,
+        CancellationToken cancellationToken)
     {
         var startInfo = new ProcessStartInfo
         {
@@ -139,14 +165,14 @@ public class PlantUmlRenderer : IPlantUmlRenderer, IDisposable
             RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true,
-            StandardOutputEncoding = Encoding.UTF8,
+            StandardInputEncoding = Encoding.UTF8,
             StandardErrorEncoding = Encoding.UTF8,
         };
 
         startInfo.ArgumentList.Add("-Djava.awt.headless=true");
         startInfo.ArgumentList.Add("-jar");
         startInfo.ArgumentList.Add(this.jarFullPath);
-        startInfo.ArgumentList.Add("-tsvg");
+        startInfo.ArgumentList.Add(outputFormat == PlantUmlOutputFormat.Png ? "-tpng" : "-tsvg");
         startInfo.ArgumentList.Add("-pipe");
         startInfo.ArgumentList.Add("-charset");
         startInfo.ArgumentList.Add("UTF-8");
@@ -165,30 +191,21 @@ public class PlantUmlRenderer : IPlantUmlRenderer, IDisposable
         catch (Exception exception)
         {
             this.logger.LogError(exception, "Failed to start the PlantUML rendering process.");
-            return RenderResult.Failure("The diagram renderer is unavailable.");
+            return PlantUmlRenderResult.Failure("The diagram renderer is unavailable.");
         }
 
-        // The timeout clock starts as soon as the process exists so the stdin write
-        // below is inside the timeout envelope too: a JVM that launches but hangs
-        // before consuming stdin (while the source overflows the OS pipe buffer)
-        // must not block a render slot forever.
         using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(Math.Max(1, this.options.RenderTimeoutSeconds)));
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+        using var outputStream = new MemoryStream();
 
-        // Readers are started before the stdin write to avoid the classic pipe
-        // deadlock where the child blocks writing its output while the parent
-        // blocks writing the child's input.
-        var stdoutTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
-        var stderrTask = process.StandardError.ReadToEndAsync(cancellationToken);
+        var outputTask = process.StandardOutput.BaseStream.CopyToAsync(outputStream, cancellationToken);
+        var errorTask = process.StandardError.ReadToEndAsync(cancellationToken);
 
         try
         {
             try
             {
                 var sourceBytes = Encoding.UTF8.GetBytes(source);
-
-                // The outer WaitAsync guarantees the timeout path is reached even if
-                // the pipe write itself never honors cancellation.
                 await process.StandardInput.BaseStream
                     .WriteAsync(sourceBytes, linkedCts.Token)
                     .AsTask()
@@ -200,9 +217,6 @@ public class PlantUmlRenderer : IPlantUmlRenderer, IDisposable
             }
             catch (Exception exception)
             {
-                // A java process that exited early (broken pipe) is not a timeout and
-                // not fatal here - fall through so the stderr-based friendly-error
-                // path below still runs.
                 this.logger.LogWarning(exception, "Failed writing PlantUML source to the renderer's stdin.");
             }
             finally
@@ -214,43 +228,32 @@ public class PlantUmlRenderer : IPlantUmlRenderer, IDisposable
         }
         catch (OperationCanceledException)
         {
-            // Covers both the render timeout and external cancellation (e.g. the
-            // SignalR connection aborting) - in either case the java process must
-            // not be orphaned.
             TryKillProcessTree(process, this.logger);
 
             if (timeoutCts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
             {
-                return RenderResult.Failure("The diagram renderer timed out.");
+                return PlantUmlRenderResult.Failure("The diagram renderer timed out.");
             }
 
             throw;
         }
 
-        var stdout = await SafeAwaitAsync(stdoutTask);
-        var stderr = await SafeAwaitAsync(stderrTask);
-
-        var svgMatch = SvgRegex.Match(stdout ?? string.Empty);
+        var output = await SafeReadOutputAsync(outputTask, outputStream);
+        var standardError = await SafeReadErrorAsync(errorTask);
+        var validatedOutput = ValidateOutput(output, outputFormat);
         var exitCode = process.HasExited ? process.ExitCode : -1;
 
-        // PlantUML happily emits a *picture* even for malformed source - a
-        // "Syntax Error?" panel baked into the SVG itself - while still
-        // signalling the problem through a non-zero exit code (and an
-        // "ERROR" marker on stderr). The shared contract calls out bad
-        // syntax as an expected failure mode (isSuccess: false plus a
-        // populated errorMessage), so a non-zero exit code must be treated
-        // as a failure even when an SVG was produced.
-        if (svgMatch.Success && exitCode == 0)
+        if (validatedOutput is not null && exitCode == 0)
         {
-            return RenderResult.Success(svgMatch.Value);
+            return PlantUmlRenderResult.Success(validatedOutput);
         }
 
-        var friendlyMessage = BuildFriendlyErrorMessage(stderr);
+        var friendlyMessage = BuildFriendlyErrorMessage(standardError);
         this.logger.LogWarning(
             "PlantUML renderer reported a failure. ExitCode={ExitCode} StdErr={StdErr}",
             exitCode,
-            stderr);
+            standardError);
 
-        return RenderResult.Failure(friendlyMessage);
+        return PlantUmlRenderResult.Failure(friendlyMessage);
     }
 }

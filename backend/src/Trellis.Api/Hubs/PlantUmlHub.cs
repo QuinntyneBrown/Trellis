@@ -1,7 +1,8 @@
+using System.Text;
 using Microsoft.AspNetCore.SignalR;
+using Trellis.Core.PlantUml;
 using Trellis.Api.Markdown;
 using Trellis.Api.Models;
-using Trellis.Api.PlantUml;
 
 namespace Trellis.Api.Hubs;
 
@@ -60,7 +61,14 @@ public class PlantUmlHub : Hub
             // ConnectionAborted (not a hub-method CancellationToken parameter, which
             // net8.0 SignalR only binds for streaming methods) is what lets a render
             // for a disconnected client cancel and kill its java process.
-            return await this.renderer.RenderAsync(source, this.Context.ConnectionAborted);
+            var renderResult = await this.renderer.RenderAsync(
+                source,
+                PlantUmlOutputFormat.Svg,
+                this.Context.ConnectionAborted);
+
+            return renderResult.IsSuccess
+                ? RenderResult.Success(Encoding.UTF8.GetString(renderResult.Content!))
+                : RenderResult.Failure(renderResult.ErrorMessage ?? "The diagram could not be rendered.");
         }
         catch (OperationCanceledException)
         {

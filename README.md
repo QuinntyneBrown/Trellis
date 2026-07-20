@@ -1,7 +1,7 @@
 # Trellis
 
-Trellis is a browser-based diagram-as-code workspace with an Angular frontend and an
-ASP.NET Core backend. It provides a Monaco editor, live PlantUML and Markdown previews
+Trellis is a diagram-as-code workspace with an Angular frontend, an ASP.NET Core backend,
+and a command-line renderer. It provides a Monaco editor, live PlantUML and Markdown previews
 over SignalR, a SQLite-backed document library, reusable templates, local-file tools,
 and an "Explain This" workflow for preparing codebase context for an LLM.
 
@@ -21,6 +21,7 @@ The repository includes architecture and development guidance, decision records,
 ## Features
 
 - Author and preview PlantUML diagrams as SVG and Markdown documents as sanitized HTML through SignalR.
+- Render local `.puml` files directly to PNG with the `trellis render` command.
 - Work in a Monaco-powered, VS Code-inspired editor with resizable, persisted workspace panels.
 - Organize SQLite-backed documents in nested virtual folders, including drag-and-drop moves and folder exports to Markdown.
 - Create, update, apply, rename, and delete templates; six PlantUML starters cover blank, sequence, class, and C4 diagrams.
@@ -54,6 +55,12 @@ dotnet run --project backend/src/Trellis.Api --urls=http://localhost:5000
 
 PlantUML rendering requires `java` to be resolvable from the terminal that starts the API. See the [Development Guide](docs/development.md) for configuration and troubleshooting.
 
+Render a local PlantUML file to an adjacent PNG:
+
+```bash
+dotnet run --project backend/src/Trellis.Cli -- render path/to/diagram.puml
+```
+
 Start the frontend (`http://localhost:4200`) in a second terminal:
 
 ```bash
@@ -69,7 +76,7 @@ The frontend proxy routes `/api` and `/hubs` traffic to the backend.
 | Area | Technologies |
 | --- | --- |
 | Frontend application | Angular 17, TypeScript, RxJS, Monaco Editor |
-| Backend | ASP.NET Core 8 Web API, SignalR |
+| Backend | ASP.NET Core 8 Web API, SignalR, System.CommandLine |
 | Data layer | Entity Framework Core 8, SQLite |
 | Rendering | Vendored PlantUML and C4-PlantUML through Java; Markdig for Markdown |
 | Source context | Local File System Access API; GitHub and GitLab archive aggregation for "Explain This" |
@@ -104,7 +111,7 @@ The Playwright configuration starts both services and resets the E2E database be
 ## Project structure
 
 ```text
-backend/                       .NET solution, single API project, persistence, renderer, and integration tests
+backend/                       .NET solution with API, CLI, shared rendering core, and tests
 frontend/                      Angular application, editor workspace, shared components, and Jest tests
 e2e/                           Playwright end-to-end suite that runs the frontend and backend together
 docs/                          Architecture, development, testing, ADRs, UI mocks, and design-system sources

@@ -1,6 +1,6 @@
 # Architecture
 
-Trellis is a browser-based diagram-as-code workspace. The system is split into an Angular frontend, an ASP.NET Core backend, a SignalR render channel, and a local SQLite document store.
+Trellis is a diagram-as-code workspace. The system is split into an Angular frontend, an ASP.NET Core API, a command-line renderer, a shared rendering core, a SignalR render channel, and a local SQLite document store.
 
 ## System Overview
 
@@ -9,23 +9,27 @@ Angular app
   |-- REST over /api for documents and templates
   |-- SignalR over /hubs/plantuml for render requests
 
-ASP.NET Core API (single Trellis.Api project)
+ASP.NET Core API (Trellis.Api)
   |-- Controllers for document and template APIs (EF Core work inline)
   |-- SignalR hub for render requests
   |-- Persistence folder for the SQLite EF Core context and migrations
-  |-- PlantUml folder for the renderer and its options
   |-- Markdown folder for the Markdig-based markdown renderer
 
-Vendored renderer assets
+Trellis.Core
+  |-- Format-aware PlantUML process renderer
+  |-- Microsoft.Extensions registration and options
   |-- plantuml.jar
   |-- C4-PlantUML include files
+
+Trellis.Cli
+  |-- System.CommandLine command tree
+  |-- `render` command for .puml-to-.png conversion
 ```
 
 ## Backend Structure
 
-The backend is a single `Trellis.Api` project, deliberately kept as plain
-controllers + services (no mediator, no separate Application/Domain/
-Infrastructure projects — the app has one entity and nine operations):
+The API remains deliberately plain controllers plus services. Only rendering
+concerns shared with the CLI are extracted into `Trellis.Core`:
 
 - `Controllers` own the HTTP surface; each action is a few lines of EF Core
   work against `ApplicationDbContext` directly. Request validation is plain
@@ -37,11 +41,11 @@ Infrastructure projects — the app has one entity and nine operations):
 - `Domain/PlantUmlDocument` is both the persisted entity and the JSON shape
   the document endpoints return.
 - `Persistence` holds the EF Core context, entity configurations, migrations,
-  and the startup initialiser; `PlantUml` holds the PlantUML renderer;
-  `Markdown` holds the Markdig renderer. Templates are ordinary database
+  and the startup initialiser; `Markdown` holds the Markdig renderer. Templates are ordinary database
   rows (full CRUD); the six built-in starters are seeded by migration.
 - `IPlantUmlRenderer` is the one deliberate seam, so integration tests can
-  substitute a fake renderer and run without a JVM.
+  substitute a fake renderer and run without a JVM. It lives in Core and
+  supports both SVG for the API and PNG for the CLI.
 
 ## Rendering Flow
 
@@ -49,8 +53,11 @@ Infrastructure projects — the app has one entity and nine operations):
 2. The hub validates the source inline (non-empty, at most 100k characters).
 3. The hub calls the renderer with the connection's abort token, so a render for a disconnected client is cancelled and its process killed.
 4. The renderer starts the vendored PlantUML JAR through the configured Java executable.
-5. PlantUML receives source through standard input and returns SVG through standard output.
-6. The backend returns either SVG content or a structured failure message to the frontend.
+5. PlantUML receives source through standard input and returns SVG bytes through standard output.
+6. The API maps the Core result to its existing SVG-or-error response contract.
+
+The CLI follows the same path but requests PNG bytes and writes them to the
+selected output file only after rendering succeeds.
 
 Rendering is bounded by a timeout and a concurrency limiter so render bursts cannot create unbounded Java processes.
 
@@ -73,5 +80,5 @@ Development uses relative `/api` and `/hubs` URLs with the Angular proxy configu
 
 ## Vendored Assets
 
-Trellis vendors PlantUML and C4-PlantUML assets so the local development and E2E workflows are deterministic. These components retain their upstream licenses and are documented in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
+Trellis.Core vendors PlantUML and C4-PlantUML assets and copies them transitively to API and CLI build/publish outputs so local workflows are deterministic. These components retain their upstream licenses and are documented in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
 

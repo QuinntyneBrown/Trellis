@@ -48,6 +48,16 @@ Start the backend:
 dotnet run --project backend/src/Trellis.Api --urls=http://localhost:5000
 ```
 
+Render a PlantUML file from the repository root:
+
+```powershell
+dotnet run --project backend/src/Trellis.Cli -- render diagrams/example.puml
+```
+
+The default output is `diagrams/example.png`. Use `--output` (or `-o`) to
+select another existing directory; an existing PNG is replaced after a
+successful render.
+
 Start the frontend:
 
 ```powershell
@@ -109,6 +119,7 @@ java -version
 ```
 
 If Java is installed outside `PATH`, set `PlantUml:JavaExecutablePath` in API configuration.
+For the CLI, set the `PlantUml__JavaExecutablePath` environment variable.
 
 ### The frontend cannot reach the API
 
@@ -117,4 +128,3 @@ Confirm the backend is listening on `http://localhost:5000` and that [frontend/p
 ### E2E tests reuse stale services
 
 Playwright reuses existing servers outside CI. Stop any local backend or frontend instances if a test run appears to use stale code.
-

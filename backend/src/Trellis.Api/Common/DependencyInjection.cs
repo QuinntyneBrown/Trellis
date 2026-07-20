@@ -1,11 +1,11 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Trellis.Core.Common;
 using Trellis.Api.ErrorHandling;
 using Trellis.Api.Explain;
 using Trellis.Api.Markdown;
 using Trellis.Api.Persistence;
 using Trellis.Api.Persistence.Initialisation;
-using Trellis.Api.PlantUml;
 
 namespace Trellis.Api.Common;
 
@@ -66,8 +66,7 @@ public static class DependencyInjection
         services.AddDbContext<ApplicationDbContext>(options => options.UseSqlite(connectionString));
         services.AddScoped<ApplicationDbContextInitialiser>();
 
-        services.Configure<PlantUmlOptions>(configuration.GetSection(PlantUmlOptions.SectionName));
-        services.AddSingleton<IPlantUmlRenderer, PlantUmlRenderer>();
+        services.AddTrellisCore(configuration);
         services.AddSingleton<IMarkdownRenderer, MarkdigMarkdownRenderer>();
 
         services.AddSingleton<IFileAggregator, FileAggregator>();

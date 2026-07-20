@@ -1,5 +1,5 @@
-using Trellis.Api.Models;
-using Trellis.Api.PlantUml;
+using System.Text;
+using Trellis.Core.PlantUml;
 
 namespace Trellis.Api.IntegrationTests.Fakes;
 
@@ -14,9 +14,18 @@ public class FakePlantUmlRenderer : IPlantUmlRenderer
     /// </summary>
     public const string CannedSvg = "<svg xmlns=\"http://www.w3.org/2000/svg\"><text>fake</text></svg>";
 
+    /// <summary>
+    /// Gets the most recently requested output format.
+    /// </summary>
+    public PlantUmlOutputFormat? RequestedFormat { get; private set; }
+
     /// <inheritdoc />
-    public Task<RenderResult> RenderAsync(string source, CancellationToken cancellationToken)
+    public Task<PlantUmlRenderResult> RenderAsync(
+        string source,
+        PlantUmlOutputFormat outputFormat,
+        CancellationToken cancellationToken)
     {
-        return Task.FromResult(RenderResult.Success(CannedSvg));
+        this.RequestedFormat = outputFormat;
+        return Task.FromResult(PlantUmlRenderResult.Success(Encoding.UTF8.GetBytes(CannedSvg)));
     }
 }

@@ -18,13 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!--
-      Non-.json vendor assets (.puml, .jar, .txt) are classified as <None> by the
-      default SDK item globs, while .json files are classified as <Content>; cover
-      both so every vendored file is copied to the output directory.
-    -->
-    <Content Update="Vendor\**" CopyToOutputDirectory="PreserveNewest" />
-    <None Update="Vendor\**" CopyToOutputDirectory="PreserveNewest" />
+    <ProjectReference Include="..\Trellis.Core\Trellis.Core.csproj" />
   </ItemGroup>
 
 </Project>
